@@ -17,7 +17,16 @@ namespace WineRatingApp.Controllers
         // GET: Wines
         public ActionResult Index()
         {
-            return View(db.Wines.ToList());
+            var wines = db.Wines.ToList();
+            List<Wine> retList = new List<Wine>();
+            foreach (var wine in wines)
+            {
+                int id = wine.WineProducerId;
+                wine.WineProducer = db.WineProducers.Find(id);
+                wine.WineProducerId = id;
+                retList.Add(wine);
+            }
+            return View(retList);
         }
 
         // GET: Wines/Details/5
@@ -46,7 +55,7 @@ namespace WineRatingApp.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "WineId,RatingName,Name,Group,Class,Category")] Wine wine)
+        public ActionResult Create([Bind(Include = "WineId,RatingName,Name,Group,Class,Category,WineProducerId")] Wine wine)
         {
             if (ModelState.IsValid)
             {
@@ -78,7 +87,7 @@ namespace WineRatingApp.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "WineId,RatingName,Name,Group,Class,Category")] Wine wine)
+        public ActionResult Edit([Bind(Include = "WineId,RatingName,Name,Group,Class,Category,WineProducerId")] Wine wine)
         {
             if (ModelState.IsValid)
             {

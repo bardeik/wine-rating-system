@@ -12,7 +12,7 @@ namespace WineRatingApp.Migrations
     {
         public Configuration()
         {
-            AutomaticMigrationsEnabled = false;
+            AutomaticMigrationsEnabled = true;
         }
 
         protected override void Seed(WineRatingApp.Models.ApplicationDbContext context)

@@ -27,7 +27,7 @@
             @Html.DisplayNameFor(model => model.Category)
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.WineProducer)
+            @Html.DisplayNameFor(model => model.WineProducerId)
         </th>
         <th></th>
     </tr>
@@ -50,7 +50,7 @@
             @Html.DisplayFor(modelItem => item.Category)
         </td>
         <td>
-            @Html.DisplayFor(modelItem => item.WineProducer)
+            @Html.DisplayFor(modelItem => item.WineProducer.WineyardName) (@Html.DisplayFor(modelItem => item.WineProducerId))
         </td>
         <td>
             @Html.ActionLink("Edit", "Edit", new { id=item.WineId }) |

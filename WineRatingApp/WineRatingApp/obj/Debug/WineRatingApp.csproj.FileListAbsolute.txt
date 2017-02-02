@@ -72,3 +72,4 @@ C:\Users\bardeh\Source\Repos\wine-rating-system\WineRatingApp\WineRatingApp\bin\
 C:\Users\bardeh\Source\Repos\wine-rating-system\WineRatingApp\WineRatingApp\bin\PagedList.Mvc.dll
 C:\Users\bardeh\Source\Repos\wine-rating-system\WineRatingApp\WineRatingApp\bin\PagedList.xml
 C:\Users\bardeh\Source\Repos\wine-rating-system\WineRatingApp\WineRatingApp\bin\PagedList.Mvc.xml
+C:\Users\bardeh\Source\Repos\wine-rating-system\WineRatingApp\WineRatingApp\obj\Debug\WineRatingApp.csprojResolveAssemblyReference.cache
