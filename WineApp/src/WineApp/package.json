@@ -1,0 +1,23 @@
+{
+  "jspm": {
+    "directories": {
+      "baseURL": "wwwroot"
+    },
+    "dependencies": {
+      "aurelia-bootstrap": "github:tochoromero/aurelia-bootstrap@^0.1.14",
+      "aurelia-bootstrapper": "npm:aurelia-bootstrapper@^2.0.1",
+      "aurelia-fetch-client": "npm:aurelia-fetch-client@^1.1.0",
+      "aurelia-framework": "npm:aurelia-framework@^1.0.8",
+      "aurelia-pal-browser": "npm:aurelia-pal-browser@^1.1.0",
+      "bootstrap": "github:twbs/bootstrap@^3.3.7",
+      "jquery": "npm:jquery@^3.1.1",
+      "jquery-ui": "npm:jquery-ui@^1.12.1",
+      "jqueryui": "npm:jqueryui@^1.11.1",
+      "moment": "npm:moment@^2.17.1"
+    },
+    "devDependencies": {
+      "typescript": "npm:typescript@^2.0.7"
+    }
+  },
+  "devDependencies": {}
+}
