@@ -1,19 +1,25 @@
 ﻿<template>
     <div class="panel panel-default">
-        <div class="panel-heading">Wine rating</div>
+        <div class="panel-heading">Wine Rating</div>
         <table class="table">
             <tr>
                 <th>Wine ID</th>
-                <th>Name</th>
-                <th></th>
+                <th>Visuality</th>
+                <th>Nose</th>
+                <th>Taste</th>
+                <th>Judge Id</th>
+                <th>Wine Id</th>
                 <th></th>
             </tr>
-            <tr repeat.for="todoItem of todoItems" style.bind="todoItem.isCompleted === false ? 'background:fuchsia' : 'background:springgreen; color:antiquewhite'">
-                <td><input type="checkbox" checked.bind="todoItem.isCompleted" click.delegate="markTodoItemAsDone(todoItem)"></td>
-                <td>${todoItem.name}</td>
-                <td>${todoItem.dueDate | dateFormat}</td>
+            <tr repeat.for="wineRating of wineRatings">
+                <td>${wineRating.wineRatingId}</td>
+                <td>${wineRating.visuality}</td>
+                <td>${wineRating.nose}</td>
+                <td>${wineRating.taste}</td>
+                <td>${wineRating.judgeId}</td> 
+                <td>${wineRating.wineId}</td>               
                 <td>
-                    <a click.delegate="deleteTodoItem(todoItem.id)" class="btn btn-default btn-sm" aria-label="Left Align">
+                    <a click.delegate="deleteWineRating(wineRating.wineRatingId)" class="btn btn-default btn-sm" aria-label="Left Align">
                         <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
                     </a>
                 </td>
@@ -22,12 +28,21 @@
         <hr />
         <form>
             <div class="form-group">
-                <input type="text" value.bind="nameTodoItem" class="form-control" placeholder="Name new todo item ...">
+                <input type="text" value.bind="visuality" class="form-control" placeholder="Visuality">
             </div>
             <div class="form-group">
-                <input datepicker value.bind="dueDateTodoItem" class="form-control" placeholder="Enter due date (MM/DD/YYYY)">
+                <input type="text" value.bind="nose" class="form-control" placeholder="Nose">
             </div>
-            <button type="submit" click.delegate="addNewTodoItem()" class="btn btn-default">Add New Todo Item</button>
+            <div class="form-group">
+                <input type="text" value.bind="taste" class="form-control" placeholder="Taste">
+            </div>
+            <div class="form-group">
+                <input type="text" value.bind="judgeId" class="form-control" placeholder="Judge Id">
+            </div>
+            <div class="form-group">
+                <input type="text" value.bind="wineId" class="form-control" placeholder="WineId">
+            </div>
+            <button type="submit" click.delegate="addNewWineRating()" class="btn btn-default">Add New Wine Rating</button>
         </form>
     </div>
 </template>

@@ -3,42 +3,47 @@ import {HttpClient, json} from "aurelia-fetch-client";
 
 @inject(HttpClient, json)
 export class WineRating {
-    todoItems: Array<IWineRating>;
-
+    wineRatings: Array<IWineRating>;
+    visuality: number;
+    nose: number;
+    taste: number;
+    judgeId: string;
+    wineId: number
 
     constructor(private http: HttpClient) { }
 
     activate() {
-        this.fetchAllTodoItems();
+        this.fetchAllWineRatings();
     }
 
-    addNewTodoItem() {
-        const newTodoItem = {
-            DueDate: this.dueDateTodoItem,
-            Name: this.nameTodoItem
+    addNewWineRating() {
+        const newWineRating = {
+            Visuality: this.visuality,
+            Nose: this.nose,
+            Taste: this.taste,
+            JudgeId: this.judgeId,
+            WineId: this.wineId
         };
-        this.http.fetch("http://localhost:50468/api/todos/", {
+        this.http.fetch("http://localhost:50468/api/wineratings/", {
             method: "post",
-            body: json(newTodoItem)
-
+            body: json(newWineRating)
         }).then(response => {
-            this.fetchAllTodoItems();
-            console.log("todo item added: ", response);
+            this.fetchAllWineRatings();
+            console.log("Wine Rating added: ", response);
         });
     }
 
-    fetchAllTodoItems() {
-        return this.http.fetch("http://localhost:50468/api/todos").
+    fetchAllWineRatings() {
+        return this.http.fetch("http://localhost:50468/api/wineratings").
             then(response => response.json()).then(data => {
-                this.todoItems = data;
+                this.wineRatings = data;
             });
     }
 
-    deleteTodoItem(todoItemId) {
-        this.http.fetch(`http://localhost:50468/api/todos/${todoItemId}`,
-            { method: "delete" }).then(() => { this.fetchAllTodoItems(); });
+    deleteWineRating(wineRatingId) {
+        this.http.fetch(`http://localhost:50468/api/wineratings/${wineRatingId}`,
+            { method: "delete" }).then(() => { this.fetchAllWineRatings(); });
     }
-
 }
 
 export interface IWineRating {

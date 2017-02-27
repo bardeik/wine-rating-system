@@ -38,6 +38,9 @@ namespace WineApp
 
             //Make Dependency Injection work
             services.AddSingleton<ITodosRepository, TodosRepository>();
+            services.AddSingleton<IWineProducerRepository, WineProducerRepository>();
+            services.AddSingleton<IWineRatingRepository, WineRatingRepository>();
+            services.AddSingleton<IWineRepository, WineRepository>();
             // Add framework services.
             services.AddMvc();
         }
