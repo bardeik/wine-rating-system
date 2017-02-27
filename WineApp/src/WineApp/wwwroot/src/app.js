@@ -25,7 +25,8 @@ System.register(["aurelia-framework", "aurelia-router"], function(exports_1, con
                     this.router = router;
                     config.title = "Todo App";
                     config.map([
-                        { route: ["", "todos"], moduleId: "./views/todos", nav: true, title: "Todo List" },
+                        { route: ["", "winerating"], moduleId: "./views/winerating", nav: true, title: "Wine Rating" },
+                        { route: ["todos"], moduleId: "./views/todos", nav: true, title: "Todo List" },
                     ]);
                 }
             };

@@ -8,7 +8,7 @@ System.register(["aurelia-framework", "aurelia-fetch-client"], function(exports_
         return c > 3 && r && Object.defineProperty(target, key, r), r;
     };
     var aurelia_framework_1, aurelia_fetch_client_1;
-    var Todos;
+    var WineRating;
     return {
         setters:[
             function (aurelia_framework_1_1) {
@@ -18,40 +18,43 @@ System.register(["aurelia-framework", "aurelia-fetch-client"], function(exports_
                 aurelia_fetch_client_1 = aurelia_fetch_client_1_1;
             }],
         execute: function() {
-            let Todos = class Todos {
+            let WineRating = class WineRating {
                 constructor(http) {
                     this.http = http;
                 }
                 activate() {
-                    this.fetchAllTodoItems();
+                    this.fetchAllWineRatings();
                 }
-                addNewTodoItem() {
-                    const newTodoItem = {
-                        DueDate: this.dueDateTodoItem,
-                        Name: this.nameTodoItem
+                addNewWineRating() {
+                    const newWineRating = {
+                        Visuality: this.visuality,
+                        Nose: this.nose,
+                        Taste: this.taste,
+                        JudgeId: this.judgeId,
+                        WineId: this.wineId
                     };
-                    this.http.fetch("http://localhost:50468/api/todos/", {
+                    this.http.fetch("http://localhost:50468/api/wineratings/", {
                         method: "post",
-                        body: aurelia_fetch_client_1.json(newTodoItem)
+                        body: aurelia_fetch_client_1.json(newWineRating)
                     }).then(response => {
-                        this.fetchAllTodoItems();
-                        console.log("todo item added: ", response);
+                        this.fetchAllWineRatings();
+                        console.log("Wine Rating added: ", response);
                     });
                 }
-                fetchAllTodoItems() {
-                    return this.http.fetch("http://localhost:50468/api/todos").
+                fetchAllWineRatings() {
+                    return this.http.fetch("http://localhost:50468/api/wineratings").
                         then(response => response.json()).then(data => {
-                        this.todoItems = data;
+                        this.wineRatings = data;
                     });
                 }
-                deleteTodoItem(todoItemId) {
-                    this.http.fetch(`http://localhost:50468/api/todos/${todoItemId}`, { method: "delete" }).then(() => { this.fetchAllTodoItems(); });
+                deleteWineRating(wineRatingId) {
+                    this.http.fetch(`http://localhost:50468/api/wineratings/${wineRatingId}`, { method: "delete" }).then(() => { this.fetchAllWineRatings(); });
                 }
             };
-            Todos = __decorate([
+            WineRating = __decorate([
                 aurelia_framework_1.inject(aurelia_fetch_client_1.HttpClient, aurelia_fetch_client_1.json)
-            ], Todos);
-            exports_1("Todos", Todos);
+            ], WineRating);
+            exports_1("WineRating", WineRating);
         }
     }
 });
