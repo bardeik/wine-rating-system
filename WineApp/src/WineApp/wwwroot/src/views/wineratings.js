@@ -8,7 +8,7 @@ System.register(["aurelia-framework", "aurelia-fetch-client"], function(exports_
         return c > 3 && r && Object.defineProperty(target, key, r), r;
     };
     var aurelia_framework_1, aurelia_fetch_client_1;
-    var WineRating;
+    var WineRatings;
     return {
         setters:[
             function (aurelia_framework_1_1) {
@@ -18,7 +18,7 @@ System.register(["aurelia-framework", "aurelia-fetch-client"], function(exports_
                 aurelia_fetch_client_1 = aurelia_fetch_client_1_1;
             }],
         execute: function() {
-            let WineRating = class WineRating {
+            let WineRatings = class WineRatings {
                 constructor(http) {
                     this.http = http;
                 }
@@ -51,11 +51,11 @@ System.register(["aurelia-framework", "aurelia-fetch-client"], function(exports_
                     this.http.fetch(`http://localhost:50468/api/wineratings/${wineRatingId}`, { method: "delete" }).then(() => { this.fetchAllWineRatings(); });
                 }
             };
-            WineRating = __decorate([
+            WineRatings = __decorate([
                 aurelia_framework_1.inject(aurelia_fetch_client_1.HttpClient, aurelia_fetch_client_1.json)
-            ], WineRating);
-            exports_1("WineRating", WineRating);
+            ], WineRatings);
+            exports_1("WineRatings", WineRatings);
         }
     }
 });
-//# sourceMappingURL=winerating.js.map
+//# sourceMappingURL=wineratings.js.map

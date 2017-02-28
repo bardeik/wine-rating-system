@@ -1,0 +1,63 @@
+﻿<template>
+    <div class="panel panel-default">
+        <div class="panel-heading">Wine Producers</div>
+        <table class="table">
+            <tr>
+                <th>Wine Producer Id</th>
+                <th>Wineyard Name</th>
+                <th>Organisation Number</th>
+                <th>Responsible Producer Name</th>ac
+                <th>Address</th>
+                <th>Zip</th>
+                <th>City</th>
+                <th>Country</th>
+                <th>Email</th>
+               <th></th>
+            </tr>
+            <tr repeat.for="wineProducer of wineProducers">
+                <td>${wineProducer.wineProducerId}</td>
+                <td>${wineProducer.wineyardName}</td>
+                <td>${wineProducer.organisationNumber}</td>
+                <td>${wineProducer.responsibleProducerName}</td>
+                <td>${wineProducer.address}</td>
+                <td>${wineProducer.zip}</td>
+                <td>${wineProducer.city}</td>
+                <td>${wineProducer.country}</td>
+                <td>${wineProducer.email}</td>
+                <td>
+                    <a click.delegate="deleteWinePoducer(wineProducer.wineProducerId)" class="btn btn-default btn-sm" aria-label="Left Align">
+                        <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+                    </a>
+                </td>
+            </tr>
+        </table>
+        <hr />
+        <form>
+            <div class="form-group">
+                <input type="text" value.bind="wineyardName" class="form-control" placeholder="Wineyard Name">
+            </div>
+            <div class="form-group">
+                <input type="text" value.bind="organisationNumber" class="form-control" placeholder="OrganisationNumber">
+            </div>
+            <div class="form-group">
+                <input type="text" value.bind="responsibleProducerName" class="form-control" placeholder="Responsible Producer Name">
+            </div>
+            <div class="form-group">
+                <input type="text" value.bind="address" class="form-control" placeholder="Address">
+            </div>
+            <div class="form-group">
+                <input type="text" value.bind="zip" class="form-control" placeholder="Zip">
+            </div>
+            <div class="form-group">
+                <input type="text" value.bind="city" class="form-control" placeholder="City">
+            </div>
+            <div class="form-group">
+                <input type="text" value.bind="country" class="form-control" placeholder="Country">
+            </div>
+            <div class="form-group">
+                <input type="text" value.bind="email" class="form-control" placeholder="Email">
+            </div>
+            <button type="submit" click.delegate="addNewWineRating()" class="btn btn-default">Add New Wine Rating</button>
+        </form>
+    </div>
+</template>

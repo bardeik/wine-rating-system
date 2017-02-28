@@ -12,7 +12,9 @@ export class App {
 
         config.title = "Todo App";
         config.map([
-            { route: ["","winerating"], moduleId: "./views/winerating", nav: true, title: "Wine Rating" },
+            { route: ["", "wines"], moduleId: "./views/wines", nav: true, title: "Wines" },
+            { route: ["wineproducers"], moduleId: "./views/wineproducers", nav: true, title: "Wine Producers" },
+            { route: ["wineratings"], moduleId: "./views/wineratings", nav: true, title: "Wine Ratings" },
             { route: ["todos"], moduleId: "./views/todos", nav: true, title: "Todo List" },
         ]);
     }
