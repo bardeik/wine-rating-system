@@ -41,8 +41,8 @@ namespace WineApp.Controllers
 
             try
             {
-                var wineRatingId = Repo.AddWineProducer(wineProducer);
-                var url = Url.RouteUrl("GetWineProducerByIdRoute", new { id = wineRatingId }, Request.Scheme,
+                var wineProducerId = Repo.AddWineProducer(wineProducer);
+                var url = Url.RouteUrl("GetWineProducerByIdRoute", new { id = wineProducerId }, Request.Scheme,
                     Request.Host.ToUriComponent());
                 return Created(url, wineProducer);
 

@@ -2,7 +2,7 @@
 import {HttpClient, json} from "aurelia-fetch-client";
 
 @inject(HttpClient, json)
-export class WineRating {
+export class WineRatings {
     wineRatings: Array<IWineRating>;
     visuality: number;
     nose: number;
@@ -52,6 +52,6 @@ export interface IWineRating {
     nose: number;
     taste: number;
     judgeId: string;
-    wineId: number
+    wineId: number;
 }
 
