@@ -22,14 +22,14 @@ System.register(["aurelia-framework", "aurelia-router"], function(exports_1, con
                 constructor() {
                 }
                 configureRouter(config, router) {
-                    this.router = router;
-                    config.title = "Todo App";
+                    config.title = 'Wine App';
                     config.map([
-                        { route: ["", "wines"], moduleId: "./views/wines", nav: true, title: "Wines" },
-                        { route: ["wineproducers"], moduleId: "./views/wineproducers", nav: true, title: "Wine Producers" },
-                        { route: ["wineratings"], moduleId: "./views/wineratings", nav: true, title: "Wine Ratings" },
-                        { route: ["todos"], moduleId: "./views/todos", nav: true, title: "Todo List" },
+                        { route: ['', 'wines'], name: 'wines', moduleId: "./views/wines", nav: true, title: "Wines" },
+                        { route: 'wineproducers', name: 'wineproducers', moduleId: "./views/wineproducers", nav: true, title: "Wine Producers" },
+                        { route: 'wineratings', name: 'wineratings', moduleId: "./views/wineratings", nav: true, title: "Wine Ratings" },
+                        { route: 'todos', name: 'todos', moduleId: "./views/todos", nav: true, title: "Todo List" }
                     ]);
+                    this.router = router;
                 }
             };
             App = __decorate([
