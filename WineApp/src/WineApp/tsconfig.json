@@ -1,14 +1,26 @@
 ﻿{
+  "compileOnSave": true,
   "compilerOptions": {
-    "noImplicitAny": false,
-    "noEmitOnError": true,
-    "removeComments": false,
+    "rootDir": "src/",
+    "outDir": "wwwroot/dist",
     "sourceMap": true,
     "target": "es6",
-    "moduleResolution": "node",
+    "module": "amd",
+    "declaration": false,
+    "noImplicitAny": false,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "module": "system"
+    "moduleResolution": "node",
+    "noEmitOnError": true
   },
+  "filesGlob": [
+    "./src/**/*.ts",
+    "./test/**/*.ts",
+    "./typings/index.d.ts",
+    "./custom_typings/**/*.d.ts",
+    "./wwwroot/jspm_packages/**/*.d.ts"
+  ],
   "exclude": [
     "wwwroot/jspm_packages"
   ]

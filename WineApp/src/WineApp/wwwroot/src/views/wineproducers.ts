@@ -30,12 +30,12 @@ export class WineProducers {
             Zip: this.zip,
             Email: this.email
         };
-        this.http.fetch("http://localhost:50468/api/wineproducerss/", {
+        this.http.fetch("http://localhost:50468/api/wineproducers/", {
             method: "post",
             body: json(newWineProducer)
         }).then(response => {
             this.fetchAllWineProducers();
-            console.log("Wine Rating added: ", response);
+            console.log("Wine Producer added: ", response);
         });
     }
 

@@ -6,7 +6,7 @@
                 <th>Wine Producer Id</th>
                 <th>Wineyard Name</th>
                 <th>Organisation Number</th>
-                <th>Responsible Producer Name</th>ac
+                <th>Responsible Producer Name</th>
                 <th>Address</th>
                 <th>Zip</th>
                 <th>City</th>
@@ -25,7 +25,7 @@
                 <td>${wineProducer.country}</td>
                 <td>${wineProducer.email}</td>
                 <td>
-                    <a click.delegate="deleteWinePoducer(wineProducer.wineProducerId)" class="btn btn-default btn-sm" aria-label="Left Align">
+                    <a click.delegate="deleteWineProducer(wineProducer.wineProducerId)" class="btn btn-default btn-sm" aria-label="Left Align">
                         <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
                     </a>
                 </td>
@@ -57,7 +57,9 @@
             <div class="form-group">
                 <input type="text" value.bind="email" class="form-control" placeholder="Email">
             </div>
-            <button type="submit" click.delegate="addNewWineRating()" class="btn btn-default">Add New Wine Rating</button>
+            <button type="submit" click.delegate="addNewWineProducer()" class="btn btn-default">Add New Wine Producer</button>
         </form>
+
+
     </div>
 </template>
