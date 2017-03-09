@@ -17,7 +17,7 @@ export class Users {
 
   public activate() {
     return this.http.fetch('users')
-      .then(response => response.json())
-      .then(users => this.users = users);
+		.then(response => response.json())
+		.then(users => this.users = JSON.parse(users['_body']));
   }
 }

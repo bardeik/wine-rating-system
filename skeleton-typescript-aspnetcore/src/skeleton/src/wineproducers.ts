@@ -42,7 +42,7 @@ export class WineProducers {
     fetchAllWineProducers() {
         return this.http.fetch("http://localhost:49862/api/wineproducers").
             then(response => response.json()).then(data => {
-                this.wineProducers = data;
+				this.wineProducers = JSON.parse(data['_body']);
             });
     }
 

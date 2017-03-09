@@ -264,8 +264,9 @@
     <Content Include="Content\bootstrap.css.map" />
     <Content Include="Content\bootstrap-theme.min.css.map" />
     <Content Include="Content\bootstrap-theme.css.map" />
-    <None Include="Properties\PublishProfiles\WineRatingApp002.pubxml" />
-    <None Include="Properties\PublishProfiles\WineRatingApp003 - Web Deploy.pubxml" />
+    <None Include="Properties\PublishProfiles\WebAppTest20170309072337 - Web Deploy.pubxml" />
+    <None Include="Properties\PublishProfiles\WineRatingApp20170309105752 - Web Deploy.pubxml" />
+    <None Include="Properties\PublishProfiles\WineTestApp001.pubxml" />
     <None Include="Scripts\jquery-3.1.1.intellisense.js" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />

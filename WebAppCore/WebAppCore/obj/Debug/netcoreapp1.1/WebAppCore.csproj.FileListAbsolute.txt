@@ -1,0 +1,10 @@
+C:\dev\wine\WebAppCore\WebAppCore\bin\Debug\netcoreapp1.1\WebAppCore.deps.json
+C:\dev\wine\WebAppCore\WebAppCore\bin\Debug\netcoreapp1.1\WebAppCore.runtimeconfig.json
+C:\dev\wine\WebAppCore\WebAppCore\bin\Debug\netcoreapp1.1\WebAppCore.runtimeconfig.dev.json
+C:\dev\wine\WebAppCore\WebAppCore\bin\Debug\netcoreapp1.1\WebAppCore.dll
+C:\dev\wine\WebAppCore\WebAppCore\bin\Debug\netcoreapp1.1\WebAppCore.pdb
+C:\dev\wine\WebAppCore\WebAppCore\obj\Debug\netcoreapp1.1\WebAppCore.csprojResolveAssemblyReference.cache
+C:\dev\wine\WebAppCore\WebAppCore\obj\Debug\netcoreapp1.1\UserSecretsAssemblyInfo.cs
+C:\dev\wine\WebAppCore\WebAppCore\obj\Debug\netcoreapp1.1\WebAppCore.AssemblyInfo.cs
+C:\dev\wine\WebAppCore\WebAppCore\obj\Debug\netcoreapp1.1\WebAppCore.dll
+C:\dev\wine\WebAppCore\WebAppCore\obj\Debug\netcoreapp1.1\WebAppCore.pdb
