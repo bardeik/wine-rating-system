@@ -39,7 +39,7 @@ export class Wines {
     fetchAllWines() {
         return this.http.fetch("http://localhost:49862/api/wines").
             then(response => response.json()).then(data => {
-                this.wines = data;
+				this.wines = JSON.parse(data['_body']);
             });
     }
 
