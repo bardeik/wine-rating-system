@@ -35,6 +35,58 @@ namespace WineRatingApp.Controllers
             return View(wineRating);
         }
 
+        // GET: WineRatings/ScoreDetails
+        public ActionResult ScoreDetails()
+        {
+            var wineRatingList = db.WineRatings.ToList();
+            var wineList = db.Wines.ToList();
+
+            List<WineRatingScore> wineScores = wineRatingList
+                .GroupBy(wr => wr.WineId)
+                .Select(cwr => new WineRatingScore
+                {
+                    WineId = cwr.First().WineId,
+                    RatingName = wineList.Where(x => x.WineId == cwr.First().WineId).FirstOrDefault().RatingName,
+                    Nose = cwr.Sum(x => x.Nose) / cwr.Count(),
+                    Taste = cwr.Sum(x => x.Taste) / cwr.Count(),
+                    Visuality = cwr.Sum(x => x.Visuality) / cwr.Count(),
+                    NumberOfRatings = cwr.Count(),
+                    WineLevel = SetWineLevel(cwr.Sum(x => x.Nose) / cwr.Count(), cwr.Sum(x => x.Taste) / cwr.Count(), cwr.Sum(x => x.Visuality) / cwr.Count()),
+                    OverallScore = ((cwr.Sum(x => x.Nose) / cwr.Count()) + (cwr.Sum(x => x.Taste) / cwr.Count()) + (cwr.Sum(x => x.Visuality) / cwr.Count()))
+                }).OrderBy(x => x.OverallScore).ToList();
+
+            return View(wineScores.ToList());
+        }
+    
+        private WineLevel SetWineLevel(double nose, double taste, double visuality)
+        {
+            if (nose < 1.8 || visuality < 1.8 || taste < 5.8)
+                return WineLevel.UnAcceptable;
+
+            var overallScore = (nose + taste + visuality);
+
+            if (overallScore >= 17)
+                return WineLevel.Gold;
+            if (overallScore >= 15.5)
+                return WineLevel.Silver;
+            if (overallScore >= 14)
+                return WineLevel.Bronze;
+            if (overallScore >= 12)
+                return WineLevel.Great;
+
+            return WineLevel.Acceptable;
+
+            /*
+            Gull: Minimum 17,0 poeng
+Sølv: Minimum 15,5 poeng
+Bronse: Minimum 14,0 poeng
+Særlig utmerkelse: Minimum 12,0 poeng
+Akseptabel: Se nedenfor
+For å oppnå en av de ovennevnte klassifiseringer og vinen betegnes som akseptabel, skal
+vinen som minimum oppnå 1,8 poeng for utseende, 1, 8 poeng for nese og 5, 8 poeng for smak.
+                    */
+        }
+
         // GET: WineRatings/Create
         public ActionResult Create()
         {

@@ -17,17 +17,17 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                @Html.ActionLink("Wine rating App", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
+                @Html.ActionLink("Vin applikasjon", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li>@Html.ActionLink("Home", "Index", "Home")</li>
-                    <li>@Html.ActionLink("Wine Producers", "Index", "WineProducers")</li>
-                    <li>@Html.ActionLink("Wine Rating", "Index", "WineRatings")</li>
-                    <li>@Html.ActionLink("Wines", "Index", "Wines")</li>
+                    <li>@Html.ActionLink("Landingssiden", "Index", "Home")</li>
+                    <li>@Html.ActionLink("Vinprodusenter", "Index", "WineProducers")</li>
+                    <li>@Html.ActionLink("Vinbedømmelser", "Index", "WineRatings")</li>
+                    <li>@Html.ActionLink("Viner", "Index", "Wines")</li>
                     @if (User.IsInRole("Administrator"))
                     {
-                        <li>@Html.ActionLink("Administration", "Index", "Admin")</li>
+                        <li>@Html.ActionLink("Administrasjon", "Index", "Admin")</li>
                     }
                 </ul>
                 @Html.Partial("_LoginPartial")
