@@ -227,6 +227,10 @@
     <Compile Include="Migrations\201701211234509_Initial.Designer.cs">
       <DependentUpon>201701211234509_Initial.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201703191746135_Judge.cs" />
+    <Compile Include="Migrations\201703191746135_Judge.Designer.cs">
+      <DependentUpon>201703191746135_Judge.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
@@ -346,6 +350,7 @@
     <Content Include="Views\Admin\EditRoles.cshtml" />
     <Content Include="Scripts\jquery-3.1.1.slim.min.map" />
     <Content Include="Scripts\jquery-3.1.1.min.map" />
+    <Content Include="Views\WineRatings\ScoreDetails.cshtml" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
@@ -357,6 +362,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Migrations\201701211234509_Initial.resx">
       <DependentUpon>201701211234509_Initial.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201703191746135_Judge.resx">
+      <DependentUpon>201703191746135_Judge.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

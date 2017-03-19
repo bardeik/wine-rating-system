@@ -1,0 +1,67 @@
+﻿@model IEnumerable<WineRatingApp.Models.WineRatingScore>
+
+@{
+    ViewBag.Title = "Judge";
+}
+
+<h2>Index</h2>
+
+<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.WineId)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.RatingName)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.NumberOfRatings)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Visuality)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Nose)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Taste)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.WineLevel)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.OverallScore)
+        </th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.WineId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.RatingName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.NumberOfRatings)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Visuality)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Nose)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Taste)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.WineLevel)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.OverallScore)
+            </td>
+        </tr>
+    }
+
+</table>
