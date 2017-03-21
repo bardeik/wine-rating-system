@@ -73,9 +73,6 @@ C:\Users\bardeh\Source\Repos\wine-rating-system\WineRatingApp\WineRatingApp\bin\
 C:\Users\bardeh\Source\Repos\wine-rating-system\WineRatingApp\WineRatingApp\bin\PagedList.xml
 C:\Users\bardeh\Source\Repos\wine-rating-system\WineRatingApp\WineRatingApp\bin\PagedList.Mvc.xml
 C:\Users\bardeh\Source\Repos\wine-rating-system\WineRatingApp\WineRatingApp\obj\Debug\WineRatingApp.csprojResolveAssemblyReference.cache
-C:\dev\wine\WineRatingApp\WineRatingApp\obj\Debug\WineRatingApp.csprojResolveAssemblyReference.cache
-C:\dev\wine\WineRatingApp\WineRatingApp\obj\Debug\WineRatingApp.Migrations.Initial.resources
-C:\dev\wine\WineRatingApp\WineRatingApp\obj\Debug\WineRatingApp.csproj.GenerateResource.Cache
 C:\dev\wine\WineRatingApp\WineRatingApp\bin\roslyn\csc.exe
 C:\dev\wine\WineRatingApp\WineRatingApp\bin\roslyn\csc.exe.config
 C:\dev\wine\WineRatingApp\WineRatingApp\bin\roslyn\csc.rsp
@@ -170,6 +167,9 @@ C:\dev\wine\WineRatingApp\WineRatingApp\bin\System.Web.Razor.xml
 C:\dev\wine\WineRatingApp\WineRatingApp\bin\System.Web.WebPages.xml
 C:\dev\wine\WineRatingApp\WineRatingApp\bin\System.Web.WebPages.Deployment.xml
 C:\dev\wine\WineRatingApp\WineRatingApp\bin\System.Web.WebPages.Razor.xml
+C:\dev\wine\WineRatingApp\WineRatingApp\obj\Debug\WineRatingApp.csprojResolveAssemblyReference.cache
+C:\dev\wine\WineRatingApp\WineRatingApp\obj\Debug\WineRatingApp.Migrations.Initial.resources
+C:\dev\wine\WineRatingApp\WineRatingApp\obj\Debug\WineRatingApp.Migrations.Judge.resources
+C:\dev\wine\WineRatingApp\WineRatingApp\obj\Debug\WineRatingApp.csproj.GenerateResource.Cache
 C:\dev\wine\WineRatingApp\WineRatingApp\obj\Debug\WineRatingApp.dll
 C:\dev\wine\WineRatingApp\WineRatingApp\obj\Debug\WineRatingApp.pdb
-C:\dev\wine\WineRatingApp\WineRatingApp\obj\Debug\WineRatingApp.Migrations.Judge.resources
