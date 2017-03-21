@@ -1,23 +1,28 @@
 ﻿@model IEnumerable<WineRatingApp.Models.WineRating>
 
 @{
-    ViewBag.Title = "Index";
+    ViewBag.Title = "Oversikt vurderinger";
 }
 
-<h2>Index</h2>
+<h2>Oversikt vurderinger av vin</h2>
 
 <p>
-    @Html.ActionLink("Create New", "Create")
-    @Html.ActionLink("Score Details", "ScoreDetails")
+    @Html.ActionLink("Lag ny", "Create")
+    </p><p>
+    @Html.ActionLink("Liste over samlet vurdering per vin", "ScoreDetails")
 </p>
+
 <table class="table">
     <tr>
         <th>
             @Html.DisplayNameFor(model => model.JudgeId)
         </th>
+        @if (User.IsInRole("Administrator"))
+        {
         <th>
             @Html.DisplayNameFor(model => model.WineId)
         </th>
+        }
         <th>
             @Html.DisplayNameFor(model => model.Visuality)
         </th>
@@ -35,9 +40,12 @@
         <td>
             @Html.DisplayFor(modelItem => item.JudgeId)
         </td>
+        @if (User.IsInRole("Administraor"))
+        {
         <td>
             @Html.DisplayFor(modelItem => item.WineId)
         </td>
+        }
         <td>
             @Html.DisplayFor(modelItem => item.Visuality)
         </td>
@@ -48,9 +56,9 @@
             @Html.DisplayFor(modelItem => item.Taste)
         </td>
         <td>
-            @Html.ActionLink("Edit", "Edit", new { id=item.WineRatingId }) |
-            @Html.ActionLink("Details", "Details", new { id=item.WineRatingId }) |
-            @Html.ActionLink("Delete", "Delete", new { id=item.WineRatingId })
+            @Html.ActionLink("Endre", "Edit", new { id=item.WineRatingId }) |
+            @Html.ActionLink("Detaljer", "Details", new { id=item.WineRatingId }) |
+            @Html.ActionLink("Slett", "Delete", new { id=item.WineRatingId })
         </td>
     </tr>
 }
