@@ -351,6 +351,8 @@
     <Content Include="Scripts\jquery-3.1.1.slim.min.map" />
     <Content Include="Scripts\jquery-3.1.1.min.map" />
     <Content Include="Views\WineRatings\ScoreDetails.cshtml" />
+    <Content Include="Views\WineRatings\JudgeFormEdit.cshtml" />
+    <Content Include="Views\WineRatings\JudgeSummaryList.cshtml" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
