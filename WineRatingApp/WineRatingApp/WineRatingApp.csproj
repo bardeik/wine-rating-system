@@ -240,9 +240,13 @@
     <Compile Include="Models\WineCategory.cs" />
     <Compile Include="Models\WineClass.cs" />
     <Compile Include="Models\WineGroup.cs" />
+    <Compile Include="Models\WineLevel.cs" />
     <Compile Include="Models\WineProducer.cs" />
     <Compile Include="Models\WineProducers.cs" />
     <Compile Include="Models\WineRating.cs" />
+    <Compile Include="Models\WineRatingNose.cs" />
+    <Compile Include="Models\WineRatingTaste.cs" />
+    <Compile Include="Models\WineRatingVisuality.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
   </ItemGroup>

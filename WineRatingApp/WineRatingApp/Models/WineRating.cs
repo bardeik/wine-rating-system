@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Web;
 
 namespace WineRatingApp.Models
 {
@@ -54,11 +50,11 @@ vinen som minimum oppnå 1,8 poeng for utseende, 1,8 poeng for nese og 5,8 poeng
     public class JudgeWineRatingScore
     {
         [DisplayName("Utseende")]
-        public double Visuality { get; set; }
+        public WineRatingVisuality Visuality { get; set; }
         [DisplayName("Nese")]
-        public double Nose { get; set; }
+        public WineRatingNose Nose { get; set; }
         [DisplayName("Smak")]
-        public double Taste { get; set; }
+        public WineRatingTaste Taste { get; set; }
         [DisplayName("Antall vurderinger")]
         public int NumberOfRatings { get; set; }
         [DisplayName("Vin nivå")]
@@ -98,10 +94,4 @@ For å oppnå en av de ovennevnte klassifiseringer og vinen betegnes som aksepta
 vinen som minimum oppnå 1,8 poeng for utseende, 1,8 poeng for nese og 5,8 poeng for smak.
 */
     }
-
-    public enum WineLevel
-    {
-        UnAcceptable = 0, Acceptable = 1, Great = 2, Bronze, Silver = 3, Gold = 4
-    }
-
 }
