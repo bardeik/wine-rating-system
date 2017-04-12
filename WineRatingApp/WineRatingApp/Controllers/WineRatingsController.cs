@@ -32,6 +32,8 @@ namespace WineRatingApp.Controllers
             {
                 return HttpNotFound();
             }
+
+            wineRating.WineRatingTasteList = new SelectList(Enum.GetValues(typeof(WineRatingTaste)).Cast<WineRatingTaste>().ToList());
             return View(wineRating);
         }
 
@@ -122,6 +124,7 @@ vinen som minimum oppnå 1,8 poeng for utseende, 1, 8 poeng for nese og 5, 8 poe
             {
                 return HttpNotFound();
             }
+            wineRating.WineRatingTasteList = new SelectList(Enum.GetValues(typeof(WineRatingTaste)).Cast<WineRatingTaste>().ToList());
             return View(wineRating);
         }
 

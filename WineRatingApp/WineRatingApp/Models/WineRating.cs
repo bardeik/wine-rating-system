@@ -1,5 +1,8 @@
-﻿using System.ComponentModel;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Web.Mvc;
 
 namespace WineRatingApp.Models
 {
@@ -19,6 +22,7 @@ namespace WineRatingApp.Models
         public int WineId { get; set; }
         [ForeignKey("WineId")]
         public virtual Wine Wine { get; set; }
+        public IEnumerable<SelectListItem> WineRatingTasteList { get; set; }
     }
     public class JudgeWineRatingForm
     {
