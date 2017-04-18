@@ -33,6 +33,10 @@
             </div>
         </div>
 }
+else
+{
+    @Html.HiddenFor(model => model.WineId)
+}
 
         <div class="form-group">
             @Html.LabelFor(model => model.Visuality, htmlAttributes: new { @class = "control-label col-md-2" })
