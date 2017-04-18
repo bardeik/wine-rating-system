@@ -40,7 +40,7 @@
         <td>
             @Html.DisplayFor(modelItem => item.JudgeId)
         </td>
-        @if (User.IsInRole("Administraor"))
+        @if (User.IsInRole("Administrator"))
         {
         <td>
             @Html.DisplayFor(modelItem => item.WineId)

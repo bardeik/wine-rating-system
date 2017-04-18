@@ -8,6 +8,5 @@ namespace WineRatingApp.Models
     public enum WineGroup
     {
         A, B, C, D
-
     }
 }
