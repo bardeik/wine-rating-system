@@ -1,71 +1,59 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using WineApp.Models;
+﻿using WineApp.Models;
 
-namespace WineApp.Data
+namespace WineApp.Data;
+
+public class WineRepository : IWineRepository
 {
-    public class WineRepository : IWineRepository
+    private readonly List<Wine> wines = new()
     {
-        private List<Wine> wines = new List<Wine>()
-        {
-            new Wine {
-                WineId = 1,
-                Name = "Polets røde",
-                RatingName="Hemmelig Polets Røde",
-                WineProducerId = 1,
-                Category = WineCategory.Rodvin,
-                Class = WineClass.Eldre,
-                Group= WineGroup.A
-            },
-            new Wine {
-                WineId = 2,
-                Name = "Polets andre røde",
-                RatingName="Hemmelig Andre Polets Røde",
-                WineProducerId = 1,
-                Category = WineCategory.Rodvin,
-                Class = WineClass.Unge,
-                Group= WineGroup.C
-            },
-            new Wine {
-                WineId = 3,
-                Name = "Polets røde",
-                RatingName="Hemmelig Tredje Polets Røde",
-                WineProducerId = 2,
-                Category = WineCategory.Rodvin,
-                Class = WineClass.Unge,
-                Group= WineGroup.B
-            },
+        new Wine {
+            WineId = 1,
+            Name = "Polets røde",
+            RatingName="Hemmelig Polets Røde",
+            WineProducerId = 1,
+            Category = WineCategory.Rodvin,
+            Class = WineClass.Eldre,
+            Group= WineGroup.A
+        },
+        new Wine {
+            WineId = 2,
+            Name = "Polets andre røde",
+            RatingName="Hemmelig Andre Polets Røde",
+            WineProducerId = 1,
+            Category = WineCategory.Rodvin,
+            Class = WineClass.Unge,
+            Group= WineGroup.C
+        },
+        new Wine {
+            WineId = 3,
+            Name = "Polets røde",
+            RatingName="Hemmelig Tredje Polets Røde",
+            WineProducerId = 2,
+            Category = WineCategory.Rodvin,
+            Class = WineClass.Unge,
+            Group= WineGroup.B
+        },
+    };
+    
+    public IList<Wine> GetAllWines() => wines;
 
-        };
-        
-        public IList<Wine> GetAllWines()
-        {
-            return wines;
-        }
+    public Wine? GetWineById(int id) => wines.Find(wine => wine.WineId == id);
 
-        public Wine GetWineById(int id)
-        {
-            return wines.Find(wine => wine.WineId == id);
-        }
+    public IList<Wine> GetAllWinesFromProducer(int producerId) => 
+        wines.FindAll(wine => wine.WineProducerId == producerId);
 
-        public IList<Wine> GetAllWinesFromProducer(int producerId)
-        {
-            return wines.FindAll(wine => wine.WineProducerId == producerId);
-        }
+    public int AddWine(Wine wine)
+    {
+        var newId = wines.Count > 0 ? wines.Max(x => x.WineId) + 1 : 1;
+        wine.WineId = newId;
+        wines.Add(wine);
+        return newId;
+    }
 
-        public int AddWine(Wine wine)
-        {
-            var newId = wines.Max(x => x.WineId) + 1;
-            wine.WineId = newId;
-            wines.Add(wine);
-            return newId;
-        }
-
-        public void DeleteWine(int id)
-        {
-            wines.Remove(wines.Single(x => x.WineId == id));
-        }
+    public void DeleteWine(int id)
+    {
+        var wine = wines.SingleOrDefault(x => x.WineId == id);
+        if (wine != null)
+            wines.Remove(wine);
     }
 }

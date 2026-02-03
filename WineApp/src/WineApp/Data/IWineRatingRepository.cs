@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using WineApp.Models;
+﻿using WineApp.Models;
 
-namespace WineApp.Data
+namespace WineApp.Data;
+
+public interface IWineRatingRepository
 {
-    public interface IWineRatingRepository
-    {
-        IList<WineRating> GetAllWineRatings();
-        WineRating GetWineRatingById(int id);
-        int AddWineRating(WineRating wineRating);
-        void DeleteWineRating(int id);
-    }
+    IList<WineRating> GetAllWineRatings();
+    WineRating? GetWineRatingById(int id);
+    int AddWineRating(WineRating wineRating);
+    void DeleteWineRating(int id);
 }
