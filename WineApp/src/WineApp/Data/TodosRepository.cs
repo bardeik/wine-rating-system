@@ -8,19 +8,19 @@ public class TodosRepository : ITodosRepository
     {
         new TodoItem
         {   Id = 1,
-            Name = "Learn Blazor",
+            Name = "Prepare wines for tasting event",
             CreatedAt =  new DateTime(2015, 12, 04),
             DueDate = new DateTime(2016, 12, 01),
         },
         new TodoItem
         {   Id = 2,
-            Name = "Write Blazor App",
+            Name = "Review judge ratings for consistency",
             CreatedAt =  new DateTime(2015, 12, 04),
             DueDate = new DateTime(2016, 08, 31),
         },
         new TodoItem
         {   Id = 3,
-            Name = "Sell Blazor App",
+            Name = "Update wine producer information",
             CreatedAt =  new DateTime(2015, 12, 04),
             DueDate = new DateTime(2016,10, 15),
         }
