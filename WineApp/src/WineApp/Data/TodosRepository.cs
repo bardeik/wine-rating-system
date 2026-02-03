@@ -8,21 +8,21 @@ public class TodosRepository : ITodosRepository
     {
         new TodoItem
         {   Id = 1,
-            Name = "Prepare wines for tasting event",
-            CreatedAt =  new DateTime(2015, 12, 04),
-            DueDate = new DateTime(2016, 12, 01),
+            Name = "Prepare wine samples for tasting",
+            CreatedAt =  new DateTime(2024, 01, 15),
+            DueDate = new DateTime(2024, 02, 01),
         },
         new TodoItem
         {   Id = 2,
-            Name = "Review judge ratings for consistency",
-            CreatedAt =  new DateTime(2015, 12, 04),
-            DueDate = new DateTime(2016, 08, 31),
+            Name = "Review judge assignments",
+            CreatedAt =  new DateTime(2024, 01, 20),
+            DueDate = new DateTime(2024, 01, 31),
         },
         new TodoItem
         {   Id = 3,
-            Name = "Update wine producer information",
-            CreatedAt =  new DateTime(2015, 12, 04),
-            DueDate = new DateTime(2016,10, 15),
+            Name = "Compile final wine ratings report",
+            CreatedAt =  new DateTime(2024, 02, 05),
+            DueDate = new DateTime(2024, 02, 15),
         }
     };
 
