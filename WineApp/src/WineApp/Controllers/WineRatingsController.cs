@@ -27,12 +27,15 @@ namespace WineApp.Controllers
             return Repo.GetAllWineRatings();
         }
 
-        // GET api/todos/2
+        // GET api/wineratings/2
         [HttpGet("{id}")]
         [Route("{id}", Name = "GetWineRatingByIdRoute")]
-        public WineRating Get(int id)
+        public IActionResult Get(int id)
         {
-            return Repo.GetWineRatingById(id);
+            var rating = Repo.GetWineRatingById(id);
+            if (rating == null)
+                return NotFound();
+            return Ok(rating);
         }
 
         [HttpPost]
@@ -48,7 +51,7 @@ namespace WineApp.Controllers
                 return Created(url, wineRating);
 
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }

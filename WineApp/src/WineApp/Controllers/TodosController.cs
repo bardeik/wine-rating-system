@@ -27,9 +27,12 @@ namespace WineApp.Controllers
         // GET api/todos/2
         [HttpGet("{id}")]
         [Route("{id}", Name = "GetTodoItemByIdRoute")]
-        public TodoItem Get(int id)
+        public IActionResult Get(int id)
         {
-            return Repo.GetTodoItemById(id);
+            var todo = Repo.GetTodoItemById(id);
+            if (todo == null)
+                return NotFound();
+            return Ok(todo);
         }
 
         [HttpPost]
@@ -45,7 +48,7 @@ namespace WineApp.Controllers
                 return Created(url, todoItem);
 
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
