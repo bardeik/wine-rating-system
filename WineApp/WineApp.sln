@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.0.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{59972115-351C-4415-9923-13D94231F4E3}"
 EndProject
@@ -10,7 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		global.json = global.json
 	EndProjectSection
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "WineApp", "src\WineApp\WineApp.xproj", "{AF4A10F1-56B2-41CE-9026-1FC178B12F2D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WineApp", "src\WineApp\WineApp.csproj", "{AF4A10F1-56B2-41CE-9026-1FC178B12F2D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

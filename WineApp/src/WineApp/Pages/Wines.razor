@@ -1,0 +1,122 @@
+@page "/wines"
+@inject IWineRepository WineRepository
+
+<PageTitle>Wines</PageTitle>
+
+<h3>Wine Rating</h3>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Wine ID</th>
+                    <th>Rating Name</th>
+                    <th>Name</th>
+                    <th>Group</th>
+                    <th>Class</th>
+                    <th>Category</th>
+                    <th>Wine Producer Id</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var wine in wines)
+                {
+                    <tr>
+                        <td>@wine.WineId</td>
+                        <td>@wine.RatingName</td>
+                        <td>@wine.Name</td>
+                        <td>@wine.Group</td>
+                        <td>@wine.Class</td>
+                        <td>@wine.Category</td>
+                        <td>@wine.WineProducerId</td>
+                        <td>
+                            <button @onclick="() => DeleteWine(wine.WineId)" class="btn btn-sm btn-danger">
+                                <span>🗑️</span>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <hr />
+
+        <h4>Add New Wine</h4>
+        <EditForm Model="@newWine" OnValidSubmit="@AddNewWine">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+            
+            <div class="mb-3">
+                <label class="form-label">Rating Name</label>
+                <InputText @bind-Value="newWine.RatingName" class="form-control" placeholder="Rating Name" />
+                <ValidationMessage For="@(() => newWine.RatingName)" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Name</label>
+                <InputText @bind-Value="newWine.Name" class="form-control" placeholder="Name" />
+                <ValidationMessage For="@(() => newWine.Name)" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <InputSelect @bind-Value="newWine.Group" class="form-control">
+                    <option value="">Select Group</option>
+                    @foreach (var group in Enum.GetValues<WineGroup>())
+                    {
+                        <option value="@group">@group</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="mb-3">
+                <InputSelect @bind-Value="newWine.Class" class="form-control">
+                    <option value="">Select Class</option>
+                    @foreach (var wineClass in Enum.GetValues<WineClass>())
+                    {
+                        <option value="@wineClass">@wineClass</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="mb-3">
+                <InputSelect @bind-Value="newWine.Category" class="form-control">
+                    <option value="">Select Category</option>
+                    @foreach (var category in Enum.GetValues<WineCategory>())
+                    {
+                        <option value="@category">@category</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="mb-3">
+                <InputNumber @bind-Value="newWine.WineProducerId" class="form-control" placeholder="Wine Producer Id" />
+            </div>
+            <button type="submit" class="btn btn-primary">Add New Wine</button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private List<Wine> wines = new();
+    private Wine newWine = new();
+
+    protected override void OnInitialized()
+    {
+        LoadWines();
+    }
+
+    private void LoadWines()
+    {
+        wines = WineRepository.GetAllWines().ToList();
+    }
+
+    private void AddNewWine()
+    {
+        WineRepository.AddWine(newWine);
+        newWine = new Wine();
+        LoadWines();
+    }
+
+    private void DeleteWine(int wineId)
+    {
+        WineRepository.DeleteWine(wineId);
+        LoadWines();
+    }
+}

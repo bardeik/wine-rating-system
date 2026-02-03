@@ -1,0 +1,112 @@
+@page "/wineproducers"
+@inject IWineProducerRepository WineProducerRepository
+
+<PageTitle>Wine Producers</PageTitle>
+
+<h3>Wine Producers</h3>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Wine Producer Id</th>
+                    <th>Wineyard Name</th>
+                    <th>Organisation Number</th>
+                    <th>Responsible Producer Name</th>
+                    <th>Address</th>
+                    <th>Zip</th>
+                    <th>City</th>
+                    <th>Country</th>
+                    <th>Email</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var producer in wineProducers)
+                {
+                    <tr>
+                        <td>@producer.WineProducerId</td>
+                        <td>@producer.WineyardName</td>
+                        <td>@producer.OrganisationNumber</td>
+                        <td>@producer.ResponsibleProducerName</td>
+                        <td>@producer.Address</td>
+                        <td>@producer.Zip</td>
+                        <td>@producer.City</td>
+                        <td>@producer.Country</td>
+                        <td>@producer.Email</td>
+                        <td>
+                            <button @onclick="() => DeleteWineProducer(producer.WineProducerId)" class="btn btn-sm btn-danger">
+                                <span>🗑️</span>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <hr />
+
+        <h4>Add New Wine Producer</h4>
+        <EditForm Model="@newProducer" OnValidSubmit="@AddNewWineProducer">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+            
+            <div class="mb-3">
+                <label class="form-label">Wineyard Name</label>
+                <InputText @bind-Value="newProducer.WineyardName" class="form-control" placeholder="Wineyard Name" />
+                <ValidationMessage For="@(() => newProducer.WineyardName)" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <InputText @bind-Value="newProducer.OrganisationNumber" class="form-control" placeholder="Organisation Number" />
+            </div>
+            <div class="mb-3">
+                <InputText @bind-Value="newProducer.ResponsibleProducerName" class="form-control" placeholder="Responsible Producer Name" />
+            </div>
+            <div class="mb-3">
+                <InputText @bind-Value="newProducer.Address" class="form-control" placeholder="Address" />
+            </div>
+            <div class="mb-3">
+                <InputText @bind-Value="newProducer.Zip" class="form-control" placeholder="Zip" />
+            </div>
+            <div class="mb-3">
+                <InputText @bind-Value="newProducer.City" class="form-control" placeholder="City" />
+            </div>
+            <div class="mb-3">
+                <InputText @bind-Value="newProducer.Country" class="form-control" placeholder="Country" />
+            </div>
+            <div class="mb-3">
+                <InputText @bind-Value="newProducer.Email" class="form-control" placeholder="Email" />
+            </div>
+            <button type="submit" class="btn btn-primary">Add New Wine Producer</button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private List<WineProducer> wineProducers = new();
+    private WineProducer newProducer = new();
+
+    protected override void OnInitialized()
+    {
+        LoadWineProducers();
+    }
+
+    private void LoadWineProducers()
+    {
+        wineProducers = WineProducerRepository.GetAllWineProducers().ToList();
+    }
+
+    private void AddNewWineProducer()
+    {
+        WineProducerRepository.AddWineProducer(newProducer);
+        newProducer = new WineProducer();
+        LoadWineProducers();
+    }
+
+    private void DeleteWineProducer(int wineProducerId)
+    {
+        WineProducerRepository.DeleteWineProducer(wineProducerId);
+        LoadWineProducers();
+    }
+}

@@ -26,12 +26,15 @@ namespace WineApp.Controllers
             return Repo.GetAllWines();
         }
 
-        // GET api/todos/2
+        // GET api/wines/2
         [HttpGet("{id}")]
         [Route("{id}", Name = "GetWineByIdRoute")]
-        public Wine Get(int id)
+        public IActionResult Get(int id)
         {
-            return Repo.GetWineById(id);
+            var wine = Repo.GetWineById(id);
+            if (wine == null)
+                return NotFound();
+            return Ok(wine);
         }
 
         [HttpPost]
@@ -47,7 +50,7 @@ namespace WineApp.Controllers
                 return Created(url, wine);
 
             }
-            catch (Exception ex)
+            catch
             {
                 return BadRequest();
             }
