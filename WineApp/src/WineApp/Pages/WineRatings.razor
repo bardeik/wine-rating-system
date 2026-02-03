@@ -1,0 +1,105 @@
+@page "/wineratings"
+@inject IWineRatingRepository WineRatingRepository
+
+<PageTitle>Wine Ratings</PageTitle>
+
+<h3>Wine Rating</h3>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Wine Rating ID</th>
+                    <th>Visuality</th>
+                    <th>Nose</th>
+                    <th>Taste</th>
+                    <th>Judge Id</th>
+                    <th>Wine Id</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var rating in wineRatings)
+                {
+                    <tr>
+                        <td>@rating.WineRatingId</td>
+                        <td>@rating.Visuality</td>
+                        <td>@rating.Nose</td>
+                        <td>@rating.Taste</td>
+                        <td>@rating.JudgeId</td>
+                        <td>@rating.WineId</td>
+                        <td>
+                            <button @onclick="() => DeleteWineRating(rating.WineRatingId)" class="btn btn-sm btn-danger">
+                                <span>🗑️</span>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <hr />
+
+        <h4>Add New Wine Rating</h4>
+        <EditForm Model="@newRating" OnValidSubmit="@AddNewWineRating">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+            
+            <div class="mb-3">
+                <label class="form-label">Visuality (0-10)</label>
+                <InputNumber @bind-Value="newRating.Visuality" class="form-control" placeholder="Visuality" />
+                <ValidationMessage For="@(() => newRating.Visuality)" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Nose (0-10)</label>
+                <InputNumber @bind-Value="newRating.Nose" class="form-control" placeholder="Nose" />
+                <ValidationMessage For="@(() => newRating.Nose)" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Taste (0-10)</label>
+                <InputNumber @bind-Value="newRating.Taste" class="form-control" placeholder="Taste" />
+                <ValidationMessage For="@(() => newRating.Taste)" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Judge ID</label>
+                <InputText @bind-Value="newRating.JudgeId" class="form-control" placeholder="Judge Id" />
+                <ValidationMessage For="@(() => newRating.JudgeId)" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Wine ID</label>
+                <InputNumber @bind-Value="newRating.WineId" class="form-control" placeholder="Wine Id" />
+                <ValidationMessage For="@(() => newRating.WineId)" class="text-danger" />
+            </div>
+            <button type="submit" class="btn btn-primary">Add New Wine Rating</button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private List<WineRating> wineRatings = new();
+    private WineRating newRating = new();
+
+    protected override void OnInitialized()
+    {
+        LoadWineRatings();
+    }
+
+    private void LoadWineRatings()
+    {
+        wineRatings = WineRatingRepository.GetAllWineRatings().ToList();
+    }
+
+    private void AddNewWineRating()
+    {
+        WineRatingRepository.AddWineRating(newRating);
+        newRating = new WineRating();
+        LoadWineRatings();
+    }
+
+    private void DeleteWineRating(int wineRatingId)
+    {
+        WineRatingRepository.DeleteWineRating(wineRatingId);
+        LoadWineRatings();
+    }
+}

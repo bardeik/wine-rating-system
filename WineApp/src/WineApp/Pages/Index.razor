@@ -1,0 +1,57 @@
+@page "/"
+
+<PageTitle>Wine Rating System</PageTitle>
+
+<div class="container mt-4">
+    <h1>Velkommen til Vinbedømmelsessystemet</h1>
+
+    <p class="lead">Dette er et system for bedømming av vin i Norge.</p>
+
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">🍷 Viner</h5>
+                    <p class="card-text">Se og administrer vinene i systemet.</p>
+                    <a href="/wines" class="btn btn-primary">Gå til Viner</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">⭐ Vinbedømmelser</h5>
+                    <p class="card-text">Registrer og se vinbedømmelser.</p>
+                    <a href="/wineratings" class="btn btn-primary">Gå til Bedømmelser</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">🏭 Produsenter</h5>
+                    <p class="card-text">Administrer vinprodusenter.</p>
+                    <a href="/wineproducers" class="btn btn-primary">Gå til Produsenter</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-info mt-4">
+        <h4>Om bedømmelsessystemet</h4>
+        <p>Dommere kan bedømme viner basert på tre kriterier:</p>
+        <ul>
+            <li><strong>Visuality (Visuelt inntrykk):</strong> Vinens utseende og farge</li>
+            <li><strong>Nose (Nese/duft):</strong> Vinens aroma og duft</li>
+            <li><strong>Taste (Smak):</strong> Vinens smak, ettersmak og balanse</li>
+        </ul>
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        // This ensures the component initializes properly
+        base.OnInitialized();
+    }
+}

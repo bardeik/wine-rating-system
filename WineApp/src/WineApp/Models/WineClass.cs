@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace WineApp.Models
+namespace WineApp.Models;
+
+public enum WineClass
 {
-    public enum WineClass
-    {
-        Unge, Eldre
-    }
+    Unge, Eldre
 }
