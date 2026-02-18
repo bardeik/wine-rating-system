@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
-
-using System.ComponentModel.DataAnnotations;
 
 namespace WineApp.Models;
 
 public class WineProducer
 {
+    [Key]
+    [DisplayName("Vinprodusent Id")]
     public int WineProducerId { get; set; }
     
     [Required(ErrorMessage = "Wineyard name is required")]
