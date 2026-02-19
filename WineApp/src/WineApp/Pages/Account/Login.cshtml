@@ -1,0 +1,50 @@
+@page
+@model WineApp.Pages.Account.LoginModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Logg inn - Vinapp</title>
+    <link rel="stylesheet" href="~/css/bootstrap/bootstrap.min.css" />
+    <link href="~/css/site.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+    <div class="container">
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white text-center py-3">
+                        <h4 class="mb-0">🍷 Wine App</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <h5 class="card-title mb-4">Logg inn</h5>
+                        <form method="post">
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                            <div class="mb-3">
+                                <label asp-for="Input.Email" class="form-label">E-post</label>
+                                <input asp-for="Input.Email" class="form-control" autocomplete="username" />
+                                <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="Input.Password" class="form-label">Passord</label>
+                                <input asp-for="Input.Password" class="form-control" autocomplete="current-password" />
+                                <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input asp-for="Input.RememberMe" class="form-check-input" />
+                                <label asp-for="Input.RememberMe" class="form-check-label">Husk meg</label>
+                            </div>
+                            <button type="submit" class="btn btn-dark w-100">Logg inn</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

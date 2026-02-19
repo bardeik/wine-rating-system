@@ -1,19 +1,20 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using WineApp.Models;
 
 namespace WineApp.Data;
 
-public class WineAppDbContext : DbContext
+public class WineAppDbContext : IdentityDbContext<ApplicationUser>
 {
     public WineAppDbContext(DbContextOptions<WineAppDbContext> options) : base(options) { }
 
     public DbSet<WineProducer> WineProducers => Set<WineProducer>();
     public DbSet<Wine> Wines => Set<Wine>();
     public DbSet<WineRating> WineRatings => Set<WineRating>();
-    public DbSet<TodoItem> TodoItems => Set<TodoItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
         modelBuilder.Entity<WineProducer>().HasData(
             new WineProducer
             {
@@ -91,12 +92,6 @@ public class WineAppDbContext : DbContext
             new WineRating { WineRatingId = 2, JudgeId = "Petter", Nose = 3, Taste = 4, Visuality = 3, WineId = 1 },
             new WineRating { WineRatingId = 3, JudgeId = "Frans", Nose = 5, Taste = 4, Visuality = 6, WineId = 1 },
             new WineRating { WineRatingId = 4, JudgeId = "Ola", Nose = 5, Taste = 4, Visuality = 4, WineId = 1 }
-        );
-
-        modelBuilder.Entity<TodoItem>().HasData(
-            new TodoItem { Id = 1, Name = "Prepare wine samples for tasting", CreatedAt = new DateTime(2024, 01, 15), DueDate = new DateTime(2024, 02, 01) },
-            new TodoItem { Id = 2, Name = "Review judge assignments", CreatedAt = new DateTime(2024, 01, 20), DueDate = new DateTime(2024, 01, 31) },
-            new TodoItem { Id = 3, Name = "Compile final wine ratings report", CreatedAt = new DateTime(2024, 02, 05), DueDate = new DateTime(2024, 02, 15) }
         );
     }
 }

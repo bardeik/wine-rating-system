@@ -9,6 +9,13 @@
     top: -2px;
 }
 
+.nav-bottom {
+    position: absolute;
+    bottom: 1rem;
+    left: 0;
+    right: 0;
+}
+
 .nav-item {
     font-size: 0.9rem;
     padding-bottom: 0.5rem;

@@ -1,24 +1,25 @@
 @page "/wineproducers"
+@attribute [Authorize(Roles = "Admin,WineProducer")]
 @inject IWineProducerRepository WineProducerRepository
 
-<PageTitle>Wine Producers</PageTitle>
+<PageTitle>Vinprodusenter</PageTitle>
 
-<h3>Wine Producers</h3>
+<h3>Vinprodusenter</h3>
 
 <div class="card">
     <div class="card-body">
         <table class="table">
             <thead>
                 <tr>
-                    <th>Wine Producer Id</th>
-                    <th>Wineyard Name</th>
-                    <th>Organisation Number</th>
-                    <th>Responsible Producer Name</th>
-                    <th>Address</th>
-                    <th>Zip</th>
-                    <th>City</th>
-                    <th>Country</th>
-                    <th>Email</th>
+                    <th>Vinprodusent Id</th>
+                    <th>Vingårdsnavn</th>
+                    <th>Organisasjonsnummer</th>
+                    <th>Ansvarlig produsent</th>
+                    <th>Adresse</th>
+                    <th>Postnummer</th>
+                    <th>By</th>
+                    <th>Land</th>
+                    <th>E-post</th>
                     <th></th>
                 </tr>
             </thead>
@@ -47,38 +48,52 @@
 
         <hr />
 
-        <h4>Add New Wine Producer</h4>
+        <h4>Legg til ny vinprodusent</h4>
         <EditForm Model="@newProducer" OnValidSubmit="@AddNewWineProducer">
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" />
-            
+
             <div class="mb-3">
-                <label class="form-label">Wineyard Name</label>
-                <InputText @bind-Value="newProducer.WineyardName" class="form-control" placeholder="Wineyard Name" />
+                <label class="form-label">Vingårdsnavn</label>
+                <InputText @bind-Value="newProducer.WineyardName" class="form-control" placeholder="Vingårdsnavn" />
                 <ValidationMessage For="@(() => newProducer.WineyardName)" class="text-danger" />
             </div>
             <div class="mb-3">
-                <InputText @bind-Value="newProducer.OrganisationNumber" class="form-control" placeholder="Organisation Number" />
+                <label class="form-label">Organisasjonsnummer</label>
+                <InputText @bind-Value="newProducer.OrganisationNumber" class="form-control" placeholder="Organisasjonsnummer" />
+                <ValidationMessage For="@(() => newProducer.OrganisationNumber)" class="text-danger" />
             </div>
             <div class="mb-3">
-                <InputText @bind-Value="newProducer.ResponsibleProducerName" class="form-control" placeholder="Responsible Producer Name" />
+                <label class="form-label">Ansvarlig produsent</label>
+                <InputText @bind-Value="newProducer.ResponsibleProducerName" class="form-control" placeholder="Ansvarlig produsent" />
+                <ValidationMessage For="@(() => newProducer.ResponsibleProducerName)" class="text-danger" />
             </div>
             <div class="mb-3">
-                <InputText @bind-Value="newProducer.Address" class="form-control" placeholder="Address" />
+                <label class="form-label">Adresse</label>
+                <InputText @bind-Value="newProducer.Address" class="form-control" placeholder="Adresse" />
+                <ValidationMessage For="@(() => newProducer.Address)" class="text-danger" />
             </div>
             <div class="mb-3">
-                <InputText @bind-Value="newProducer.Zip" class="form-control" placeholder="Zip" />
+                <label class="form-label">Postnummer</label>
+                <InputText @bind-Value="newProducer.Zip" class="form-control" placeholder="Postnummer" />
+                <ValidationMessage For="@(() => newProducer.Zip)" class="text-danger" />
             </div>
             <div class="mb-3">
-                <InputText @bind-Value="newProducer.City" class="form-control" placeholder="City" />
+                <label class="form-label">By</label>
+                <InputText @bind-Value="newProducer.City" class="form-control" placeholder="By" />
+                <ValidationMessage For="@(() => newProducer.City)" class="text-danger" />
             </div>
             <div class="mb-3">
-                <InputText @bind-Value="newProducer.Country" class="form-control" placeholder="Country" />
+                <label class="form-label">Land</label>
+                <InputText @bind-Value="newProducer.Country" class="form-control" placeholder="Land" />
+                <ValidationMessage For="@(() => newProducer.Country)" class="text-danger" />
             </div>
             <div class="mb-3">
-                <InputText @bind-Value="newProducer.Email" class="form-control" placeholder="Email" />
+                <label class="form-label">E-post</label>
+                <InputText @bind-Value="newProducer.Email" class="form-control" placeholder="E-post" />
+                <ValidationMessage For="@(() => newProducer.Email)" class="text-danger" />
             </div>
-            <button type="submit" class="btn btn-primary">Add New Wine Producer</button>
+            <button type="submit" class="btn btn-primary">Legg til</button>
         </EditForm>
     </div>
 </div>

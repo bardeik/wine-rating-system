@@ -1,3 +1,4 @@
+@using Microsoft.AspNetCore.Components.Authorization
 @inject NavigationManager NavigationManager
 
 <div class="top-row ps-3 navbar navbar-dark">
@@ -13,25 +14,48 @@
     <nav class="flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> Home
+                <span class="oi oi-home" aria-hidden="true"></span> Hjem
             </NavLink>
         </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="wines">
-                <span class="oi oi-list" aria-hidden="true"></span> Wines
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="wineproducers">
-                <span class="oi oi-briefcase" aria-hidden="true"></span> Wine Producers
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="wineratings">
-                <span class="oi oi-star" aria-hidden="true"></span> Wine Ratings
-            </NavLink>
-        </div>
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="wines">
+                        <span class="oi oi-list" aria-hidden="true"></span> Viner
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="wineratings">
+                        <span class="oi oi-star" aria-hidden="true"></span> Vurderinger
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+        <AuthorizeView Roles="Admin,WineProducer">
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="wineproducers">
+                        <span class="oi oi-briefcase" aria-hidden="true"></span> Vinprodusenter
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
     </nav>
+
+    <div class="nav-bottom px-3">
+        <AuthorizeView>
+            <Authorized>
+                <button class="btn btn-outline-light w-100" @onclick="Logout" @onclick:stopPropagation="true">
+                    <span class="oi oi-account-logout" aria-hidden="true"></span> Logg ut (@context.User.Identity?.Name)
+                </button>
+            </Authorized>
+            <NotAuthorized>
+                <a href="Account/Login" class="btn btn-outline-light w-100" @onclick:stopPropagation="true">
+                    <span class="oi oi-account-login" aria-hidden="true"></span> Logg inn
+                </a>
+            </NotAuthorized>
+        </AuthorizeView>
+    </div>
 </div>
 
 @code {
@@ -43,4 +67,6 @@
     {
         collapseNavMenu = !collapseNavMenu;
     }
+
+    private void Logout() => NavigationManager.NavigateTo("/Account/Logout", forceLoad: true);
 }

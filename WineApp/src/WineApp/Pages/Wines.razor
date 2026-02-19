@@ -1,22 +1,23 @@
 @page "/wines"
+@attribute [Authorize]
 @inject IWineRepository WineRepository
 
-<PageTitle>Wines</PageTitle>
+<PageTitle>Viner</PageTitle>
 
-<h3>Wine Rating</h3>
+<h3>Viner</h3>
 
 <div class="card">
     <div class="card-body">
         <table class="table">
             <thead>
                 <tr>
-                    <th>Wine ID</th>
-                    <th>Rating Name</th>
-                    <th>Name</th>
-                    <th>Group</th>
-                    <th>Class</th>
-                    <th>Category</th>
-                    <th>Wine Producer Id</th>
+                    <th>Vin Id</th>
+                    <th>Vurderingsnavn</th>
+                    <th>Navn</th>
+                    <th>Gruppe</th>
+                    <th>Klasse</th>
+                    <th>Kategori</th>
+                    <th>Vinprodusent Id</th>
                     <th></th>
                 </tr>
             </thead>
@@ -43,52 +44,60 @@
 
         <hr />
 
-        <h4>Add New Wine</h4>
+        <h4>Legg til ny vin</h4>
         <EditForm Model="@newWine" OnValidSubmit="@AddNewWine">
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" />
-            
+
             <div class="mb-3">
-                <label class="form-label">Rating Name</label>
-                <InputText @bind-Value="newWine.RatingName" class="form-control" placeholder="Rating Name" />
+                <label class="form-label">Vurderingsnavn</label>
+                <InputText @bind-Value="newWine.RatingName" class="form-control" placeholder="Vurderingsnavn" />
                 <ValidationMessage For="@(() => newWine.RatingName)" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Name</label>
-                <InputText @bind-Value="newWine.Name" class="form-control" placeholder="Name" />
+                <label class="form-label">Navn</label>
+                <InputText @bind-Value="newWine.Name" class="form-control" placeholder="Navn" />
                 <ValidationMessage For="@(() => newWine.Name)" class="text-danger" />
             </div>
             <div class="mb-3">
+                <label class="form-label">Gruppe</label>
                 <InputSelect @bind-Value="newWine.Group" class="form-control">
-                    <option value="">Select Group</option>
+                    <option value="">Velg gruppe</option>
                     @foreach (var group in Enum.GetValues<WineGroup>())
                     {
                         <option value="@group">@group</option>
                     }
                 </InputSelect>
+                <ValidationMessage For="@(() => newWine.Group)" class="text-danger" />
             </div>
             <div class="mb-3">
+                <label class="form-label">Klasse</label>
                 <InputSelect @bind-Value="newWine.Class" class="form-control">
-                    <option value="">Select Class</option>
+                    <option value="">Velg klasse</option>
                     @foreach (var wineClass in Enum.GetValues<WineClass>())
                     {
                         <option value="@wineClass">@wineClass</option>
                     }
                 </InputSelect>
+                <ValidationMessage For="@(() => newWine.Class)" class="text-danger" />
             </div>
             <div class="mb-3">
+                <label class="form-label">Kategori</label>
                 <InputSelect @bind-Value="newWine.Category" class="form-control">
-                    <option value="">Select Category</option>
+                    <option value="">Velg kategori</option>
                     @foreach (var category in Enum.GetValues<WineCategory>())
                     {
                         <option value="@category">@category</option>
                     }
                 </InputSelect>
+                <ValidationMessage For="@(() => newWine.Category)" class="text-danger" />
             </div>
             <div class="mb-3">
-                <InputNumber @bind-Value="newWine.WineProducerId" class="form-control" placeholder="Wine Producer Id" />
+                <label class="form-label">Vinprodusent Id</label>
+                <InputNumber @bind-Value="newWine.WineProducerId" class="form-control" placeholder="Vinprodusent Id" />
+                <ValidationMessage For="@(() => newWine.WineProducerId)" class="text-danger" />
             </div>
-            <button type="submit" class="btn btn-primary">Add New Wine</button>
+            <button type="submit" class="btn btn-primary">Legg til</button>
         </EditForm>
     </div>
 </div>

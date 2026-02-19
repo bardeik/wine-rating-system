@@ -1,21 +1,22 @@
 @page "/wineratings"
+@attribute [Authorize]
 @inject IWineRatingRepository WineRatingRepository
 
-<PageTitle>Wine Ratings</PageTitle>
+<PageTitle>Vurderinger</PageTitle>
 
-<h3>Wine Rating</h3>
+<h3>Vurderinger</h3>
 
 <div class="card">
     <div class="card-body">
         <table class="table">
             <thead>
                 <tr>
-                    <th>Wine Rating ID</th>
-                    <th>Visuality</th>
-                    <th>Nose</th>
-                    <th>Taste</th>
-                    <th>Judge Id</th>
-                    <th>Wine Id</th>
+                    <th>Vurdering Id</th>
+                    <th>Utseende</th>
+                    <th>Nese</th>
+                    <th>Smak</th>
+                    <th>Dommer</th>
+                    <th>Vin Id</th>
                     <th></th>
                 </tr>
             </thead>
@@ -41,37 +42,37 @@
 
         <hr />
 
-        <h4>Add New Wine Rating</h4>
+        <h4>Legg til ny vurdering</h4>
         <EditForm Model="@newRating" OnValidSubmit="@AddNewWineRating">
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" />
-            
+
             <div class="mb-3">
-                <label class="form-label">Visuality (0-10)</label>
-                <InputNumber @bind-Value="newRating.Visuality" class="form-control" placeholder="Visuality" />
+                <label class="form-label">Utseende (0-10)</label>
+                <InputNumber @bind-Value="newRating.Visuality" class="form-control" placeholder="Utseende" />
                 <ValidationMessage For="@(() => newRating.Visuality)" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Nose (0-10)</label>
-                <InputNumber @bind-Value="newRating.Nose" class="form-control" placeholder="Nose" />
+                <label class="form-label">Nese (0-10)</label>
+                <InputNumber @bind-Value="newRating.Nose" class="form-control" placeholder="Nese" />
                 <ValidationMessage For="@(() => newRating.Nose)" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Taste (0-10)</label>
-                <InputNumber @bind-Value="newRating.Taste" class="form-control" placeholder="Taste" />
+                <label class="form-label">Smak (0-10)</label>
+                <InputNumber @bind-Value="newRating.Taste" class="form-control" placeholder="Smak" />
                 <ValidationMessage For="@(() => newRating.Taste)" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Judge ID</label>
-                <InputText @bind-Value="newRating.JudgeId" class="form-control" placeholder="Judge Id" />
+                <label class="form-label">Dommer</label>
+                <InputText @bind-Value="newRating.JudgeId" class="form-control" placeholder="Dommer" />
                 <ValidationMessage For="@(() => newRating.JudgeId)" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Wine ID</label>
-                <InputNumber @bind-Value="newRating.WineId" class="form-control" placeholder="Wine Id" />
+                <label class="form-label">Vin Id</label>
+                <InputNumber @bind-Value="newRating.WineId" class="form-control" placeholder="Vin Id" />
                 <ValidationMessage For="@(() => newRating.WineId)" class="text-danger" />
             </div>
-            <button type="submit" class="btn btn-primary">Add New Wine Rating</button>
+            <button type="submit" class="btn btn-primary">Legg til</button>
         </EditForm>
     </div>
 </div>

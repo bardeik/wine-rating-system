@@ -12,37 +12,45 @@ public class WineProducer
     [Key]
     [DisplayName("Vinprodusent Id")]
     public int WineProducerId { get; set; }
-    
-    [Required(ErrorMessage = "Wineyard name is required")]
-    [StringLength(100, ErrorMessage = "Wineyard name cannot exceed 100 characters")]
+
+    [Required(ErrorMessage = "Vingårdsnavn er påkrevd")]
+    [StringLength(100, ErrorMessage = "Vingårdsnavn kan ikke overstige 100 tegn")]
+    [DisplayName("Vingårdsnavn")]
     public string WineyardName { get; set; } = string.Empty;
-    
-    [Required(ErrorMessage = "Organisation number is required")]
-    [StringLength(20, ErrorMessage = "Organisation number cannot exceed 20 characters")]
+
+    [Required(ErrorMessage = "Organisasjonsnummer er påkrevd")]
+    [StringLength(20, ErrorMessage = "Organisasjonsnummer kan ikke overstige 20 tegn")]
+    [DisplayName("Organisasjonsnummer")]
     public string OrganisationNumber { get; set; } = string.Empty;
-    
-    [Required(ErrorMessage = "Responsible producer name is required")]
-    [StringLength(100, ErrorMessage = "Name cannot exceed 100 characters")]
+
+    [Required(ErrorMessage = "Ansvarlig produsents navn er påkrevd")]
+    [StringLength(100, ErrorMessage = "Navn kan ikke overstige 100 tegn")]
+    [DisplayName("Ansvarlig produsent")]
     public string ResponsibleProducerName { get; set; } = string.Empty;
-    
-    [Required(ErrorMessage = "Address is required")]
-    [StringLength(200, ErrorMessage = "Address cannot exceed 200 characters")]
+
+    [Required(ErrorMessage = "Adresse er påkrevd")]
+    [StringLength(200, ErrorMessage = "Adresse kan ikke overstige 200 tegn")]
+    [DisplayName("Adresse")]
     public string Address { get; set; } = string.Empty;
-    
-    [Required(ErrorMessage = "City is required")]
-    [StringLength(100, ErrorMessage = "City cannot exceed 100 characters")]
+
+    [Required(ErrorMessage = "By er påkrevd")]
+    [StringLength(100, ErrorMessage = "By kan ikke overstige 100 tegn")]
+    [DisplayName("By")]
     public string City { get; set; } = string.Empty;
-    
-    [Required(ErrorMessage = "Country is required")]
-    [StringLength(100, ErrorMessage = "Country cannot exceed 100 characters")]
+
+    [Required(ErrorMessage = "Land er påkrevd")]
+    [StringLength(100, ErrorMessage = "Land kan ikke overstige 100 tegn")]
+    [DisplayName("Land")]
     public string Country { get; set; } = string.Empty;
-    
-    [Required(ErrorMessage = "Zip code is required")]
-    [StringLength(20, ErrorMessage = "Zip code cannot exceed 20 characters")]
+
+    [Required(ErrorMessage = "Postnummer er påkrevd")]
+    [StringLength(20, ErrorMessage = "Postnummer kan ikke overstige 20 tegn")]
+    [DisplayName("Postnummer")]
     public string Zip { get; set; } = string.Empty;
-    
-    [Required(ErrorMessage = "Email is required")]
-    [EmailAddress(ErrorMessage = "Invalid email address")]
-    [StringLength(100, ErrorMessage = "Email cannot exceed 100 characters")]
+
+    [Required(ErrorMessage = "E-post er påkrevd")]
+    [EmailAddress(ErrorMessage = "Ugyldig e-postadresse")]
+    [StringLength(100, ErrorMessage = "E-post kan ikke overstige 100 tegn")]
+    [DisplayName("E-post")]
     public string Email { get; set; } = string.Empty;
 }
