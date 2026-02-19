@@ -1,62 +1,43 @@
-﻿using WineApp.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using WineApp.Models;
 
 namespace WineApp.Data;
 
 public class WineRatingRepository : IWineRatingRepository
 {
-    private readonly List<WineRating> wineRatings = new()
-    {
-        new WineRating {
-            WineRatingId = 1,
-            JudgeId = "Hans",
-            Nose = 4,
-            Taste = 5,
-            Visuality = 5,
-            WineId = 1
-        },
-        new WineRating {
-            WineRatingId = 2,
-            JudgeId = "Petter",
-            Nose = 3,
-            Taste = 4,
-            Visuality = 3,
-            WineId = 1
-        },
-        new WineRating {
-            WineRatingId = 3,
-            JudgeId = "Frans",
-            Nose = 5,
-            Taste = 4,
-            Visuality = 6,
-            WineId = 1
-        },
-        new WineRating {
-            WineRatingId = 4,
-            JudgeId = "Ola",
-            Nose = 5,
-            Taste = 4,
-            Visuality = 4,
-            WineId = 1
-        }
-    };
-    
-    public IList<WineRating> GetAllWineRatings() => wineRatings;
+    private readonly IDbContextFactory<WineAppDbContext> _contextFactory;
 
-    public WineRating? GetWineRatingById(int id) => 
-        wineRatings.Find(wineRating => wineRating.WineRatingId == id);
+    public WineRatingRepository(IDbContextFactory<WineAppDbContext> contextFactory) =>
+        _contextFactory = contextFactory;
+
+    public IList<WineRating> GetAllWineRatings()
+    {
+        using var context = _contextFactory.CreateDbContext();
+        return context.WineRatings.ToList();
+    }
+
+    public WineRating? GetWineRatingById(int id)
+    {
+        using var context = _contextFactory.CreateDbContext();
+        return context.WineRatings.Find(id);
+    }
 
     public int AddWineRating(WineRating wineRating)
     {
-        var newId = wineRatings.Count > 0 ? wineRatings.Max(x => x.WineRatingId) + 1 : 1;
-        wineRating.WineRatingId = newId;
-        wineRatings.Add(wineRating);
-        return newId;
+        using var context = _contextFactory.CreateDbContext();
+        context.WineRatings.Add(wineRating);
+        context.SaveChanges();
+        return wineRating.WineRatingId;
     }
 
     public void DeleteWineRating(int id)
     {
-        var rating = wineRatings.SingleOrDefault(x => x.WineRatingId == id);
+        using var context = _contextFactory.CreateDbContext();
+        var rating = context.WineRatings.Find(id);
         if (rating != null)
-            wineRatings.Remove(rating);
+        {
+            context.WineRatings.Remove(rating);
+            context.SaveChanges();
+        }
     }
 }

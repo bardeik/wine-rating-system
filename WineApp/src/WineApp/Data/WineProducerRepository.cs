@@ -1,66 +1,43 @@
-﻿using WineApp.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using WineApp.Models;
 
 namespace WineApp.Data;
 
 public class WineProducerRepository : IWineProducerRepository
 {
-    private readonly List<WineProducer> wineProducers = new()
+    private readonly IDbContextFactory<WineAppDbContext> _contextFactory;
+
+    public WineProducerRepository(IDbContextFactory<WineAppDbContext> contextFactory) =>
+        _contextFactory = contextFactory;
+
+    public IList<WineProducer> GetAllWineProducers()
     {
-        new WineProducer
-        {
-            WineProducerId = 1,
-            Address = "Test adresse 21",
-            City= "Oslo",
-            Country = "Norway",
-            Email= "bestWines@fluffy.com",
-            OrganisationNumber="111122223333445",
-            ResponsibleProducerName="Test Testersen",
-            WineyardName="Oslo Vest Wines AS",
-            Zip="0125"
-        },
-        new WineProducer
-        {
-            WineProducerId = 2,
-            Address = "Test adresse Ny 15",
-            City= "Grimstad",
-            Country = "Norway",
-            Email= "bestWinesEver@fluffier.com",
-            OrganisationNumber="111122234567890",
-            ResponsibleProducerName="Petter Testeren",
-            WineyardName="Grimstad Vin og Vann AS",
-            Zip="4525"
-        },
-        new WineProducer
-        {
-            WineProducerId = 3,
-            Address = "Agder Alle 21",
-            City= "Kristiansand",
-            Country = "Norway",
-            Email= "bardeh@gmail.com",
-            OrganisationNumber="222222223333445",
-            ResponsibleProducerName="Bård Eik-Hvidsten",
-            WineyardName="Tech Wine AS",
-            Zip="4631"
-        }
-    };
-    
-    public IList<WineProducer> GetAllWineProducers() => wineProducers;
-    
-    public WineProducer? GetWineProducerById(int id) => 
-        wineProducers.Find(wineProducer => wineProducer.WineProducerId == id);
+        using var context = _contextFactory.CreateDbContext();
+        return context.WineProducers.ToList();
+    }
+
+    public WineProducer? GetWineProducerById(int id)
+    {
+        using var context = _contextFactory.CreateDbContext();
+        return context.WineProducers.Find(id);
+    }
 
     public int AddWineProducer(WineProducer wineProducer)
     {
-        var newId = wineProducers.Count > 0 ? wineProducers.Max(x => x.WineProducerId) + 1 : 1;
-        wineProducer.WineProducerId = newId;
-        wineProducers.Add(wineProducer);
-        return newId;
+        using var context = _contextFactory.CreateDbContext();
+        context.WineProducers.Add(wineProducer);
+        context.SaveChanges();
+        return wineProducer.WineProducerId;
     }
 
     public void DeleteWineProducer(int id)
     {
-        var producer = wineProducers.SingleOrDefault(x => x.WineProducerId == id);
+        using var context = _contextFactory.CreateDbContext();
+        var producer = context.WineProducers.Find(id);
         if (producer != null)
-            wineProducers.Remove(producer);
+        {
+            context.WineProducers.Remove(producer);
+            context.SaveChanges();
+        }
     }
 }

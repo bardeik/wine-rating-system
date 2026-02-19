@@ -1,4 +1,5 @@
-﻿using WineApp.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using WineApp.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,13 +12,24 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 
-// Register repositories as singletons
+builder.Services.AddDbContextFactory<WineAppDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=wineapp.db"));
+
+// Register repositories
 builder.Services.AddSingleton<ITodosRepository, TodosRepository>();
 builder.Services.AddSingleton<IWineProducerRepository, WineProducerRepository>();
 builder.Services.AddSingleton<IWineRatingRepository, WineRatingRepository>();
 builder.Services.AddSingleton<IWineRepository, WineRepository>();
 
 var app = builder.Build();
+
+// Apply EF Core migrations and seed data on startup
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<WineAppDbContext>>();
+    using var db = factory.CreateDbContext();
+    db.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
