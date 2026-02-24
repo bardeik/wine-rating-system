@@ -18,7 +18,7 @@
                     <th>Nese</th>
                     <th>Smak</th>
                     <th>Dommer</th>
-                    <th>Vin Id</th>
+                    <th>Vin</th>
                     <th></th>
                 </tr>
             </thead>
@@ -31,7 +31,7 @@
                         <td>@rating.Nose</td>
                         <td>@rating.Taste</td>
                         <td>@rating.JudgeId</td>
-                        <td>@rating.WineId</td>
+                        <td>@(wines.FirstOrDefault(w => w.WineId == rating.WineId)?.RatingName ?? rating.WineId) – @(wines.FirstOrDefault(w => w.WineId == rating.WineId)?.Name ?? string.Empty)</td>
                         <td>
                             <button @onclick="() => DeleteWineRating(rating.WineRatingId)" class="btn btn-sm btn-danger">
                                 <span>🗑️</span>
@@ -50,18 +50,27 @@
             <ValidationSummary class="text-danger" />
 
             <div class="mb-3">
-                <label class="form-label">Utseende (0-10)</label>
-                <InputNumber @bind-Value="newRating.Visuality" class="form-control" placeholder="Utseende" />
+                <label class="form-label">Utseende (0-10): <strong>@newRating.Visuality</strong></label>
+                <input type="range" min="0" max="10" step="1"
+                       class="form-range"
+                       @bind="newRating.Visuality"
+                       @bind:event="oninput" />
                 <ValidationMessage For="@(() => newRating.Visuality)" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Nese (0-10)</label>
-                <InputNumber @bind-Value="newRating.Nose" class="form-control" placeholder="Nese" />
+                <label class="form-label">Nese (0-10): <strong>@newRating.Nose</strong></label>
+                <input type="range" min="0" max="10" step="1"
+                       class="form-range"
+                       @bind="newRating.Nose"
+                       @bind:event="oninput" />
                 <ValidationMessage For="@(() => newRating.Nose)" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Smak (0-10)</label>
-                <InputNumber @bind-Value="newRating.Taste" class="form-control" placeholder="Smak" />
+                <label class="form-label">Smak (0-10): <strong>@newRating.Taste</strong></label>
+                <input type="range" min="0" max="10" step="1"
+                       class="form-range"
+                       @bind="newRating.Taste"
+                       @bind:event="oninput" />
                 <ValidationMessage For="@(() => newRating.Taste)" class="text-danger" />
             </div>
             <div class="mb-3">
