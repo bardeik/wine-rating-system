@@ -5,7 +5,7 @@ namespace WineApp.Data;
 public interface IWineRatingRepository
 {
     IList<WineRating> GetAllWineRatings();
-    WineRating? GetWineRatingById(int id);
-    int AddWineRating(WineRating wineRating);
-    void DeleteWineRating(int id);
+    WineRating? GetWineRatingById(string id);
+    string AddWineRating(WineRating wineRating);
+    void DeleteWineRating(string id);
 }

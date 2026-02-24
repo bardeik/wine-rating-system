@@ -1,43 +1,27 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MongoDB.Driver;
 using WineApp.Models;
 
 namespace WineApp.Data;
 
 public class WineRatingRepository : IWineRatingRepository
 {
-    private readonly IDbContextFactory<WineAppDbContext> _contextFactory;
+    private readonly IMongoCollection<WineRating> _collection;
 
-    public WineRatingRepository(IDbContextFactory<WineAppDbContext> contextFactory) =>
-        _contextFactory = contextFactory;
+    public WineRatingRepository(WineMongoDbContext context) =>
+        _collection = context.WineRatings;
 
-    public IList<WineRating> GetAllWineRatings()
+    public IList<WineRating> GetAllWineRatings() =>
+        _collection.Find(_ => true).ToList();
+
+    public WineRating? GetWineRatingById(string id) =>
+        _collection.Find(r => r.WineRatingId == id).FirstOrDefault();
+
+    public string AddWineRating(WineRating wineRating)
     {
-        using var context = _contextFactory.CreateDbContext();
-        return context.WineRatings.ToList();
-    }
-
-    public WineRating? GetWineRatingById(int id)
-    {
-        using var context = _contextFactory.CreateDbContext();
-        return context.WineRatings.Find(id);
-    }
-
-    public int AddWineRating(WineRating wineRating)
-    {
-        using var context = _contextFactory.CreateDbContext();
-        context.WineRatings.Add(wineRating);
-        context.SaveChanges();
+        _collection.InsertOne(wineRating);
         return wineRating.WineRatingId;
     }
 
-    public void DeleteWineRating(int id)
-    {
-        using var context = _contextFactory.CreateDbContext();
-        var rating = context.WineRatings.Find(id);
-        if (rating != null)
-        {
-            context.WineRatings.Remove(rating);
-            context.SaveChanges();
-        }
-    }
+    public void DeleteWineRating(string id) =>
+        _collection.DeleteOne(r => r.WineRatingId == id);
 }

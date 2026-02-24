@@ -11,7 +11,9 @@ namespace WineApp.Models;
 public class Wine
 {
     [DisplayName("Vin Id")]
-    public int WineId { get; set; }
+    [MongoDB.Bson.Serialization.Attributes.BsonId]
+    [MongoDB.Bson.Serialization.Attributes.BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
+    public string WineId { get; set; } = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
 
     [Required(ErrorMessage = "Vurderingsnavn er påkrevd")]
     [StringLength(100, ErrorMessage = "Vurderingsnavn kan ikke overstige 100 tegn")]
@@ -36,7 +38,6 @@ public class Wine
     public WineCategory Category { get; set; }
 
     [Required(ErrorMessage = "Vinprodusent er påkrevd")]
-    [Range(1, int.MaxValue, ErrorMessage = "Velg en gyldig vinprodusent")]
     [DisplayName("Vinprodusent")]
-    public int WineProducerId { get; set; }
+    public string WineProducerId { get; set; } = string.Empty;
 }

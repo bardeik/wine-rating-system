@@ -11,7 +11,9 @@ namespace WineApp.Models;
 public class WineRating
 {
     [DisplayName("Vurdering Id")]
-    public int WineRatingId { get; set; }
+    [MongoDB.Bson.Serialization.Attributes.BsonId]
+    [MongoDB.Bson.Serialization.Attributes.BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
+    public string WineRatingId { get; set; } = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
 
     [Required]
     [Range(0, 10, ErrorMessage = "Utseende må være mellom 0 og 10")]
@@ -34,7 +36,6 @@ public class WineRating
     public string JudgeId { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Vin-ID er påkrevd")]
-    [Range(1, int.MaxValue, ErrorMessage = "Velg en gyldig vin")]
     [DisplayName("Vin")]
-    public int WineId { get; set; }
+    public string WineId { get; set; } = string.Empty;
 }

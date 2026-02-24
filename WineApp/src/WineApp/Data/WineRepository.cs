@@ -1,49 +1,30 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MongoDB.Driver;
 using WineApp.Models;
 
 namespace WineApp.Data;
 
 public class WineRepository : IWineRepository
 {
-    private readonly IDbContextFactory<WineAppDbContext> _contextFactory;
+    private readonly IMongoCollection<Wine> _collection;
 
-    public WineRepository(IDbContextFactory<WineAppDbContext> contextFactory) =>
-        _contextFactory = contextFactory;
+    public WineRepository(WineMongoDbContext context) =>
+        _collection = context.Wines;
 
-    public IList<Wine> GetAllWines()
+    public IList<Wine> GetAllWines() =>
+        _collection.Find(_ => true).ToList();
+
+    public Wine? GetWineById(string id) =>
+        _collection.Find(w => w.WineId == id).FirstOrDefault();
+
+    public IList<Wine> GetAllWinesFromProducer(string producerId) =>
+        _collection.Find(w => w.WineProducerId == producerId).ToList();
+
+    public string AddWine(Wine wine)
     {
-        using var context = _contextFactory.CreateDbContext();
-        return context.Wines.ToList();
-    }
-
-    public Wine? GetWineById(int id)
-    {
-        using var context = _contextFactory.CreateDbContext();
-        return context.Wines.Find(id);
-    }
-
-    public IList<Wine> GetAllWinesFromProducer(int producerId)
-    {
-        using var context = _contextFactory.CreateDbContext();
-        return context.Wines.Where(w => w.WineProducerId == producerId).ToList();
-    }
-
-    public int AddWine(Wine wine)
-    {
-        using var context = _contextFactory.CreateDbContext();
-        context.Wines.Add(wine);
-        context.SaveChanges();
+        _collection.InsertOne(wine);
         return wine.WineId;
     }
 
-    public void DeleteWine(int id)
-    {
-        using var context = _contextFactory.CreateDbContext();
-        var wine = context.Wines.Find(id);
-        if (wine != null)
-        {
-            context.Wines.Remove(wine);
-            context.SaveChanges();
-        }
-    }
+    public void DeleteWine(string id) =>
+        _collection.DeleteOne(w => w.WineId == id);
 }

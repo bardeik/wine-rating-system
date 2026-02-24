@@ -1,43 +1,27 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MongoDB.Driver;
 using WineApp.Models;
 
 namespace WineApp.Data;
 
 public class WineProducerRepository : IWineProducerRepository
 {
-    private readonly IDbContextFactory<WineAppDbContext> _contextFactory;
+    private readonly IMongoCollection<WineProducer> _collection;
 
-    public WineProducerRepository(IDbContextFactory<WineAppDbContext> contextFactory) =>
-        _contextFactory = contextFactory;
+    public WineProducerRepository(WineMongoDbContext context) =>
+        _collection = context.WineProducers;
 
-    public IList<WineProducer> GetAllWineProducers()
+    public IList<WineProducer> GetAllWineProducers() =>
+        _collection.Find(_ => true).ToList();
+
+    public WineProducer? GetWineProducerById(string id) =>
+        _collection.Find(p => p.WineProducerId == id).FirstOrDefault();
+
+    public string AddWineProducer(WineProducer wineProducer)
     {
-        using var context = _contextFactory.CreateDbContext();
-        return context.WineProducers.ToList();
-    }
-
-    public WineProducer? GetWineProducerById(int id)
-    {
-        using var context = _contextFactory.CreateDbContext();
-        return context.WineProducers.Find(id);
-    }
-
-    public int AddWineProducer(WineProducer wineProducer)
-    {
-        using var context = _contextFactory.CreateDbContext();
-        context.WineProducers.Add(wineProducer);
-        context.SaveChanges();
+        _collection.InsertOne(wineProducer);
         return wineProducer.WineProducerId;
     }
 
-    public void DeleteWineProducer(int id)
-    {
-        using var context = _contextFactory.CreateDbContext();
-        var producer = context.WineProducers.Find(id);
-        if (producer != null)
-        {
-            context.WineProducers.Remove(producer);
-            context.SaveChanges();
-        }
-    }
+    public void DeleteWineProducer(string id) =>
+        _collection.DeleteOne(p => p.WineProducerId == id);
 }

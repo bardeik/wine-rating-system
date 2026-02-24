@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+﻿using AspNetCore.Identity.MongoDbCore.Models;
+using Microsoft.AspNetCore.Identity;
+using MongoDB.Bson;
 using WineApp.Data;
 using WineApp.Models;
 
@@ -14,10 +15,14 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 
-builder.Services.AddDbContextFactory<WineAppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=wineapp.db"));
+// MongoDB context (domain collections)
+builder.Services.AddSingleton<WineMongoDbContext>();
 
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+// MongoDB Identity
+var mongoConnectionString = builder.Configuration.GetConnectionString("MongoDB") ?? "mongodb://localhost:27017";
+var mongoDatabaseName = builder.Configuration["MongoDbSettings:DatabaseName"] ?? "wineapp";
+
+builder.Services.AddIdentity<ApplicationUser, MongoIdentityRole<Guid>>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
     options.Password.RequiredLength = 8;
@@ -25,7 +30,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.Password.RequireUppercase = true;
     options.Password.RequireDigit = true;
 })
-.AddEntityFrameworkStores<WineAppDbContext>()
+.AddMongoDbStores<ApplicationUser, MongoIdentityRole<Guid>, Guid>(mongoConnectionString, mongoDatabaseName)
 .AddDefaultTokenProviders();
 
 builder.Services.ConfigureApplicationCookie(options =>
@@ -37,26 +42,22 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 // Register repositories
- builder.Services.AddSingleton<IWineProducerRepository, WineProducerRepository>();
+builder.Services.AddSingleton<IWineProducerRepository, WineProducerRepository>();
 builder.Services.AddSingleton<IWineRatingRepository, WineRatingRepository>();
 builder.Services.AddSingleton<IWineRepository, WineRepository>();
 
 var app = builder.Build();
 
-// Apply EF Core migrations, seed data, roles and default admin on startup
+// Seed roles, default admin and sample data on startup
 using (var scope = app.Services.CreateScope())
 {
-    var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<WineAppDbContext>>();
-    using var db = factory.CreateDbContext();
-    db.Database.Migrate();
-
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<MongoIdentityRole<Guid>>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
     foreach (var role in new[] { "Admin", "Judge", "Viewer", "WineProducer" })
     {
         if (!roleManager.RoleExistsAsync(role).GetAwaiter().GetResult())
-            roleManager.CreateAsync(new IdentityRole(role)).GetAwaiter().GetResult();
+            roleManager.CreateAsync(new MongoIdentityRole<Guid>(role)).GetAwaiter().GetResult();
     }
 
     if (userManager.FindByEmailAsync("admin@wineapp.com").GetAwaiter().GetResult() is null)
@@ -70,6 +71,39 @@ using (var scope = app.Services.CreateScope())
         };
         userManager.CreateAsync(admin, "Admin123!").GetAwaiter().GetResult();
         userManager.AddToRoleAsync(admin, "Admin").GetAwaiter().GetResult();
+    }
+
+    // Seed sample data if collections are empty
+    var wineProducerRepo = scope.ServiceProvider.GetRequiredService<IWineProducerRepository>();
+    var wineRepo = scope.ServiceProvider.GetRequiredService<IWineRepository>();
+    var wineRatingRepo = scope.ServiceProvider.GetRequiredService<IWineRatingRepository>();
+
+    if (wineProducerRepo.GetAllWineProducers().Count == 0)
+    {
+        var p1 = new WineProducer { WineProducerId = ObjectId.GenerateNewId().ToString(), Address = "Test adresse 21", City = "Oslo", Country = "Norway", Email = "bestWines@fluffy.com", OrganisationNumber = "111122223333445", ResponsibleProducerName = "Test Testersen", WineyardName = "Oslo Vest Wines AS", Zip = "0125" };
+        var p2 = new WineProducer { WineProducerId = ObjectId.GenerateNewId().ToString(), Address = "Test adresse Ny 15", City = "Grimstad", Country = "Norway", Email = "bestWinesEver@fluffier.com", OrganisationNumber = "111122234567890", ResponsibleProducerName = "Petter Testeren", WineyardName = "Grimstad Vin og Vann AS", Zip = "4525" };
+        var p3 = new WineProducer { WineProducerId = ObjectId.GenerateNewId().ToString(), Address = "Agder Alle 21", City = "Kristiansand", Country = "Norway", Email = "bardeh@gmail.com", OrganisationNumber = "222222223333445", ResponsibleProducerName = "Bård Eik", WineyardName = "Tech Wine AS", Zip = "4631" };
+        wineProducerRepo.AddWineProducer(p1);
+        wineProducerRepo.AddWineProducer(p2);
+        wineProducerRepo.AddWineProducer(p3);
+
+        if (wineRepo.GetAllWines().Count == 0)
+        {
+            var w1 = new Wine { WineId = ObjectId.GenerateNewId().ToString(), Name = "Polets røde", RatingName = "Hemmelig Polets Røde", WineProducerId = p1.WineProducerId, Category = WineCategory.Rodvin, Class = WineClass.Eldre, Group = WineGroup.A };
+            var w2 = new Wine { WineId = ObjectId.GenerateNewId().ToString(), Name = "Polets andre røde", RatingName = "Hemmelig Andre Polets Røde", WineProducerId = p1.WineProducerId, Category = WineCategory.Rodvin, Class = WineClass.Unge, Group = WineGroup.C };
+            var w3 = new Wine { WineId = ObjectId.GenerateNewId().ToString(), Name = "Polets røde", RatingName = "Hemmelig Tredje Polets Røde", WineProducerId = p2.WineProducerId, Category = WineCategory.Rodvin, Class = WineClass.Unge, Group = WineGroup.B };
+            wineRepo.AddWine(w1);
+            wineRepo.AddWine(w2);
+            wineRepo.AddWine(w3);
+
+            if (wineRatingRepo.GetAllWineRatings().Count == 0)
+            {
+                wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Hans",   Nose = 4, Taste = 5, Visuality = 5, WineId = w1.WineId });
+                wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Petter", Nose = 3, Taste = 4, Visuality = 3, WineId = w1.WineId });
+                wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Frans",  Nose = 5, Taste = 4, Visuality = 6, WineId = w1.WineId });
+                wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Ola",    Nose = 5, Taste = 4, Visuality = 4, WineId = w1.WineId });
+            }
+        }
     }
 }
 

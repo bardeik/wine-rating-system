@@ -1,8 +1,10 @@
-using Microsoft.AspNetCore.Identity;
+using AspNetCore.Identity.MongoDbCore.Models;
+using MongoDbGenericRepository.Attributes;
 
 namespace WineApp.Models;
 
-public class ApplicationUser : IdentityUser
+[CollectionName("Users")]
+public class ApplicationUser : MongoIdentityUser<Guid>
 {
     public string? DisplayName { get; set; }
 }

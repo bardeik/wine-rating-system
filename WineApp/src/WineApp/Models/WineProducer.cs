@@ -9,9 +9,10 @@ namespace WineApp.Models;
 
 public class WineProducer
 {
-    [Key]
     [DisplayName("Vinprodusent Id")]
-    public int WineProducerId { get; set; }
+    [MongoDB.Bson.Serialization.Attributes.BsonId]
+    [MongoDB.Bson.Serialization.Attributes.BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
+    public string WineProducerId { get; set; } = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
 
     [Required(ErrorMessage = "Vingårdsnavn er påkrevd")]
     [StringLength(100, ErrorMessage = "Vingårdsnavn kan ikke overstige 100 tegn")]

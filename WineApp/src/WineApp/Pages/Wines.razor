@@ -94,7 +94,7 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Vinprodusent Id</label>
-                <InputNumber @bind-Value="newWine.WineProducerId" class="form-control" placeholder="Vinprodusent Id" />
+                <InputText @bind-Value="newWine.WineProducerId" class="form-control" placeholder="Vinprodusent Id" />
                 <ValidationMessage For="@(() => newWine.WineProducerId)" class="text-danger" />
             </div>
             <button type="submit" class="btn btn-primary">Legg til</button>
@@ -123,7 +123,7 @@
         LoadWines();
     }
 
-    private void DeleteWine(int wineId)
+    private void DeleteWine(string wineId)
     {
         WineRepository.DeleteWine(wineId);
         LoadWines();

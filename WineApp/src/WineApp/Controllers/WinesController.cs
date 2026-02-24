@@ -29,7 +29,7 @@ namespace WineApp.Controllers
         // GET api/wines/2
         [HttpGet("{id}")]
         [Route("{id}", Name = "GetWineByIdRoute")]
-        public IActionResult Get(int id)
+        public IActionResult Get(string id)
         {
             var wine = Repo.GetWineById(id);
             if (wine == null)
@@ -60,17 +60,9 @@ namespace WineApp.Controllers
         [Route("{id}")]
         public IActionResult Delete(string id)
         {
-            try
-            {
-                var idWine = int.Parse(id, CultureInfo.InvariantCulture);
-                if (Repo.GetWineById(idWine) == null) return NotFound();
-                Repo.DeleteWine(idWine);
-                return new StatusCodeResult(200);
-            }
-            catch (Exception)
-            {
-                return BadRequest();
-            }
+            if (Repo.GetWineById(id) == null) return NotFound();
+            Repo.DeleteWine(id);
+            return new StatusCodeResult(200);
         }
     }
 }
