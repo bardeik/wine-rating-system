@@ -1,6 +1,8 @@
 @page "/wineratings"
 @attribute [Authorize]
 @inject IWineRatingRepository WineRatingRepository
+@inject IWineRepository WineRepository
+@inject IJudgeRepository JudgeRepository
 
 <PageTitle>Vurderinger</PageTitle>
 
@@ -64,12 +66,24 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Dommer</label>
-                <InputText @bind-Value="newRating.JudgeId" class="form-control" placeholder="Dommer" />
+                <InputSelect @bind-Value="newRating.JudgeId" class="form-select">
+                    <option value="">-- Velg dommer --</option>
+                    @foreach (var judge in judges)
+                    {
+                        <option value="@judge.Name">@judge.Name</option>
+                    }
+                </InputSelect>
                 <ValidationMessage For="@(() => newRating.JudgeId)" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Vin Id</label>
-                <InputText @bind-Value="newRating.WineId" class="form-control" placeholder="Vin Id" />
+                <label class="form-label">Vin</label>
+                <InputSelect @bind-Value="newRating.WineId" class="form-select">
+                    <option value="">-- Velg vin --</option>
+                    @foreach (var wine in wines)
+                    {
+                        <option value="@wine.WineId">@wine.RatingName – @wine.Name</option>
+                    }
+                </InputSelect>
                 <ValidationMessage For="@(() => newRating.WineId)" class="text-danger" />
             </div>
             <button type="submit" class="btn btn-primary">Legg til</button>
@@ -80,10 +94,14 @@
 @code {
     private List<WineRating> wineRatings = new();
     private WineRating newRating = new();
+    private List<Wine> wines = new();
+    private List<Judge> judges = new();
 
     protected override void OnInitialized()
     {
         LoadWineRatings();
+        wines = WineRepository.GetAllWines().ToList();
+        judges = JudgeRepository.GetAllJudges().ToList();
     }
 
     private void LoadWineRatings()

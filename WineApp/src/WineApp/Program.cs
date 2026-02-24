@@ -45,6 +45,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddSingleton<IWineProducerRepository, WineProducerRepository>();
 builder.Services.AddSingleton<IWineRatingRepository, WineRatingRepository>();
 builder.Services.AddSingleton<IWineRepository, WineRepository>();
+builder.Services.AddSingleton<IJudgeRepository, JudgeRepository>();
 
 var app = builder.Build();
 
@@ -77,6 +78,13 @@ using (var scope = app.Services.CreateScope())
     var wineProducerRepo = scope.ServiceProvider.GetRequiredService<IWineProducerRepository>();
     var wineRepo = scope.ServiceProvider.GetRequiredService<IWineRepository>();
     var wineRatingRepo = scope.ServiceProvider.GetRequiredService<IWineRatingRepository>();
+    var judgeRepo = scope.ServiceProvider.GetRequiredService<IJudgeRepository>();
+
+    if (judgeRepo.GetAllJudges().Count == 0)
+    {
+        foreach (var name in new[] { "Frans", "Hans", "Ola", "Petter" })
+            judgeRepo.AddJudge(new Judge { JudgeId = ObjectId.GenerateNewId().ToString(), Name = name });
+    }
 
     if (wineProducerRepo.GetAllWineProducers().Count == 0)
     {

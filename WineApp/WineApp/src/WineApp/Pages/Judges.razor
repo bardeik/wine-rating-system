@@ -1,0 +1,71 @@
+@page "/judges"
+@attribute [Authorize(Roles = "Admin")]
+@inject IJudgeRepository JudgeRepository
+
+<PageTitle>Dommere</PageTitle>
+
+<h3>Dommere</h3>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Navn</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var judge in judges)
+                {
+                    <tr>
+                        <td>@judge.Name</td>
+                        <td>
+                            <button @onclick="() => DeleteJudge(judge.JudgeId)" class="btn btn-sm btn-danger">
+                                <span>🗑️</span>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <hr />
+
+        <h4>Legg til ny dommer</h4>
+        <EditForm Model="@newJudge" OnValidSubmit="@AddNewJudge">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+
+            <div class="mb-3">
+                <label class="form-label">Navn</label>
+                <InputText @bind-Value="newJudge.Name" class="form-control" placeholder="Navn" />
+                <ValidationMessage For="@(() => newJudge.Name)" class="text-danger" />
+            </div>
+            <button type="submit" class="btn btn-primary">Legg til</button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private List<Judge> judges = new();
+    private Judge newJudge = new();
+
+    protected override void OnInitialized() => LoadJudges();
+
+    private void LoadJudges() =>
+        judges = JudgeRepository.GetAllJudges().ToList();
+
+    private void AddNewJudge()
+    {
+        JudgeRepository.AddJudge(newJudge);
+        newJudge = new Judge();
+        LoadJudges();
+    }
+
+    private void DeleteJudge(string judgeId)
+    {
+        JudgeRepository.DeleteJudge(judgeId);
+        LoadJudges();
+    }
+}
