@@ -1,6 +1,7 @@
 @page "/judges"
 @attribute [Authorize(Roles = "Admin")]
 @inject IJudgeRepository JudgeRepository
+@inject UserManager<ApplicationUser> UserManager
 
 <PageTitle>Dommere</PageTitle>
 
@@ -12,6 +13,7 @@
             <thead>
                 <tr>
                     <th>Navn</th>
+                    <th>E-post</th>
                     <th></th>
                 </tr>
             </thead>
@@ -20,6 +22,7 @@
                 {
                     <tr>
                         <td>@judge.Name</td>
+                        <td>@(judgeEmails.TryGetValue(judge.JudgeId, out var email) ? email : "–")</td>
                         <td>
                             <button @onclick="() => DeleteJudge(judge.JudgeId)" class="btn btn-sm btn-danger">
                                 <span>🗑️</span>
@@ -33,14 +36,30 @@
         <hr />
 
         <h4>Legg til ny dommer</h4>
-        <EditForm Model="@newJudge" OnValidSubmit="@AddNewJudge">
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        <EditForm Model="@formModel" OnValidSubmit="@AddNewJudge">
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" />
 
             <div class="mb-3">
                 <label class="form-label">Navn</label>
-                <InputText @bind-Value="newJudge.Name" class="form-control" placeholder="Navn" />
-                <ValidationMessage For="@(() => newJudge.Name)" class="text-danger" />
+                <InputText @bind-Value="formModel.Name" class="form-control" placeholder="Navn" />
+                <ValidationMessage For="@(() => formModel.Name)" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">E-post</label>
+                <InputText @bind-Value="formModel.Email" class="form-control" placeholder="E-post" />
+                <ValidationMessage For="@(() => formModel.Email)" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Passord</label>
+                <input type="password" @bind="formModel.Password" class="form-control" placeholder="Passord (minst 8 tegn)" />
+                <ValidationMessage For="@(() => formModel.Password)" class="text-danger" />
             </div>
             <button type="submit" class="btn btn-primary">Legg til</button>
         </EditForm>
@@ -49,23 +68,90 @@
 
 @code {
     private List<Judge> judges = new();
-    private Judge newJudge = new();
+    private Dictionary<string, string> judgeEmails = new();
+    private JudgeFormModel formModel = new();
+    private string errorMessage = string.Empty;
 
-    protected override void OnInitialized() => LoadJudges();
+    protected override async Task OnInitializedAsync()
+    {
+        LoadJudges();
+        await LoadJudgeEmailsAsync();
+    }
 
     private void LoadJudges() =>
         judges = JudgeRepository.GetAllJudges().ToList();
 
-    private void AddNewJudge()
+    private async Task LoadJudgeEmailsAsync()
     {
-        JudgeRepository.AddJudge(newJudge);
-        newJudge = new Judge();
-        LoadJudges();
+        judgeEmails.Clear();
+        foreach (var judge in judges.Where(j => !string.IsNullOrEmpty(j.UserId)))
+        {
+            var user = await UserManager.FindByIdAsync(judge.UserId!);
+            if (user != null)
+                judgeEmails[judge.JudgeId] = user.Email ?? string.Empty;
+        }
     }
 
-    private void DeleteJudge(string judgeId)
+    private async Task AddNewJudge()
     {
+        errorMessage = string.Empty;
+
+        var user = new ApplicationUser
+        {
+            UserName = formModel.Email,
+            Email = formModel.Email,
+            DisplayName = formModel.Name,
+            EmailConfirmed = true
+        };
+
+        var result = await UserManager.CreateAsync(user, formModel.Password);
+        if (!result.Succeeded)
+        {
+            errorMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+            return;
+        }
+
+        await UserManager.AddToRoleAsync(user, "Judge");
+
+        JudgeRepository.AddJudge(new Judge
+        {
+            JudgeId = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),
+            Name = formModel.Name,
+            UserId = user.Id.ToString()
+        });
+
+        formModel = new JudgeFormModel();
+        LoadJudges();
+        await LoadJudgeEmailsAsync();
+    }
+
+    private async Task DeleteJudge(string judgeId)
+    {
+        var judge = JudgeRepository.GetJudgeById(judgeId);
+        if (judge?.UserId is not null)
+        {
+            var user = await UserManager.FindByIdAsync(judge.UserId);
+            if (user is not null)
+                await UserManager.DeleteAsync(user);
+        }
+
         JudgeRepository.DeleteJudge(judgeId);
         LoadJudges();
+        await LoadJudgeEmailsAsync();
+    }
+
+    private class JudgeFormModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Navn er påkrevd")]
+        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Navn kan ikke overstige 100 tegn")]
+        public string Name { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "E-post er påkrevd")]
+        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Ugyldig e-postadresse")]
+        public string Email { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Passord er påkrevd")]
+        [System.ComponentModel.DataAnnotations.MinLength(8, ErrorMessage = "Passord må være minst 8 tegn")]
+        public string Password { get; set; } = string.Empty;
     }
 }

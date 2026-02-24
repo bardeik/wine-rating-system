@@ -3,47 +3,94 @@
 @inject IWineRatingRepository WineRatingRepository
 @inject IWineRepository WineRepository
 @inject IJudgeRepository JudgeRepository
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using System.Security.Claims
 
 <PageTitle>Vurderinger</PageTitle>
 
-<h3>Vurderinger</h3>
+<AuthorizeView Roles="Admin">
+    <h3>Vurderinger</h3>
+
+    <div class="card">
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Vurdering Id</th>
+                        <th>Utseende</th>
+                        <th>Nese</th>
+                        <th>Smak</th>
+                        <th>Dommer</th>
+                        <th>Vin</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var rating in wineRatings)
+                    {
+                        <tr>
+                            <td>@rating.WineRatingId</td>
+                            <td>@rating.Visuality</td>
+                            <td>@rating.Nose</td>
+                            <td>@rating.Taste</td>
+                            <td>@rating.JudgeId</td>
+                            <td>@(wines.FirstOrDefault(w => w.WineId == rating.WineId)?.RatingName ?? rating.WineId) – @(wines.FirstOrDefault(w => w.WineId == rating.WineId)?.Name ?? string.Empty)</td>
+                            <td>
+                                <button @onclick="() => DeleteWineRating(rating.WineRatingId)" class="btn btn-sm btn-danger">
+                                    <span>🗑️</span>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</AuthorizeView>
+
+<AuthorizeView Roles="Judge">
+    @if (currentJudge is not null)
+    {
+        <h3>Mine vurderinger</h3>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Utseende</th>
+                            <th>Nese</th>
+                            <th>Smak</th>
+                            <th>Vin</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var rating in wineRatings.Where(r => r.JudgeId == currentJudge.Name))
+                        {
+                            <tr>
+                                <td>@rating.Visuality</td>
+                                <td>@rating.Nose</td>
+                                <td>@rating.Taste</td>
+                                <td>@(wines.FirstOrDefault(w => w.WineId == rating.WineId)?.RatingName ?? rating.WineId) – @(wines.FirstOrDefault(w => w.WineId == rating.WineId)?.Name ?? string.Empty)</td>
+                                <td>
+                                    <button @onclick="() => DeleteWineRating(rating.WineRatingId)" class="btn btn-sm btn-danger">
+                                        <span>🗑️</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</AuthorizeView>
+
+<hr />
 
 <div class="card">
     <div class="card-body">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Vurdering Id</th>
-                    <th>Utseende</th>
-                    <th>Nese</th>
-                    <th>Smak</th>
-                    <th>Dommer</th>
-                    <th>Vin</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var rating in wineRatings)
-                {
-                    <tr>
-                        <td>@rating.WineRatingId</td>
-                        <td>@rating.Visuality</td>
-                        <td>@rating.Nose</td>
-                        <td>@rating.Taste</td>
-                        <td>@rating.JudgeId</td>
-                        <td>@(wines.FirstOrDefault(w => w.WineId == rating.WineId)?.RatingName ?? rating.WineId) – @(wines.FirstOrDefault(w => w.WineId == rating.WineId)?.Name ?? string.Empty)</td>
-                        <td>
-                            <button @onclick="() => DeleteWineRating(rating.WineRatingId)" class="btn btn-sm btn-danger">
-                                <span>🗑️</span>
-                            </button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-
-        <hr />
-
         <h4>Legg til ny vurdering</h4>
         <EditForm Model="@newRating" OnValidSubmit="@AddNewWineRating">
             <DataAnnotationsValidator />
@@ -75,13 +122,20 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Dommer</label>
-                <InputSelect @bind-Value="newRating.JudgeId" class="form-select">
-                    <option value="">-- Velg dommer --</option>
-                    @foreach (var judge in judges)
-                    {
-                        <option value="@judge.Name">@judge.Name</option>
-                    }
-                </InputSelect>
+                @if (currentJudge is not null)
+                {
+                    <input class="form-control" value="@currentJudge.Name" disabled />
+                }
+                else
+                {
+                    <InputSelect @bind-Value="newRating.JudgeId" class="form-select">
+                        <option value="">-- Velg dommer --</option>
+                        @foreach (var judge in judges)
+                        {
+                            <option value="@judge.Name">@judge.Name</option>
+                        }
+                    </InputSelect>
+                }
                 <ValidationMessage For="@(() => newRating.JudgeId)" class="text-danger" />
             </div>
             <div class="mb-3">
@@ -105,12 +159,21 @@
     private WineRating newRating = new();
     private List<Wine> wines = new();
     private List<Judge> judges = new();
+    private Judge? currentJudge;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         LoadWineRatings();
         wines = WineRepository.GetAllWines().ToList();
         judges = JudgeRepository.GetAllJudges().ToList();
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId is not null)
+            currentJudge = judges.FirstOrDefault(j => j.UserId == userId);
+
+        if (currentJudge is not null)
+            newRating.JudgeId = currentJudge.Name;
     }
 
     private void LoadWineRatings()
@@ -122,6 +185,8 @@
     {
         WineRatingRepository.AddWineRating(newRating);
         newRating = new WineRating();
+        if (currentJudge is not null)
+            newRating.JudgeId = currentJudge.Name;
         LoadWineRatings();
     }
 

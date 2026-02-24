@@ -83,7 +83,26 @@ using (var scope = app.Services.CreateScope())
     if (judgeRepo.GetAllJudges().Count == 0)
     {
         foreach (var name in new[] { "Frans", "Hans", "Ola", "Petter" })
-            judgeRepo.AddJudge(new Judge { JudgeId = ObjectId.GenerateNewId().ToString(), Name = name });
+        {
+            var email = $"{name.ToLower()}@wineapp.com";
+            var judgeUser = new ApplicationUser
+            {
+                UserName = email,
+                Email = email,
+                DisplayName = name,
+                EmailConfirmed = true
+            };
+            var result = userManager.CreateAsync(judgeUser, "Judge123!").GetAwaiter().GetResult();
+            if (result.Succeeded)
+                userManager.AddToRoleAsync(judgeUser, "Judge").GetAwaiter().GetResult();
+
+            judgeRepo.AddJudge(new Judge
+            {
+                JudgeId = ObjectId.GenerateNewId().ToString(),
+                Name = name,
+                UserId = result.Succeeded ? judgeUser.Id.ToString() : null
+            });
+        }
     }
 
     if (wineProducerRepo.GetAllWineProducers().Count == 0)

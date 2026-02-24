@@ -16,4 +16,7 @@ public class Judge
     [StringLength(100, ErrorMessage = "Navn kan ikke overstige 100 tegn")]
     [DisplayName("Navn")]
     public string Name { get; set; } = string.Empty;
+
+    [DisplayName("Bruker Id")]
+    public string? UserId { get; set; }
 }
