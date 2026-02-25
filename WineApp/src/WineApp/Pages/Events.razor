@@ -1,8 +1,14 @@
 @page "/events"
 @attribute [Authorize(Roles = "Admin")]
 @inject IEventRepository EventRepository
+@inject IWineRepository WineRepository
+@inject IWineRatingRepository WineRatingRepository
+@inject IWineResultRepository WineResultRepository
+@inject IWineProducerRepository WineProducerRepository
 @inject IWineNumberService WineNumberService
 @inject IScoreAggregationService ScoreAggregationService
+@inject IExportService ExportService
+@inject IJSRuntime JS
 @inject NavigationManager Navigation
 @using WineApp.Services
 
@@ -50,7 +56,7 @@
                             <td>@evt.RegistrationEndDate.ToString("dd.MM.yyyy")</td>
                             <td>@evt.FeePerWine.ToString("N0") NOK</td>
                             <td>
-                                <button class="btn btn-sm btn-info" @onclick="() => ViewEvent(evt)">
+                                <button class="btn btn-sm btn-info" @onclick="() => ViewDetails(evt)">
                                     👁️ Detaljer
                                 </button>
                                 <button class="btn btn-sm btn-warning" @onclick="() => EditEvent(evt)">
@@ -74,6 +80,9 @@
                                         ▶️ Aktiver
                                     </button>
                                 }
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => ExportEventData(evt.EventId)">
+                                    📥 Eksporter
+                                </button>
                             </td>
                         </tr>
                     }
@@ -269,45 +278,49 @@ else
 
     private void ShowAddForm()
     {
-        currentEvent = new Event
-        {
-            Year = DateTime.Now.Year,
-            RegistrationStartDate = DateTime.Now,
-            RegistrationEndDate = DateTime.Now.AddMonths(3),
-            PaymentDeadline = DateTime.Now.AddMonths(4),
-            DeliveryDeadline = DateTime.Now.AddMonths(5),
-            FeePerWine = 500,
-            BankName = "Landkreditt Bank",
-            AccountNumber = "1234.56.78901",
-            IBAN = "NO93 1234 5678 901",
-            BIC = "NOLILNOX",
-            OrganizationNumber = "123456789",
-            GoldThreshold = 17.0m,
-            SilverThreshold = 15.5m,
-            BronzeThreshold = 14.0m,
-            SpecialMeritThreshold = 12.0m,
-            AdjustedGoldThreshold = 15.0m,
-            AdjustedSilverThreshold = 14.0m,
-            AdjustedBronzeThreshold = 13.0m,
-            AdjustedSpecialMeritThreshold = 11.5m,
-            AppearanceGateValue = 1.8m,
-            NoseGateValue = 1.8m,
-            TasteGateValue = 5.8m,
-            OutlierThreshold = 4.0m,
-            IsActive = true
-        };
+        currentEvent = new Event();
         isEditing = false;
         showForm = true;
     }
 
     private void EditEvent(Event evt)
     {
-        currentEvent = evt;
+        currentEvent = new Event
+        {
+            EventId = evt.EventId,
+            Name = evt.Name,
+            Year = evt.Year,
+            RegistrationStartDate = evt.RegistrationStartDate,
+            RegistrationEndDate = evt.RegistrationEndDate,
+            PaymentDeadline = evt.PaymentDeadline,
+            DeliveryDeadline = evt.DeliveryDeadline,
+            IsActive = evt.IsActive,
+            FeePerWine = evt.FeePerWine,
+            AccountNumber = evt.AccountNumber,
+            IBAN = evt.IBAN,
+            BIC = evt.BIC,
+            BankName = evt.BankName,
+            OrganizationNumber = evt.OrganizationNumber,
+            GoldThreshold = evt.GoldThreshold,
+            SilverThreshold = evt.SilverThreshold,
+            BronzeThreshold = evt.BronzeThreshold,
+            SpecialMeritThreshold = evt.SpecialMeritThreshold,
+            AppearanceGateValue = evt.AppearanceGateValue,
+            NoseGateValue = evt.NoseGateValue,
+            TasteGateValue = evt.TasteGateValue,
+            OutlierThreshold = evt.OutlierThreshold,
+            AdjustedGoldThreshold = evt.AdjustedGoldThreshold,
+            AdjustedSilverThreshold = evt.AdjustedSilverThreshold,
+            AdjustedBronzeThreshold = evt.AdjustedBronzeThreshold,
+            AdjustedSpecialMeritThreshold = evt.AdjustedSpecialMeritThreshold,
+            DeliveryAddressNorway = evt.DeliveryAddressNorway,
+            ImporterInfoNordic = evt.ImporterInfoNordic
+        };
         isEditing = true;
         showForm = true;
     }
 
-    private void ViewEvent(Event evt)
+    private void ViewDetails(Event evt)
     {
         Navigation.NavigateTo($"/event-details/{evt.EventId}");
     }
@@ -395,6 +408,39 @@ else
         catch (Exception ex)
         {
             ShowStatus($"Feil ved beregning av resultater: {ex.Message}", "alert-danger");
+        }
+    }
+
+    private async Task ExportEventData(string eventId)
+    {
+        try
+        {
+            var eventData = events.FirstOrDefault(e => e.EventId == eventId);
+            if (eventData == null)
+            {
+                ShowStatus("Feil: Arrangement ikke funnet", "alert-danger");
+                return;
+            }
+
+            var wines = WineRepository.GetAllWines().Where(w => w.EventId == eventId).ToList();
+            var ratings = WineRatingRepository.GetAllWineRatings()
+                .Where(r => wines.Any(w => w.WineId == r.WineId))
+                .ToList();
+            var results = WineResultRepository.GetAllWineResults()
+                .Where(r => wines.Any(w => w.WineId == r.WineId))
+                .ToList();
+            var producers = WineProducerRepository.GetAllWineProducers().ToList();
+
+            var csv = ExportService.ExportEventData(eventData, wines, ratings, results, producers);
+            var bytes = ExportService.GetCSVBytes(csv);
+            var fileName = $"Arkiv_{eventData.Name}_{eventData.Year}.csv";
+            
+            await JS.InvokeVoidAsync("downloadFile", fileName, "text/csv", Convert.ToBase64String(bytes));
+            ShowStatus($"✓ {eventData.Name} eksportert", "alert-success");
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Feil ved eksport av data: {ex.Message}", "alert-danger");
         }
     }
 

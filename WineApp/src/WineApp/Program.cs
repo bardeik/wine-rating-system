@@ -58,6 +58,7 @@ builder.Services.AddSingleton<ITrophyService, TrophyService>();
 builder.Services.AddSingleton<IOutlierDetectionService, OutlierDetectionService>();
 builder.Services.AddSingleton<IWineValidationService, WineValidationService>();
 builder.Services.AddSingleton<IFlightService, FlightService>();
+builder.Services.AddSingleton<IExportService, ExportService>();
 
 var app = builder.Build();
 

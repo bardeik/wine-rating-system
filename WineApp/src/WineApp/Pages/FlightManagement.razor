@@ -3,6 +3,8 @@
 @inject IFlightService FlightService
 @inject IWineRepository WineRepository
 @inject IEventRepository EventRepository
+@inject IExportService ExportService
+@inject IJSRuntime JS
 @using WineApp.Services
 
 <PageTitle>Flight Management</PageTitle>
@@ -219,10 +221,21 @@ else
         StateHasChanged();
     }
 
-    private void ExportFlightList()
+    private async Task ExportFlightList()
     {
-        // TODO: Implement export to CSV/PDF
-        ShowStatus("ℹ️ Eksport-funksjonalitet kommer snart", "alert-info");
+        try
+        {
+            var csv = ExportService.ExportFlightList(flights, allWines);
+            var bytes = ExportService.GetCSVBytes(csv);
+            var fileName = $"Flights_{activeEvent?.Name}_{DateTime.Now:yyyyMMdd}.csv";
+            
+            await JS.InvokeVoidAsync("downloadFile", fileName, "text/csv", Convert.ToBase64String(bytes));
+            ShowStatus("✓ Flight-liste eksportert", "alert-success");
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Feil ved eksport: {ex.Message}", "alert-danger");
+        }
     }
 
     private void ShowStatus(string message, string cssClass)

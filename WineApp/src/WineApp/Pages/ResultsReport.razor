@@ -5,6 +5,8 @@
 @inject IWineResultRepository WineResultRepository
 @inject IWineProducerRepository WineProducerRepository
 @inject IScoreAggregationService ScoreAggregationService
+@inject IExportService ExportService
+@inject IJSRuntime JS
 @using WineApp.Services
 
 <PageTitle>Resultatliste</PageTitle>
@@ -422,10 +424,21 @@ else
         };
     }
 
-    private void ExportToCSV()
+    private async Task ExportToCSV()
     {
-        // TODO: Implement CSV export
-        ShowStatus("ℹ️ CSV-eksport kommer snart", "alert-info");
+        try
+        {
+            var csv = ExportService.ExportResultsToCSV(allResults, wines, producers);
+            var bytes = ExportService.GetCSVBytes(csv);
+            var fileName = $"Resultater_{activeEvent?.Name}_{DateTime.Now:yyyyMMdd}.csv";
+            
+            await JS.InvokeVoidAsync("downloadFile", fileName, "text/csv", Convert.ToBase64String(bytes));
+            ShowStatus("✓ CSV eksportert", "alert-success");
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Feil ved eksport: {ex.Message}", "alert-danger");
+        }
     }
 
     private void ShowStatus(string message, string cssClass)

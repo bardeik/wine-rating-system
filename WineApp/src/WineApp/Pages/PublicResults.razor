@@ -1,0 +1,322 @@
+@page "/public-results"
+@inject IEventRepository EventRepository
+@inject IWineRepository WineRepository
+@inject IWineResultRepository WineResultRepository
+@inject IWineProducerRepository WineProducerRepository
+@inject ITrophyService TrophyService
+@using WineApp.Services
+
+<PageTitle>Resultater - @(activeEvent?.Name ?? "Norsk Vinskue")</PageTitle>
+
+<style>
+    body {
+        background: #f8f9fa;
+    }
+    
+    .public-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 3rem 0;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .trophy-card {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+    
+    .trophy-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .medal-badge {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .results-table {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+</style>
+
+@if (activeEvent == null)
+{
+    <div class="container mt-5">
+        <div class="alert alert-info text-center">
+            <h4>Ingen aktive resultater tilgjengelig for øyeblikket</h4>
+            <p class="mb-0">Sjekk tilbake senere for oppdaterte resultater.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="public-header">
+        <div class="container">
+            <h1 class="display-4 text-center mb-3">@activeEvent.Name</h1>
+            <p class="lead text-center mb-0">Offisielle Resultater</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Trophy Winners -->
+        <h2 class="text-center mb-4">🏆 Pokalvinnere</h2>
+        
+        <div class="row mb-5">
+            <!-- Årets Vinbonde -->
+            <div class="col-md-4 mb-4">
+                <div class="card trophy-card h-100">
+                    <div class="card-body text-center">
+                        <div class="medal-badge">🏅</div>
+                        <h4>Årets Vinbonde</h4>
+                        <hr />
+                        @if (aaretsVinbonde.wine != null && aaretsVinbonde.result != null)
+                        {
+                            <h5 class="text-primary">@aaretsVinbonde.wine.Name</h5>
+                            <p class="text-muted mb-2">@GetProducerName(aaretsVinbonde.wine.WineProducerId)</p>
+                            <div class="display-6 text-success">@aaretsVinbonde.result.TotalScore.ToString("F1")</div>
+                            <p class="text-muted">poeng</p>
+                            <span class="badge bg-@GetClassificationColor(aaretsVinbonde.result.Classification) fs-6">
+                                @aaretsVinbonde.result.Classification
+                            </span>
+                        }
+                        else
+                        {
+                            <p class="text-muted">Ikke tildelt ennå</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Beste Norske -->
+            <div class="col-md-4 mb-4">
+                <div class="card trophy-card h-100">
+                    <div class="card-body text-center">
+                        <div class="medal-badge">🇳🇴</div>
+                        <h4>Beste Norske Vin</h4>
+                        <hr />
+                        @if (bestNorwegian.wine != null && bestNorwegian.result != null)
+                        {
+                            <h5 class="text-primary">@bestNorwegian.wine.Name</h5>
+                            <p class="text-muted mb-2">@GetProducerName(bestNorwegian.wine.WineProducerId)</p>
+                            <div class="display-6 text-success">@bestNorwegian.result.TotalScore.ToString("F1")</div>
+                            <p class="text-muted">poeng</p>
+                            <span class="badge bg-@GetClassificationColor(bestNorwegian.result.Classification) fs-6">
+                                @bestNorwegian.result.Classification
+                            </span>
+                        }
+                        else
+                        {
+                            <p class="text-muted">Ikke tildelt ennå</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Beste Nordiske -->
+            <div class="col-md-4 mb-4">
+                <div class="card trophy-card h-100">
+                    <div class="card-body text-center">
+                        <div class="medal-badge">🌍</div>
+                        <h4>Beste Nordiske Vin</h4>
+                        <hr />
+                        @if (bestNordic.wine != null && bestNordic.result != null)
+                        {
+                            <h5 class="text-primary">@bestNordic.wine.Name</h5>
+                            <p class="text-muted mb-2">@GetProducerName(bestNordic.wine.WineProducerId)</p>
+                            <div class="display-6 text-success">@bestNordic.result.TotalScore.ToString("F1")</div>
+                            <p class="text-muted">poeng</p>
+                            <span class="badge bg-@GetClassificationColor(bestNordic.result.Classification) fs-6">
+                                @bestNordic.result.Classification
+                            </span>
+                        }
+                        else
+                        {
+                            <p class="text-muted">Ikke tildelt ennå</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Medal Statistics -->
+        <div class="row mb-5">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div class="display-4">🥇</div>
+                        <h3 class="display-6">@goldCount</h3>
+                        <p class="text-muted mb-0">Gullmedaljer</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div class="display-4">🥈</div>
+                        <h3 class="display-6">@silverCount</h3>
+                        <p class="text-muted mb-0">Sølvmedaljer</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div class="display-4">🥉</div>
+                        <h3 class="display-6">@bronzeCount</h3>
+                        <p class="text-muted mb-0">Bronsemedaljer</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div class="display-4">🍷</div>
+                        <h3 class="display-6">@totalResults</h3>
+                        <p class="text-muted mb-0">Totalt viner</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Results Table -->
+        <h2 class="text-center mb-4">🌟 Topp Resultater</h2>
+        
+        <div class="results-table mb-5">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Plassering</th>
+                        <th>Vinnavn</th>
+                        <th>Produsent</th>
+                        <th>Kategori</th>
+                        <th class="text-end">Score</th>
+                        <th>Klassifisering</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var rank = 1;
+                        foreach (var item in TopResults.Take(20))
+                        {
+                            var wine = wines.FirstOrDefault(w => w.WineId == item.WineId);
+                            if (wine == null) continue;
+                            
+                            var producer = producers.FirstOrDefault(p => p.WineProducerId == wine.WineProducerId);
+                            
+                            <tr>
+                                <td>
+                                    @if (rank <= 3)
+                                    {
+                                        <span class="badge bg-@GetRankColor(rank) fs-6">@rank</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">@rank</span>
+                                    }
+                                </td>
+                                <td><strong>@wine.Name</strong></td>
+                                <td>@(producer?.WineyardName ?? "Ukjent")</td>
+                                <td>@wine.Category</td>
+                                <td class="text-end">
+                                    <strong class="text-success fs-5">@item.TotalScore.ToString("F1")</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-@GetClassificationColor(item.Classification)">
+                                        @item.Classification
+                                    </span>
+                                </td>
+                            </tr>
+                            rank++;
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-muted mb-4">
+            <p>Norsk Vinskue - @activeEvent.Year</p>
+            <p><small>Oppdatert: @DateTime.Now.ToString("dd.MM.yyyy HH:mm")</small></p>
+        </div>
+    </div>
+}
+
+@code {
+    private Event? activeEvent;
+    private List<WineResult> allResults = new();
+    private List<Wine> wines = new();
+    private List<WineProducer> producers = new();
+    
+    private (Wine? wine, WineResult? result) aaretsVinbonde;
+    private (Wine? wine, WineResult? result) bestNorwegian;
+    private (Wine? wine, WineResult? result) bestNordic;
+
+    private int goldCount => allResults.Count(r => r.Classification == "Gull");
+    private int silverCount => allResults.Count(r => r.Classification == "Sølv");
+    private int bronzeCount => allResults.Count(r => r.Classification == "Bronse");
+    private int totalResults => allResults.Count;
+
+    private IEnumerable<WineResult> TopResults =>
+        allResults
+            .Where(r => !string.IsNullOrEmpty(r.Classification) && r.Classification != "IkkeGodkjent")
+            .OrderByDescending(r => r.TotalScore);
+
+    protected override void OnInitialized()
+    {
+        LoadData();
+    }
+
+    private void LoadData()
+    {
+        activeEvent = EventRepository.GetActiveEvent();
+        wines = WineRepository.GetAllWines().ToList();
+        producers = WineProducerRepository.GetAllWineProducers().ToList();
+
+        if (activeEvent != null)
+        {
+            allResults = WineResultRepository.GetAllWineResults()
+                .Where(r => wines.Any(w => w.WineId == r.WineId && w.EventId == activeEvent.EventId))
+                .ToList();
+
+            // Load trophies
+            aaretsVinbonde = TrophyService.GetAaretsVinbonde(activeEvent.EventId);
+            bestNorwegian = TrophyService.GetBestNorwegianWine(activeEvent.EventId);
+            bestNordic = TrophyService.GetBestNordicWine(activeEvent.EventId);
+        }
+    }
+
+    private string GetProducerName(string producerId)
+    {
+        var producer = producers.FirstOrDefault(p => p.WineProducerId == producerId);
+        return producer?.WineyardName ?? "Ukjent";
+    }
+
+    private string GetClassificationColor(string classification)
+    {
+        return classification switch
+        {
+            "Gull" => "warning",
+            "Sølv" => "secondary",
+            "Bronse" => "bronze",
+            "Særlig" => "info",
+            _ => "light"
+        };
+    }
+
+    private string GetRankColor(int rank)
+    {
+        return rank switch
+        {
+            1 => "warning",
+            2 => "secondary",
+            3 => "bronze",
+            _ => "light"
+        };
+    }
+}

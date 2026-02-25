@@ -4,7 +4,10 @@
 @inject ITrophyService TrophyService
 @inject IWineRepository WineRepository
 @inject IWineResultRepository WineResultRepository
+@inject IWineProducerRepository WineProducerRepository
 @inject IScoreAggregationService ScoreAggregationService
+@inject IExportService ExportService
+@inject IJSRuntime JS
 @using WineApp.Services
 
 <PageTitle>Pokalrapporter</PageTitle>
@@ -352,9 +355,9 @@ else
 
     private string GetProducerName(string producerId)
     {
-        // This would use WineProducerRepository
-        // For now, return ID
-        return producerId;
+        var producer = WineProducerRepository.GetAllWineProducers()
+            .FirstOrDefault(p => p.WineProducerId == producerId);
+        return producer?.WineyardName ?? producerId;
     }
 
     private string GetClassificationColor(string classification)
@@ -368,16 +371,27 @@ else
         };
     }
 
-    private void PrintTrophyReport()
+    private async Task PrintTrophyReport()
     {
-        // TODO: Implement print functionality
-        ShowStatus("ℹ️ Utskrift kommer snart", "alert-info");
+        await JS.InvokeVoidAsync("printPage");
     }
 
-    private void ExportTrophyReport()
+    private async Task ExportTrophyReport()
     {
-        // TODO: Implement PDF export
-        ShowStatus("ℹ️ PDF-eksport kommer snart", "alert-info");
+        try
+        {
+            var producers = WineProducerRepository.GetAllWineProducers().ToList();
+            var csv = ExportService.ExportTrophiesToCSV(aaretsVinbonde, bestNorwegian, bestNordic, producers);
+            var bytes = ExportService.GetCSVBytes(csv);
+            var fileName = $"Pokaler_{activeEvent?.Name}_{DateTime.Now:yyyyMMdd}.csv";
+            
+            await JS.InvokeVoidAsync("downloadFile", fileName, "text/csv", Convert.ToBase64String(bytes));
+            ShowStatus("✓ CSV eksportert", "alert-success");
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Feil ved eksport: {ex.Message}", "alert-danger");
+        }
     }
 
     private void ShareResults()
