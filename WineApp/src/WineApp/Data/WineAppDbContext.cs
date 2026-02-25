@@ -23,4 +23,13 @@ public class WineMongoDbContext
 
     public IMongoCollection<WineRating> WineRatings =>
         _database.GetCollection<WineRating>("wineratings");
+
+    public IMongoCollection<Event> Events =>
+        _database.GetCollection<Event>("events");
+
+    public IMongoCollection<WineResult> WineResults =>
+        _database.GetCollection<WineResult>("wineresults");
+
+    public IMongoCollection<Payment> Payments =>
+        _database.GetCollection<Payment>("payments");
 }

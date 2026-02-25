@@ -16,9 +16,10 @@
             <thead>
                 <tr>
                     @if (isAdmin) { <th>Vurdering Id</th> }
-                    <th>Utseende</th>
-                    <th>Nese</th>
-                    <th>Smak</th>
+                    <th>Utseende (A)</th>
+                    <th>Nese (B)</th>
+                    <th>Smak (C)</th>
+                    <th>Total</th>
                     @if (isAdmin) { <th>Dommer</th> }
                     <th>Vin</th>
                     @if (canEdit) { <th></th> }
@@ -29,9 +30,10 @@
                 {
                     <tr>
                         @if (isAdmin) { <td>@rating.WineRatingId</td> }
-                        <td>@rating.Visuality</td>
-                        <td>@rating.Nose</td>
-                        <td>@rating.Taste</td>
+                        <td>@rating.Appearance.ToString("F1")</td>
+                        <td>@rating.Nose.ToString("F1")</td>
+                        <td>@rating.Taste.ToString("F1")</td>
+                        <td><strong>@rating.Total.ToString("F1")</strong></td>
                         @if (isAdmin) { <td>@rating.JudgeId</td> }
                         <td>@WineName(rating.WineId)</td>
                         @if (canEdit)
@@ -62,22 +64,27 @@
             <ValidationSummary class="text-danger" />
 
             <div class="mb-3">
-                <label class="form-label">Utseende (0-10): <strong>@newRating.Visuality</strong></label>
-                <input type="range" min="0" max="10" step="1" class="form-range"
-                       @bind="newRating.Visuality" @bind:event="oninput" />
-                <ValidationMessage For="@(() => newRating.Visuality)" class="text-danger" />
+                <label class="form-label">Utseende (A) 0.0-3.0: <strong>@newRating.Appearance.ToString("F1")</strong></label>
+                <input type="number" min="0" max="3" step="0.1" class="form-control"
+                       @bind="newRating.Appearance" @bind:event="oninput" />
+                <ValidationMessage For="@(() => newRating.Appearance)" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Nese (0-10): <strong>@newRating.Nose</strong></label>
-                <input type="range" min="0" max="10" step="1" class="form-range"
+                <label class="form-label">Nese (B) 0.0-4.0: <strong>@newRating.Nose.ToString("F1")</strong></label>
+                <input type="number" min="0" max="4" step="0.1" class="form-control"
                        @bind="newRating.Nose" @bind:event="oninput" />
                 <ValidationMessage For="@(() => newRating.Nose)" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Smak (0-10): <strong>@newRating.Taste</strong></label>
-                <input type="range" min="0" max="10" step="1" class="form-range"
+                <label class="form-label">Smak (C) 0.0-13.0: <strong>@newRating.Taste.ToString("F1")</strong></label>
+                <input type="number" min="0" max="13" step="0.1" class="form-control"
                        @bind="newRating.Taste" @bind:event="oninput" />
                 <ValidationMessage For="@(() => newRating.Taste)" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Kommentar (valgfritt)</label>
+                <InputTextArea @bind-Value="newRating.Comment" class="form-control" rows="3" />
+                <ValidationMessage For="@(() => newRating.Comment)" class="text-danger" />
             </div>
             <div class="mb-3">
                 <label class="form-label">Dommer</label>

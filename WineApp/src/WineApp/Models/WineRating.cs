@@ -16,19 +16,27 @@ public class WineRating
     public string WineRatingId { get; set; } = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
 
     [Required]
-    [Range(0, 10, ErrorMessage = "Utseende må være mellom 0 og 10")]
-    [DisplayName("Utseende")]
-    public int Visuality { get; set; }
+    [Range(0.0, 3.0, ErrorMessage = "Utseende (A) må være mellom 0.0 og 3.0")]
+    [DisplayName("Utseende (A)")]
+   [MongoDB.Bson.Serialization.Attributes.BsonElement("Visuality")]
+    public decimal Appearance { get; set; }
 
     [Required]
-    [Range(0, 10, ErrorMessage = "Nese må være mellom 0 og 10")]
-    [DisplayName("Nese")]
-    public int Nose { get; set; }
+    [Range(0.0, 4.0, ErrorMessage = "Nese (B) må være mellom 0.0 og 4.0")]
+    [DisplayName("Nese (B)")]
+    public decimal Nose { get; set; }
 
     [Required]
-    [Range(0, 10, ErrorMessage = "Smak må være mellom 0 og 10")]
-    [DisplayName("Smak")]
-    public int Taste { get; set; }
+    [Range(0.0, 13.0, ErrorMessage = "Smak (C) må være mellom 0.0 og 13.0")]
+    [DisplayName("Smak (C)")]
+    public decimal Taste { get; set; }
+
+    [DisplayName("Kommentar")]
+    [StringLength(1000, ErrorMessage = "Kommentar kan ikke overstige 1000 tegn")]
+    public string Comment { get; set; } = string.Empty;
+
+    [DisplayName("Total")]
+    public decimal Total => Math.Round(Appearance + Nose + Taste, 1);
 
     [Required(ErrorMessage = "Dommer-ID er påkrevd")]
     [StringLength(50, ErrorMessage = "Dommer-ID kan ikke overstige 50 tegn")]
@@ -38,4 +46,7 @@ public class WineRating
     [Required(ErrorMessage = "Vin-ID er påkrevd")]
     [DisplayName("Vin")]
     public string WineId { get; set; } = string.Empty;
+
+    [DisplayName("Vurderingsdato")]
+    public DateTime RatingDate { get; set; } = DateTime.UtcNow;
 }

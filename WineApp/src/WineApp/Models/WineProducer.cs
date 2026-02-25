@@ -14,6 +14,10 @@ public class WineProducer
     [MongoDB.Bson.Serialization.Attributes.BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
     public string WineProducerId { get; set; } = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
 
+    [StringLength(50, ErrorMessage = "Medlemsnummer kan ikke overstige 50 tegn")]
+    [DisplayName("Medlemsnummer")]
+    public string MemberNumber { get; set; } = string.Empty;
+
     [Required(ErrorMessage = "Vingårdsnavn er påkrevd")]
     [StringLength(100, ErrorMessage = "Vingårdsnavn kan ikke overstige 100 tegn")]
     [DisplayName("Vingårdsnavn")]
@@ -48,6 +52,12 @@ public class WineProducer
     [StringLength(20, ErrorMessage = "Postnummer kan ikke overstige 20 tegn")]
     [DisplayName("Postnummer")]
     public string Zip { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Telefon er påkrevd")]
+    [Phone(ErrorMessage = "Ugyldig telefonnummer")]
+    [StringLength(20, ErrorMessage = "Telefon kan ikke overstige 20 tegn")]
+    [DisplayName("Telefon")]
+    public string Phone { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "E-post er påkrevd")]
     [EmailAddress(ErrorMessage = "Ugyldig e-postadresse")]

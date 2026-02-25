@@ -45,6 +45,9 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddSingleton<IWineProducerRepository, WineProducerRepository>();
 builder.Services.AddSingleton<IWineRatingRepository, WineRatingRepository>();
 builder.Services.AddSingleton<IWineRepository, WineRepository>();
+builder.Services.AddSingleton<IEventRepository, EventRepository>();
+builder.Services.AddSingleton<IWineResultRepository, WineResultRepository>();
+builder.Services.AddSingleton<IPaymentRepository, PaymentRepository>();
 
 var app = builder.Build();
 
@@ -143,28 +146,32 @@ async Task SeedAsync(IServiceProvider services)
         var p2UserId = await CreateProducerUserAsync("grimstad@wineapp.com",  "Grimstad Vin og Vann AS");
         var p3UserId = await CreateProducerUserAsync("techwine@wineapp.com",  "Tech Wine AS");
 
-        var p1 = new WineProducer { WineProducerId = ObjectId.GenerateNewId().ToString(), UserId = p1UserId, Address = "Test adresse 21",  City = "Oslo",         Country = "Norway", Email = "oslo@wineapp.com",    OrganisationNumber = "111122223333445", ResponsibleProducerName = "Test Testersen", WineyardName = "Oslo Vest Wines AS",       Zip = "0125" };
-        var p2 = new WineProducer { WineProducerId = ObjectId.GenerateNewId().ToString(), UserId = p2UserId, Address = "Test adresse Ny 15", City = "Grimstad",     Country = "Norway", Email = "grimstad@wineapp.com", OrganisationNumber = "111122234567890", ResponsibleProducerName = "Petter Testeren", WineyardName = "Grimstad Vin og Vann AS", Zip = "4525" };
-        var p3 = new WineProducer { WineProducerId = ObjectId.GenerateNewId().ToString(), UserId = p3UserId, Address = "Agder Alle 21",      City = "Kristiansand", Country = "Norway", Email = "techwine@wineapp.com", OrganisationNumber = "222222223333445", ResponsibleProducerName = "Bård Eik",       WineyardName = "Tech Wine AS",             Zip = "4631" };
+        var p1 = new WineProducer { WineProducerId = ObjectId.GenerateNewId().ToString(), UserId = p1UserId, Address = "Test adresse 21",  City = "Oslo",         Country = "Norway", Email = "oslo@wineapp.com",    OrganisationNumber = "111122223333445", ResponsibleProducerName = "Test Testersen", WineyardName = "Oslo Vest Wines AS",       Zip = "0125", Phone = "+47 12345678" };
+        var p2 = new WineProducer { WineProducerId = ObjectId.GenerateNewId().ToString(), UserId = p2UserId, Address = "Test adresse Ny 15", City = "Grimstad",     Country = "Norway", Email = "grimstad@wineapp.com", OrganisationNumber = "111122234567890", ResponsibleProducerName = "Petter Testeren", WineyardName = "Grimstad Vin og Vann AS", Zip = "4525", Phone = "+47 23456789" };
+        var p3 = new WineProducer { WineProducerId = ObjectId.GenerateNewId().ToString(), UserId = p3UserId, Address = "Agder Alle 21",      City = "Kristiansand", Country = "Norway", Email = "techwine@wineapp.com", OrganisationNumber = "222222223333445", ResponsibleProducerName = "Bård Eik",       WineyardName = "Tech Wine AS",             Zip = "4631", Phone = "+47 34567890" };
         wineProducerRepo.AddWineProducer(p1);
         wineProducerRepo.AddWineProducer(p2);
         wineProducerRepo.AddWineProducer(p3);
 
         if (wineRepo.GetAllWines().Count == 0)
         {
-            var w1 = new Wine { WineId = ObjectId.GenerateNewId().ToString(), Name = "Polets røde", RatingName = "Hemmelig Polets Røde", WineProducerId = p1.WineProducerId, Category = WineCategory.Rodvin, Class = WineClass.Eldre, Group = WineGroup.A };
-            var w2 = new Wine { WineId = ObjectId.GenerateNewId().ToString(), Name = "Polets andre røde", RatingName = "Hemmelig Andre Polets Røde", WineProducerId = p1.WineProducerId, Category = WineCategory.Rodvin, Class = WineClass.Unge, Group = WineGroup.C };
-            var w3 = new Wine { WineId = ObjectId.GenerateNewId().ToString(), Name = "Polets røde", RatingName = "Hemmelig Tredje Polets Røde", WineProducerId = p2.WineProducerId, Category = WineCategory.Rodvin, Class = WineClass.Unge, Group = WineGroup.B };
+            var w1 = new Wine { WineId = ObjectId.GenerateNewId().ToString(), Name = "Polets røde", RatingName = "Hemmelig Polets Røde", WineProducerId = p1.WineProducerId, Category = WineCategory.Rodvin, Class = WineClass.Eldre, Group = WineGroup.A1, Vintage = 2023, AlcoholPercentage = 13.5m, Country = "Norge", IsVinbonde = true };
+            var w2 = new Wine { WineId = ObjectId.GenerateNewId().ToString(), Name = "Polets andre røde", RatingName = "Hemmelig Andre Polets Røde", WineProducerId = p1.WineProducerId, Category = WineCategory.Rodvin, Class = WineClass.Unge, Group = WineGroup.C, Vintage = 2024, AlcoholPercentage = 12.0m, Country = "Norge", IsVinbonde = false };
+            var w3 = new Wine { WineId = ObjectId.GenerateNewId().ToString(), Name = "Polets røde", RatingName = "Hemmelig Tredje Polets Røde", WineProducerId = p2.WineProducerId, Category = WineCategory.Rodvin, Class = WineClass.Unge, Group = WineGroup.B, Vintage = 2024, AlcoholPercentage = 11.5m, Country = "Norge", IsVinbonde = true };
+            w1.GrapeBlend.Add("Rondo", 100m);
+            w2.GrapeBlend.Add("Solaris", 60m);
+            w2.GrapeBlend.Add("Phoenix", 40m);
+            w3.GrapeBlend.Add("Regent", 100m);
             wineRepo.AddWine(w1);
             wineRepo.AddWine(w2);
             wineRepo.AddWine(w3);
 
             if (wineRatingRepo.GetAllWineRatings().Count == 0)
             {
-                wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Hans",   Nose = 4, Taste = 5, Visuality = 5, WineId = w1.WineId });
-                wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Petter", Nose = 3, Taste = 4, Visuality = 3, WineId = w1.WineId });
-                wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Frans",  Nose = 5, Taste = 4, Visuality = 6, WineId = w1.WineId });
-                wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Ola",    Nose = 5, Taste = 4, Visuality = 4, WineId = w1.WineId });
+                wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Hans",   Nose = 2.5m, Taste = 8.5m, Appearance = 2.0m, WineId = w1.WineId });
+                wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Petter", Nose = 2.0m, Taste = 7.5m, Appearance = 1.8m, WineId = w1.WineId });
+                wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Frans",  Nose = 3.0m, Taste = 9.0m, Appearance = 2.5m, WineId = w1.WineId });
+                wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Ola",    Nose = 2.8m, Taste = 8.0m, Appearance = 2.2m, WineId = w1.WineId });
             }
         }
     }
