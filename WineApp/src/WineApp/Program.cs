@@ -57,6 +57,7 @@ builder.Services.AddSingleton<IWineNumberService, WineNumberService>();
 builder.Services.AddSingleton<ITrophyService, TrophyService>();
 builder.Services.AddSingleton<IOutlierDetectionService, OutlierDetectionService>();
 builder.Services.AddSingleton<IWineValidationService, WineValidationService>();
+builder.Services.AddSingleton<IFlightService, FlightService>();
 
 var app = builder.Build();
 

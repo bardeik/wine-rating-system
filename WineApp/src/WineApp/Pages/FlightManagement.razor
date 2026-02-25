@@ -1,0 +1,233 @@
+@page "/flight-management"
+@attribute [Authorize(Roles = "Admin")]
+@inject IFlightService FlightService
+@inject IWineRepository WineRepository
+@inject IEventRepository EventRepository
+@using WineApp.Services
+
+<PageTitle>Flight Management</PageTitle>
+
+<h3>Flight Management</h3>
+
+@if (activeEvent == null)
+{
+    <div class="alert alert-warning">
+        <h4>Ingen aktivt arrangement</h4>
+        <p>Det finnes ingen aktive arrangementer for øyeblikket.</p>
+    </div>
+}
+else
+{
+    <div class="alert alert-info mb-4">
+        <h5>@activeEvent.Name</h5>
+        <p class="mb-0">
+            <strong>Totalt viner:</strong> @totalWines | 
+            <strong>Betalte:</strong> @paidWines | 
+            <strong>Med vinnummer:</strong> @numberedWines
+        </p>
+    </div>
+
+    <!-- Actions -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Auto-organisering</h6>
+                    <div class="input-group mb-2">
+                        <span class="input-group-text">Viner per flight:</span>
+                        <input type="number" class="form-control" @bind="winesPerFlight" min="4" max="10" />
+                        <button class="btn btn-primary" @onclick="OrganizeSimple">
+                            📋 Organiser (enkelt)
+                        </button>
+                    </div>
+                    <button class="btn btn-success w-100" @onclick="OrganizeByCategory">
+                        🎯 Auto-organiser (kategori/gruppe)
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <h6>Handlinger</h6>
+                    <button class="btn btn-warning w-100 mb-2" @onclick="ClearFlights">
+                        🗑️ Slett alle flights
+                    </button>
+                    <button class="btn btn-info w-100" @onclick="ExportFlightList">
+                        📄 Eksporter flight-liste
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flight List -->
+    @if (flights.Any())
+    {
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Flights (@flights.Count)</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    @foreach (var flight in flights)
+                    {
+                        var wines = FlightService.GetWinesInFlight(flight.FlightId);
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <strong>@flight.FlightName</strong>
+                                    <span class="badge bg-secondary">@wines.Count viner</span>
+                                </div>
+                                <div class="card-body">
+                                    @if (flight.Category.HasValue)
+                                    {
+                                        <p class="mb-2">
+                                            <small class="text-muted">
+                                                @flight.Category @(flight.Group.HasValue ? $"({flight.Group})" : "")
+                                            </small>
+                                        </p>
+                                    }
+                                    
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Nr.</th>
+                                                <th>Navn</th>
+                                                <th>Kategori</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var wine in wines)
+                                            {
+                                                <tr>
+                                                    <td><strong>@wine.WineNumber</strong></td>
+                                                    <td>@wine.RatingName</td>
+                                                    <td><small>@wine.Category</small></td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteFlight(flight.FlightId)">
+                                        🗑️ Slett
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <h5>Ingen flights opprettet ennå</h5>
+            <p class="mb-0">Bruk knappene ovenfor for å organisere viner i flights.</p>
+        </div>
+    }
+}
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <div class="alert @statusClass alert-dismissible mt-3">
+        @statusMessage
+        <button type="button" class="btn-close" @onclick="() => statusMessage = string.Empty"></button>
+    </div>
+}
+
+@code {
+    private Event? activeEvent;
+    private List<Flight> flights = new();
+    private List<Wine> allWines = new();
+    
+    private int winesPerFlight = 6;
+    private string statusMessage = string.Empty;
+    private string statusClass = "alert-info";
+
+    private int totalWines => allWines.Count(w => w.EventId == activeEvent?.EventId);
+    private int paidWines => allWines.Count(w => w.EventId == activeEvent?.EventId && w.IsPaid);
+    private int numberedWines => allWines.Count(w => w.EventId == activeEvent?.EventId && w.WineNumber.HasValue);
+
+    protected override void OnInitialized()
+    {
+        LoadData();
+    }
+
+    private void LoadData()
+    {
+        activeEvent = EventRepository.GetActiveEvent();
+        allWines = WineRepository.GetAllWines().ToList();
+        
+        if (activeEvent != null)
+        {
+            flights = FlightService.GetFlightsForEvent(activeEvent.EventId);
+        }
+    }
+
+    private void OrganizeSimple()
+    {
+        if (activeEvent == null) return;
+
+        try
+        {
+            flights = FlightService.OrganizeFlights(activeEvent.EventId, winesPerFlight);
+            ShowStatus($"✓ Opprettet {flights.Count} flights med {winesPerFlight} viner hver", "alert-success");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Feil ved organisering: {ex.Message}", "alert-danger");
+        }
+    }
+
+    private void OrganizeByCategory()
+    {
+        if (activeEvent == null) return;
+
+        try
+        {
+            flights = FlightService.AutoOrganizeFlights(activeEvent.EventId);
+            ShowStatus($"✓ Auto-organisert {flights.Count} flights etter kategori og gruppe", "alert-success");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Feil ved auto-organisering: {ex.Message}", "alert-danger");
+        }
+    }
+
+    private void ClearFlights()
+    {
+        if (activeEvent == null) return;
+
+        var flightIds = flights.Select(f => f.FlightId).ToList();
+        foreach (var flightId in flightIds)
+        {
+            FlightService.DeleteFlight(flightId);
+        }
+
+        flights.Clear();
+        ShowStatus("✓ Alle flights slettet", "alert-success");
+        StateHasChanged();
+    }
+
+    private void DeleteFlight(string flightId)
+    {
+        FlightService.DeleteFlight(flightId);
+        LoadData();
+        ShowStatus("✓ Flight slettet", "alert-success");
+        StateHasChanged();
+    }
+
+    private void ExportFlightList()
+    {
+        // TODO: Implement export to CSV/PDF
+        ShowStatus("ℹ️ Eksport-funksjonalitet kommer snart", "alert-info");
+    }
+
+    private void ShowStatus(string message, string cssClass)
+    {
+        statusMessage = message;
+        statusClass = cssClass;
+    }
+}

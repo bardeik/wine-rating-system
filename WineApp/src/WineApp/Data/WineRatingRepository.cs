@@ -22,6 +22,9 @@ public class WineRatingRepository : IWineRatingRepository
         return wineRating.WineRatingId;
     }
 
+    public void UpdateWineRating(WineRating wineRating) =>
+        _collection.ReplaceOne(r => r.WineRatingId == wineRating.WineRatingId, wineRating);
+
     public void DeleteWineRating(string id) =>
         _collection.DeleteOne(r => r.WineRatingId == id);
 }

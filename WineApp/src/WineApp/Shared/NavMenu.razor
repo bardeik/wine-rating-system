@@ -40,8 +40,13 @@
                 </div>
             </Authorized>
         </AuthorizeView>
-        <AuthorizeView Roles="Admin,Judge">
+        <AuthorizeView Roles="Judge,Admin">
             <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="judge-rating">
+                        <span class="oi oi-tablet" aria-hidden="true"></span> Dombedømming
+                    </NavLink>
+                </div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="wineratings">
                         <span class="oi oi-star" aria-hidden="true"></span> Vurderinger
@@ -69,6 +74,11 @@
         </AuthorizeView>
         <AuthorizeView Roles="Admin">
             <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="flight-management">
+                        <span class="oi oi-list-rich" aria-hidden="true"></span> Flight Management
+                    </NavLink>
+                </div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="events">
                         <span class="oi oi-calendar" aria-hidden="true"></span> Arrangementer

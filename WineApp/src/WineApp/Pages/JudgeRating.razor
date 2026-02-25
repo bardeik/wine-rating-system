@@ -1,0 +1,523 @@
+@page "/judge-rating"
+@attribute [Authorize(Roles = "Judge,Admin")]
+@inject IWineRepository WineRepository
+@inject IWineRatingRepository WineRatingRepository
+@inject IFlightService FlightService
+@inject IEventRepository EventRepository
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+@using System.Security.Claims
+@using WineApp.Services
+
+<PageTitle>Dombedøming</PageTitle>
+
+<style>
+    /* Tablet-optimized styles */
+    .judge-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 1rem;
+    }
+    
+    .wine-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        touch-action: pan-y;
+    }
+    
+    .rating-input {
+        font-size: 2rem;
+        padding: 1.5rem;
+        text-align: center;
+        border: 3px solid #dee2e6;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        width: 100%;
+    }
+    
+    .rating-input:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .score-label {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    
+    .score-range {
+        font-size: 1rem;
+        color: #6c757d;
+        display: block;
+        margin-bottom: 1rem;
+    }
+    
+    .wine-number-badge {
+        font-size: 3rem;
+        padding: 1rem 2rem;
+        border-radius: 15px;
+    }
+    
+    .progress-indicator {
+        height: 10px;
+        border-radius: 5px;
+        margin-bottom: 2rem;
+    }
+    
+    .nav-button {
+        font-size: 1.5rem;
+        padding: 1.5rem 3rem;
+        border-radius: 10px;
+        min-width: 150px;
+    }
+    
+    .flight-selector {
+        font-size: 1.3rem;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+    
+    .total-score-display {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #0d6efd;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        text-align: center;
+        margin-top: 1rem;
+    }
+    
+    .comment-textarea {
+        font-size: 1.2rem;
+        padding: 1rem;
+        border-radius: 10px;
+        min-height: 120px;
+    }
+    
+    .auto-save-indicator {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        z-index: 1000;
+    }
+    
+    @@media (max-width: 768px) {
+        .wine-card {
+            padding: 1.5rem;
+        }
+        
+        .rating-input {
+            font-size: 1.5rem;
+            padding: 1rem;
+        }
+        
+        .nav-button {
+            font-size: 1.2rem;
+            padding: 1rem 2rem;
+        }
+    }
+</style>
+
+<div class="judge-container">
+    @if (activeEvent == null)
+    {
+        <div class="alert alert-warning">
+            <h4>Ingen aktivt arrangement</h4>
+            <p>Det finnes ingen aktive arrangementer for øyeblikket.</p>
+        </div>
+    }
+    else if (flights.Count == 0)
+    {
+        <div class="alert alert-info">
+            <h4>Ingen flights tilgjengelig</h4>
+            <p>Ingen viner er organisert i flights ennå. Kontakt administrator for å få organisert flights.</p>
+        </div>
+    }
+    else
+    {
+        <!-- Flight Selector -->
+        <div class="mb-4">
+            <label class="form-label score-label">Velg Flight</label>
+            <select class="form-select flight-selector" @bind="selectedFlightId" @bind:after="LoadCurrentFlight">
+                @foreach (var flight in flights)
+                {
+                    var ratedCount = GetRatedWinesInFlight(flight.FlightId);
+                    var totalCount = flight.WineIds.Count;
+                    <option value="@flight.FlightId">
+                        @flight.FlightName (@ratedCount/@totalCount vurdert)
+                    </option>
+                }
+            </select>
+        </div>
+
+        @if (currentWine != null)
+        {
+            <!-- Progress Indicator -->
+            <div class="progress progress-indicator">
+                <div class="progress-bar @(isAllRated ? "bg-success" : "bg-primary")" 
+                     style="width: @progressPercentage%">
+                    @currentWineIndex / @currentFlightWines.Count
+                </div>
+            </div>
+
+            <!-- Wine Card -->
+            <div class="wine-card" @ref="wineCardRef">
+                <!-- Wine Number -->
+                <div class="text-center mb-4">
+                    <span class="badge wine-number-badge @(hasExistingRating ? "bg-success" : "bg-primary")">
+                        Vin #@currentWine.WineNumber
+                    </span>
+                </div>
+
+                <!-- Wine Info (hidden for blind tasting) -->
+                <div class="text-center mb-4">
+                    <p class="text-muted mb-1">@currentWine.RatingName</p>
+                    <p class="text-muted mb-0">
+                        <small>
+                            @currentWine.Category | @currentWine.Class | @currentWine.Group
+                        </small>
+                    </p>
+                </div>
+
+                <!-- Rating Inputs -->
+                <div class="row mb-4">
+                    <div class="col-md-4 mb-3">
+                        <label class="score-label">A - Utseende</label>
+                        <span class="score-range">0.0 - 3.0</span>
+                        <input type="number" 
+                               class="rating-input @(currentRating.Appearance < 1.8m ? "border-warning" : "")"
+                               @bind="currentRating.Appearance"
+                               @bind:after="CalculateTotal"
+                               step="0.1" 
+                               min="0" 
+                               max="3"
+                               @onfocus="@(() => SelectInputContent())" />
+                        @if (currentRating.Appearance < 1.8m && currentRating.Appearance > 0)
+                        {
+                            <small class="text-warning">⚠️ Under gate-verdi (1.8)</small>
+                        }
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="score-label">B - Nese</label>
+                        <span class="score-range">0.0 - 4.0</span>
+                        <input type="number" 
+                               class="rating-input @(currentRating.Nose < 1.8m ? "border-warning" : "")"
+                               @bind="currentRating.Nose"
+                               @bind:after="CalculateTotal"
+                               step="0.1" 
+                               min="0" 
+                               max="4"
+                               @onfocus="@(() => SelectInputContent())" />
+                        @if (currentRating.Nose < 1.8m && currentRating.Nose > 0)
+                        {
+                            <small class="text-warning">⚠️ Under gate-verdi (1.8)</small>
+                        }
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="score-label">C - Smak</label>
+                        <span class="score-range">0.0 - 13.0</span>
+                        <input type="number" 
+                               class="rating-input @(currentRating.Taste < 5.8m ? "border-warning" : "")"
+                               @bind="currentRating.Taste"
+                               @bind:after="CalculateTotal"
+                               step="0.1" 
+                               min="0" 
+                               max="13"
+                               @onfocus="@(() => SelectInputContent())" />
+                        @if (currentRating.Taste < 5.8m && currentRating.Taste > 0)
+                        {
+                            <small class="text-warning">⚠️ Under gate-verdi (5.8)</small>
+                        }
+                    </div>
+                </div>
+
+                <!-- Total Score Display -->
+                <div class="total-score-display">
+                    Total: @totalScore.ToString("F1") poeng
+                </div>
+
+                <!-- Comment -->
+                <div class="mb-4">
+                    <label class="score-label">Kommentar</label>
+                    <textarea class="form-control comment-textarea"
+                              @bind="currentRating.Comment"
+                              placeholder="Valgfri kommentar om vinen..."></textarea>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <button class="btn btn-secondary nav-button" 
+                            @onclick="PreviousWine"
+                            disabled="@(currentWineIndex <= 1)">
+                        ← Forrige
+                    </button>
+
+                    <button class="btn btn-success nav-button" 
+                            @onclick="SaveAndNext">
+                        @(currentWineIndex < currentFlightWines.Count ? "Lagre & Neste →" : "Lagre & Ferdig ✓")
+                    </button>
+                </div>
+
+                <!-- Keyboard Shortcuts Help -->
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        Hurtigtaster: Tab = neste felt | Enter = lagre & neste
+                    </small>
+                </div>
+            </div>
+
+            <!-- Previous Ratings History -->
+            @if (hasExistingRating && previousRating != null)
+            {
+                <div class="alert alert-info">
+                    <h6>Tidligere vurdering:</h6>
+                    <p class="mb-0">
+                        <strong>A:</strong> @previousRating.Appearance.ToString("F1") | 
+                        <strong>B:</strong> @previousRating.Nose.ToString("F1") | 
+                        <strong>C:</strong> @previousRating.Taste.ToString("F1") | 
+                        <strong>Total:</strong> @((previousRating.Appearance + previousRating.Nose + previousRating.Taste).ToString("F1"))
+                    </p>
+                    @if (!string.IsNullOrEmpty(previousRating.Comment))
+                    {
+                        <p class="mb-0 mt-2"><em>@previousRating.Comment</em></p>
+                    }
+                </div>
+            }
+        }
+    }
+</div>
+
+<!-- Auto-save Indicator -->
+@if (!string.IsNullOrEmpty(autoSaveStatus))
+{
+    <div class="auto-save-indicator @autoSaveClass">
+        @autoSaveStatus
+    </div>
+}
+
+@code {
+    private Event? activeEvent;
+    private List<Flight> flights = new();
+    private string selectedFlightId = string.Empty;
+    private List<Wine> currentFlightWines = new();
+    private Wine? currentWine;
+    private int currentWineIndex = 1;
+    
+    private WineRating currentRating = new();
+    private WineRating? previousRating;
+    private bool hasExistingRating;
+    private decimal totalScore = 0;
+    
+    private string judgeId = string.Empty;
+    private string autoSaveStatus = string.Empty;
+    private string autoSaveClass = string.Empty;
+    private System.Threading.Timer? autoSaveTimer;
+    
+    private ElementReference wineCardRef;
+
+    private int progressPercentage => currentFlightWines.Count > 0 
+        ? (currentWineIndex * 100 / currentFlightWines.Count) 
+        : 0;
+    private bool isAllRated => GetRatedWinesInFlight(selectedFlightId) == currentFlightWines.Count;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        judgeId = user.FindFirst(ClaimTypes.Name)?.Value ?? user.Identity?.Name ?? "Unknown";
+
+        LoadData();
+    }
+
+    private void LoadData()
+    {
+        activeEvent = EventRepository.GetActiveEvent();
+        
+        if (activeEvent != null)
+        {
+            flights = FlightService.GetFlightsForEvent(activeEvent.EventId);
+            
+            if (flights.Any())
+            {
+                selectedFlightId = flights.First().FlightId;
+                LoadCurrentFlight();
+            }
+        }
+    }
+
+    private void LoadCurrentFlight()
+    {
+        if (string.IsNullOrEmpty(selectedFlightId)) return;
+
+        currentFlightWines = FlightService.GetWinesInFlight(selectedFlightId);
+        currentWineIndex = 1;
+        
+        if (currentFlightWines.Any())
+        {
+            LoadWine(0);
+        }
+    }
+
+    private void LoadWine(int index)
+    {
+        if (index < 0 || index >= currentFlightWines.Count) return;
+
+        currentWine = currentFlightWines[index];
+        currentWineIndex = index + 1;
+
+        // Load existing rating if any
+        var existingRating = WineRatingRepository.GetAllWineRatings()
+            .FirstOrDefault(r => r.WineId == currentWine.WineId && r.JudgeId == judgeId);
+
+        if (existingRating != null)
+        {
+            currentRating = new WineRating
+            {
+                WineRatingId = existingRating.WineRatingId,
+                WineId = existingRating.WineId,
+                JudgeId = judgeId,
+                Appearance = existingRating.Appearance,
+                Nose = existingRating.Nose,
+                Taste = existingRating.Taste,
+                Comment = existingRating.Comment,
+                RatingDate = existingRating.RatingDate
+            };
+            
+            previousRating = existingRating;
+            hasExistingRating = true;
+        }
+        else
+        {
+            currentRating = new WineRating
+            {
+                WineId = currentWine.WineId,
+                JudgeId = judgeId,
+                RatingDate = DateTime.UtcNow
+            };
+            
+            previousRating = null;
+            hasExistingRating = false;
+        }
+
+        CalculateTotal();
+    }
+
+    private void CalculateTotal()
+    {
+        totalScore = currentRating.Appearance + currentRating.Nose + currentRating.Taste;
+        TriggerAutoSave();
+    }
+
+    private void TriggerAutoSave()
+    {
+        autoSaveTimer?.Dispose();
+        autoSaveTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                SaveCurrentRating(silent: true);
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(2), Timeout.InfiniteTimeSpan);
+    }
+
+    private void SaveCurrentRating(bool silent = false)
+    {
+        if (currentWine == null) return;
+
+        try
+        {
+            if (hasExistingRating && !string.IsNullOrEmpty(currentRating.WineRatingId))
+            {
+                WineRatingRepository.UpdateWineRating(currentRating);
+            }
+            else
+            {
+                currentRating.WineRatingId = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
+                WineRatingRepository.AddWineRating(currentRating);
+                hasExistingRating = true;
+            }
+
+            if (!silent)
+            {
+                ShowAutoSaveStatus("✓ Lagret", "bg-success text-white");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowAutoSaveStatus($"✗ Feil: {ex.Message}", "bg-danger text-white");
+        }
+    }
+
+    private void SaveAndNext()
+    {
+        SaveCurrentRating();
+        
+        if (currentWineIndex < currentFlightWines.Count)
+        {
+            LoadWine(currentWineIndex);
+        }
+        else
+        {
+            ShowAutoSaveStatus("✓ Flight fullført!", "bg-success text-white");
+        }
+    }
+
+    private void PreviousWine()
+    {
+        if (currentWineIndex > 1)
+        {
+            SaveCurrentRating();
+            LoadWine(currentWineIndex - 2);
+        }
+    }
+
+    private void ShowAutoSaveStatus(string message, string cssClass)
+    {
+        autoSaveStatus = message;
+        autoSaveClass = cssClass;
+        
+        Task.Delay(3000).ContinueWith(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                autoSaveStatus = string.Empty;
+                StateHasChanged();
+            });
+        });
+    }
+
+    private int GetRatedWinesInFlight(string flightId)
+    {
+        var flight = flights.FirstOrDefault(f => f.FlightId == flightId);
+        if (flight == null) return 0;
+
+        var allRatings = WineRatingRepository.GetAllWineRatings()
+            .Where(r => r.JudgeId == judgeId);
+
+        return flight.WineIds.Count(wineId => allRatings.Any(r => r.WineId == wineId));
+    }
+
+    private void SelectInputContent()
+    {
+        // Could use JS interop to select input content for easier editing
+    }
+
+    public void Dispose()
+    {
+        autoSaveTimer?.Dispose();
+    }
+}
