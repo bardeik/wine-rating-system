@@ -76,6 +76,20 @@ async Task SeedAsync(IServiceProvider services)
         };
         await userManager.CreateAsync(admin, "Admin123!");
         await userManager.AddToRoleAsync(admin, "Admin");
+        await userManager.AddToRoleAsync(admin, "Viewer");
+    }
+
+    if (await userManager.FindByEmailAsync("viewer@wineapp.com") is null)
+    {
+        var viewer = new ApplicationUser
+        {
+            UserName = "viewer@wineapp.com",
+            Email = "viewer@wineapp.com",
+            DisplayName = "Gjest",
+            EmailConfirmed = true
+        };
+        await userManager.CreateAsync(viewer, "Viewer123!");
+        await userManager.AddToRoleAsync(viewer, "Viewer");
     }
 
     // Seed sample data if collections are empty
@@ -99,7 +113,10 @@ async Task SeedAsync(IServiceProvider services)
             };
             var result = await userManager.CreateAsync(judgeUser, "Judge123!");
             if (result.Succeeded)
+            {
                 await userManager.AddToRoleAsync(judgeUser, "Judge");
+                await userManager.AddToRoleAsync(judgeUser, "Viewer");
+            }
         }
     }
 
@@ -118,6 +135,7 @@ async Task SeedAsync(IServiceProvider services)
             var r = await userManager.CreateAsync(u, "Producer123!");
             if (!r.Succeeded) return null;
             await userManager.AddToRoleAsync(u, "WineProducer");
+            await userManager.AddToRoleAsync(u, "Viewer");
             return u.Id.ToString();
         }
 
