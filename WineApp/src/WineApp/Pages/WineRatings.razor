@@ -2,14 +2,14 @@
 @attribute [Authorize]
 @inject IWineRatingRepository WineRatingRepository
 @inject IWineRepository WineRepository
-@inject IJudgeRepository JudgeRepository
+@inject UserManager<ApplicationUser> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @using System.Security.Claims
 
 <PageTitle>Vurderinger</PageTitle>
 
 @* ── Ratings table (Admin sees all + extra columns, Judge sees own only) ── *@
-@if (isAdmin || (isJudge && currentJudge is not null))
+@if (isAdmin || (isJudge && currentUser is not null))
 {
     <h3>@(isAdmin ? "Vurderinger" : "Mine vurderinger")</h3>
     <div class="card mb-3">
@@ -79,17 +79,17 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Dommer</label>
-                @if (currentJudge is not null)
+                @if (currentUser is not null && isJudge)
                 {
-                    <input class="form-control" value="@currentJudge.Name" disabled />
+                    <input class="form-control" value="@(currentUser.DisplayName ?? currentUser.UserName)" disabled />
                 }
                 else
                 {
                     <InputSelect @bind-Value="newRating.JudgeId" class="form-select">
                         <option value="">-- Velg dommer --</option>
-                        @foreach (var judge in judges)
+                        @foreach (var u in judgeUsers)
                         {
-                            <option value="@judge.Name">@judge.Name</option>
+                            <option value="@(u.DisplayName ?? u.UserName)">@(u.DisplayName ?? u.UserName)</option>
                         }
                     </InputSelect>
                 }
@@ -116,19 +116,21 @@
     private List<WineRating> wineRatings = new();
     private WineRating newRating = new();
     private List<Wine> wines = new();
-    private List<Judge> judges = new();
+    private List<ApplicationUser> judgeUsers = new();
 
     // ── Auth flags (resolved once in OnInitializedAsync) ──
     private bool isAdmin;
     private bool isJudge;
-    private Judge? currentJudge;
+    private ApplicationUser? currentUser;
 
     // ── Lifecycle ──────────────────────────────────────────
     protected override async Task OnInitializedAsync()
     {
         LoadWineRatings();
         wines = WineRepository.GetAllWines().ToList();
-        judges = JudgeRepository.GetAllJudges().ToList();
+        judgeUsers = (await UserManager.GetUsersInRoleAsync("Judge"))
+            .OrderBy(u => u.DisplayName)
+            .ToList();
 
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
@@ -138,15 +140,15 @@
 
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (userId is not null)
-            currentJudge = judges.FirstOrDefault(j => j.UserId == userId);
+            currentUser = await UserManager.FindByIdAsync(userId);
 
-        if (currentJudge is not null)
-            newRating.JudgeId = currentJudge.Name;
+        if (currentUser is not null)
+            newRating.JudgeId = currentUser.DisplayName ?? currentUser.UserName ?? string.Empty;
     }
 
     // ── Helpers ────────────────────────────────────────────
     private IEnumerable<WineRating> VisibleRatings =>
-        isAdmin ? wineRatings : wineRatings.Where(r => r.JudgeId == currentJudge?.Name);
+        isAdmin ? wineRatings : wineRatings.Where(r => r.JudgeId == (currentUser?.DisplayName ?? currentUser?.UserName));
 
     private string WineName(string wineId)
     {
@@ -162,8 +164,8 @@
     {
         WineRatingRepository.AddWineRating(newRating);
         newRating = new WineRating();
-        if (currentJudge is not null)
-            newRating.JudgeId = currentJudge.Name;
+        if (currentUser is not null)
+            newRating.JudgeId = currentUser.DisplayName ?? currentUser.UserName ?? string.Empty;
         LoadWineRatings();
     }
 

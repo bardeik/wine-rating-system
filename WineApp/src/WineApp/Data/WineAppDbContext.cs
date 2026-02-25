@@ -23,7 +23,4 @@ public class WineMongoDbContext
 
     public IMongoCollection<WineRating> WineRatings =>
         _database.GetCollection<WineRating>("wineratings");
-
-    public IMongoCollection<Judge> Judges =>
-        _database.GetCollection<Judge>("judges");
 }

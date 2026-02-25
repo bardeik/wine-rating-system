@@ -45,23 +45,27 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddSingleton<IWineProducerRepository, WineProducerRepository>();
 builder.Services.AddSingleton<IWineRatingRepository, WineRatingRepository>();
 builder.Services.AddSingleton<IWineRepository, WineRepository>();
-builder.Services.AddSingleton<IJudgeRepository, JudgeRepository>();
 
 var app = builder.Build();
 
 // Seed roles, default admin and sample data on startup
 using (var scope = app.Services.CreateScope())
 {
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<MongoIdentityRole<Guid>>>();
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    await SeedAsync(scope.ServiceProvider);
+}
+
+async Task SeedAsync(IServiceProvider services)
+{
+    var roleManager = services.GetRequiredService<RoleManager<MongoIdentityRole<Guid>>>();
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
 
     foreach (var role in new[] { "Admin", "Judge", "Viewer", "WineProducer" })
     {
-        if (!roleManager.RoleExistsAsync(role).GetAwaiter().GetResult())
-            roleManager.CreateAsync(new MongoIdentityRole<Guid>(role)).GetAwaiter().GetResult();
+        if (!await roleManager.RoleExistsAsync(role))
+            await roleManager.CreateAsync(new MongoIdentityRole<Guid>(role));
     }
 
-    if (userManager.FindByEmailAsync("admin@wineapp.com").GetAwaiter().GetResult() is null)
+    if (await userManager.FindByEmailAsync("admin@wineapp.com") is null)
     {
         var admin = new ApplicationUser
         {
@@ -70,17 +74,18 @@ using (var scope = app.Services.CreateScope())
             DisplayName = "Administrator",
             EmailConfirmed = true
         };
-        userManager.CreateAsync(admin, "Admin123!").GetAwaiter().GetResult();
-        userManager.AddToRoleAsync(admin, "Admin").GetAwaiter().GetResult();
+        await userManager.CreateAsync(admin, "Admin123!");
+        await userManager.AddToRoleAsync(admin, "Admin");
     }
 
     // Seed sample data if collections are empty
-    var wineProducerRepo = scope.ServiceProvider.GetRequiredService<IWineProducerRepository>();
-    var wineRepo = scope.ServiceProvider.GetRequiredService<IWineRepository>();
-    var wineRatingRepo = scope.ServiceProvider.GetRequiredService<IWineRatingRepository>();
-    var judgeRepo = scope.ServiceProvider.GetRequiredService<IJudgeRepository>();
+    var wineProducerRepo = services.GetRequiredService<IWineProducerRepository>();
+    var wineRepo = services.GetRequiredService<IWineRepository>();
+    var wineRatingRepo = services.GetRequiredService<IWineRatingRepository>();
 
-    if (judgeRepo.GetAllJudges().Count == 0)
+    // Seed judge users if none exist with the Judge role
+    var judgeUsers = await userManager.GetUsersInRoleAsync("Judge");
+    if (judgeUsers.Count == 0)
     {
         foreach (var name in new[] { "Frans", "Hans", "Ola", "Petter" })
         {
@@ -92,16 +97,9 @@ using (var scope = app.Services.CreateScope())
                 DisplayName = name,
                 EmailConfirmed = true
             };
-            var result = userManager.CreateAsync(judgeUser, "Judge123!").GetAwaiter().GetResult();
+            var result = await userManager.CreateAsync(judgeUser, "Judge123!");
             if (result.Succeeded)
-                userManager.AddToRoleAsync(judgeUser, "Judge").GetAwaiter().GetResult();
-
-            judgeRepo.AddJudge(new Judge
-            {
-                JudgeId = ObjectId.GenerateNewId().ToString(),
-                Name = name,
-                UserId = result.Succeeded ? judgeUser.Id.ToString() : null
-            });
+                await userManager.AddToRoleAsync(judgeUser, "Judge");
         }
     }
 
