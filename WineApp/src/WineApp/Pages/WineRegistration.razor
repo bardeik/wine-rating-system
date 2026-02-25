@@ -1,0 +1,693 @@
+@page "/wine-registration"
+@attribute [Authorize(Roles = "Admin,WineProducer")]
+@inject IWineRepository WineRepository
+@inject IWineProducerRepository WineProducerRepository
+@inject IEventRepository EventRepository
+@inject IWineValidationService WineValidationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+@using System.Security.Claims
+@using WineApp.Services
+
+<PageTitle>Vinregistrering</PageTitle>
+
+<h3>
+    @if (isAdmin)
+    {
+        <span>Vinregistrering (Admin)</span>
+    }
+    else if (isWineProducer && currentProducer != null)
+    {
+        <span>Vinregistrering - @currentProducer.WineyardName</span>
+    }
+</h3>
+
+@if (activeEvent == null)
+{
+    <div class="alert alert-warning">
+        <h4>Ingen aktivt arrangement</h4>
+        <p>Det finnes ingen aktive arrangementer for øyeblikket. Vennligst kontakt administrator.</p>
+    </div>
+}
+else
+{
+    <div class="alert alert-info mb-4">
+        <h5>@activeEvent.Name</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <p class="mb-1"><strong>Påmeldingsfrist:</strong> @activeEvent.RegistrationEndDate.ToString("dd.MM.yyyy")</p>
+                <p class="mb-1"><strong>Betalingsfrist:</strong> @activeEvent.PaymentDeadline.ToString("dd.MM.yyyy")</p>
+            </div>
+            <div class="col-md-6">
+                <p class="mb-1"><strong>Avgift per vin:</strong> @activeEvent.FeePerWine.ToString("N0") NOK</p>
+                <p class="mb-0"><strong>Leveringsfrist:</strong> @activeEvent.DeliveryDeadline.ToString("dd.MM.yyyy")</p>
+            </div>
+        </div>
+    </div>
+
+    @if (currentProducerWines.Any())
+    {
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Dine registrerte viner (@currentProducerWines.Count)</h5>
+                <span class="badge bg-primary">Total: @((currentProducerWines.Count * activeEvent.FeePerWine).ToString("N0")) NOK</span>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nr.</th>
+                            <th>Navn</th>
+                            <th>Årgang</th>
+                            <th>Gruppe</th>
+                            <th>Kategori</th>
+                            <th>Status</th>
+                            @if (canEdit) { <th>Handlinger</th> }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var wine in currentProducerWines.OrderBy(w => w.SubmissionDate))
+                        {
+                            <tr>
+                                <td>
+                                    @if (wine.WineNumber.HasValue)
+                                    {
+                                        <strong>@wine.WineNumber</strong>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>@wine.Name</td>
+                                <td>@wine.Vintage</td>
+                                <td>@wine.Group</td>
+                                <td>@wine.Category</td>
+                                <td>
+                                    @if (wine.IsPaid)
+                                    {
+                                        <span class="badge bg-success">✓ Betalt</span>
+                                        @if (wine.WineNumber.HasValue)
+                                        {
+                                            <span class="badge bg-info ms-1">Nr. @wine.WineNumber</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark">Venter betaling</span>
+                                    }
+                                </td>
+                                @if (canEdit)
+                                {
+                                    <td>
+                                        @if (!wine.IsPaid)
+                                        {
+                                            <button class="btn btn-sm btn-secondary me-1" @onclick="() => StartEdit(wine)">✏️</button>
+                                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteWine(wine.WineId)">🗑️</button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-info" @onclick="() => ViewWine(wine)">👁️</button>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    @if (editingWine != null)
+    {
+        <div class="card border-warning mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">Rediger vin</h5>
+            </div>
+            <div class="card-body">
+                @RenderWineForm(editingWine, true)
+            </div>
+        </div>
+    }
+    else if (canEdit)
+    {
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Registrer ny vin</h5>
+            </div>
+            <div class="card-body">
+                @RenderWineForm(newWine, false)
+            </div>
+        </div>
+    }
+}
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <div class="alert @statusClass alert-dismissible mt-3">
+        @statusMessage
+        <button type="button" class="btn-close" @onclick="() => statusMessage = string.Empty"></button>
+    </div>
+}
+
+@if (showViewModal && viewingWine != null)
+{
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Vindetaljer</h5>
+                    <button type="button" class="btn-close" @onclick="CloseViewModal"></button>
+                </div>
+                <div class="modal-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Vinnummer:</dt>
+                        <dd class="col-sm-8">
+                            @if (viewingWine.WineNumber.HasValue)
+                            {
+                                <strong class="badge bg-info fs-6">@viewingWine.WineNumber</strong>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Ikke tildelt ennå</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Navn:</dt>
+                        <dd class="col-sm-8">@viewingWine.Name</dd>
+
+                        <dt class="col-sm-4">Årgang:</dt>
+                        <dd class="col-sm-8">@viewingWine.Vintage</dd>
+
+                        <dt class="col-sm-4">Alkohol:</dt>
+                        <dd class="col-sm-8">@viewingWine.AlcoholPercentage.ToString("F1") %</dd>
+
+                        <dt class="col-sm-4">Gruppe:</dt>
+                        <dd class="col-sm-8">@viewingWine.Group</dd>
+
+                        <dt class="col-sm-4">Klasse:</dt>
+                        <dd class="col-sm-8">@viewingWine.Class</dd>
+
+                        <dt class="col-sm-4">Kategori:</dt>
+                        <dd class="col-sm-8">@viewingWine.Category</dd>
+
+                        <dt class="col-sm-4">Land:</dt>
+                        <dd class="col-sm-8">@viewingWine.Country</dd>
+
+                        <dt class="col-sm-4">Drueblanding:</dt>
+                        <dd class="col-sm-8">
+                            @if (viewingWine.GrapeBlend.Any())
+                            {
+                                <ul class="mb-0">
+                                    @foreach (var grape in viewingWine.GrapeBlend.OrderByDescending(g => g.Value))
+                                    {
+                                        <li>@grape.Key: @grape.Value.ToString("F1")%</li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Ingen data</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Vinbonde:</dt>
+                        <dd class="col-sm-8">
+                            @if (viewingWine.IsVinbonde)
+                            {
+                                <span class="badge bg-success">✓ Ja (≥100 vinstokker)</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Nei</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Status:</dt>
+                        <dd class="col-sm-8">
+                            @if (viewingWine.IsPaid)
+                            {
+                                <span class="badge bg-success">Betalt</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">Venter betaling</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Registrert:</dt>
+                        <dd class="col-sm-8">@viewingWine.SubmissionDate.ToString("dd.MM.yyyy HH:mm")</dd>
+                    </dl>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseViewModal">Lukk</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show"></div>
+}
+
+@code {
+    private Event? activeEvent;
+    private List<Wine> allWines = new();
+    private List<Wine> currentProducerWines = new();
+    private List<WineProducer> wineProducers = new();
+    private WineProducer? currentProducer;
+    
+    private Wine newWine = new();
+    private Wine? editingWine;
+    private Wine? viewingWine;
+    private bool showViewModal;
+
+    private bool isAdmin;
+    private bool isWineProducer;
+    private bool canEdit => isAdmin || isWineProducer;
+
+    private string statusMessage = string.Empty;
+    private string statusClass = "alert-info";
+
+    // Grape blend editing
+    private string newGrapeVariety = string.Empty;
+    private decimal newGrapePercentage = 0m;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        isAdmin = user.IsInRole("Admin");
+        isWineProducer = user.IsInRole("WineProducer");
+
+        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (isWineProducer && userId != null)
+        {
+            currentProducer = WineProducerRepository.GetWineProducerByUserId(userId);
+        }
+
+        LoadData();
+    }
+
+    private void LoadData()
+    {
+        activeEvent = EventRepository.GetActiveEvent();
+        allWines = WineRepository.GetAllWines().ToList();
+        wineProducers = WineProducerRepository.GetAllWineProducers().ToList();
+
+        if (activeEvent != null)
+        {
+            if (isWineProducer && currentProducer != null)
+            {
+                currentProducerWines = allWines
+                    .Where(w => w.WineProducerId == currentProducer.WineProducerId && w.EventId == activeEvent.EventId)
+                    .ToList();
+            }
+            else if (isAdmin)
+            {
+                currentProducerWines = allWines.Where(w => w.EventId == activeEvent.EventId).ToList();
+            }
+            
+            // Initialize new wine form for both admin and producer
+            if (canEdit)
+            {
+                InitializeNewWine();
+            }
+        }
+    }
+
+    private void InitializeNewWine()
+    {
+        newWine = new Wine
+        {
+            EventId = activeEvent?.EventId,
+            WineProducerId = currentProducer?.WineProducerId ?? string.Empty,
+            Country = "Norge",
+            IsVinbonde = false,
+            IsPaid = false,
+            SubmissionDate = DateTime.UtcNow,
+            Vintage = DateTime.Now.Year
+        };
+    }
+
+    private RenderFragment RenderWineForm(Wine wine, bool isEdit) => __builder =>
+    {
+        <EditForm Model="@wine" OnValidSubmit="@(() => HandleFormSubmit(isEdit))">
+            <DataAnnotationsValidator />
+
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="border-bottom pb-2 mb-3">Grunnleggende informasjon</h6>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Vinnavn *</label>
+                        <InputText @bind-Value="wine.Name" class="form-control" />
+                        <ValidationMessage For="@(() => wine.Name)" class="text-danger" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Vurderingsnavn (hemlig) *</label>
+                        <InputText @bind-Value="wine.RatingName" class="form-control" />
+                        <small class="form-text text-muted">Dette navnet vises kun for dommere under blindsmaking</small>
+                        <ValidationMessage For="@(() => wine.RatingName)" class="text-danger" />
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Årgang *</label>
+                            <InputNumber @bind-Value="wine.Vintage" class="form-control" />
+                            <ValidationMessage For="@(() => wine.Vintage)" class="text-danger" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Alkohol % *</label>
+                            <InputNumber @bind-Value="wine.AlcoholPercentage" class="form-control" step="0.1" />
+                            <ValidationMessage For="@(() => wine.AlcoholPercentage)" class="text-danger" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Land *</label>
+                        <InputText @bind-Value="wine.Country" class="form-control" />
+                        <small class="form-text text-muted">Nordiske gjesteviner (A2) må ikke være fra Norge</small>
+                        <ValidationMessage For="@(() => wine.Country)" class="text-danger" />
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <h6 class="border-bottom pb-2 mb-3">Klassifisering</h6>
+
+                    <div class="mb-3">
+                        <label class="form-label">Gruppe *</label>
+                        <InputSelect @bind-Value="wine.Group" class="form-select">
+                            <option value="">Velg gruppe</option>
+                            @foreach (var g in Enum.GetValues<WineGroup>())
+                            {
+                                <option value="@g">@g.ToString() - @GetGroupDescription(g)</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => wine.Group)" class="text-danger" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Klasse *</label>
+                        <InputSelect @bind-Value="wine.Class" class="form-select">
+                            <option value="">Velg klasse</option>
+                            @foreach (var c in Enum.GetValues<WineClass>())
+                            {
+                                <option value="@c">@c</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => wine.Class)" class="text-danger" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Kategori *</label>
+                        <InputSelect @bind-Value="wine.Category" class="form-select">
+                            <option value="">Velg kategori</option>
+                            @foreach (var cat in Enum.GetValues<WineCategory>())
+                            {
+                                <option value="@cat">@cat</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => wine.Category)" class="text-danger" />
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <InputCheckbox @bind-Value="wine.IsVinbonde" class="form-check-input" id="isVinbonde" />
+                        <label class="form-check-label" for="isVinbonde">
+                            Vinbonde (≥100 vinstokker)
+                        </label>
+                        <div class="form-text">Kun relevant for Gruppe A1 og pokalkonkurranse</div>
+                    </div>
+
+                    @if (isAdmin)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Vinprodusent</label>
+                            <InputSelect @bind-Value="wine.WineProducerId" class="form-select">
+                                <option value="">-- Velg vinprodusent --</option>
+                                @foreach (var p in wineProducers)
+                                {
+                                    <option value="@p.WineProducerId">@p.WineyardName</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => wine.WineProducerId)" class="text-danger" />
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <h6 class="border-bottom pb-2 mb-3 mt-4">Drueblanding</h6>
+            <div class="row">
+                <div class="col-md-12">
+                    @if (wine.GrapeBlend.Any())
+                    {
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Druesort</th>
+                                    <th>Prosent</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var grape in wine.GrapeBlend.OrderByDescending(g => g.Value))
+                                {
+                                    <tr>
+                                        <td>@grape.Key</td>
+                                        <td>@grape.Value.ToString("F1")%</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-danger" @onclick="() => RemoveGrape(wine, grape.Key)">×</button>
+                                        </td>
+                                    </tr>
+                                }
+                                <tr class="table-info">
+                                    <td><strong>Total:</strong></td>
+                                    <td><strong>@wine.GrapeBlend.Values.Sum().ToString("F1")%</strong></td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        var blendTotal = wine.GrapeBlend.Values.Sum();
+                        var progressPercentage = Math.Min(blendTotal, 100);
+                        var progressClass = blendTotal == 100 ? "bg-success" : blendTotal < 100 ? "bg-warning" : "bg-danger";
+
+                        <div class="progress mb-3" style="height: 25px;">
+                            <div class="progress-bar @progressClass" style="width: @progressPercentage%">
+                                @blendTotal.ToString("F1")%
+                            </div>
+                        </div>
+
+                        @if (blendTotal != 100)
+                        {
+                            <div class="alert alert-warning">
+                                <strong>⚠️ Drueblandingen må summere til 100%!</strong>
+                                Nåværende sum: @blendTotal.ToString("F1")%
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">Ingen druesorter lagt til ennå. Legg til minst én druesort.</div>
+                    }
+
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6>Legg til druesort</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control" placeholder="Druesort (f.eks. Rondo)" @bind="newGrapeVariety" />
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="number" class="form-control" placeholder="Prosent" step="0.1" min="0" max="100" @bind="newGrapePercentage" />
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-primary w-100" @onclick="() => AddGrape(wine)">➕ Legg til</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <ValidationSummary class="text-danger" />
+                <button type="submit" class="btn @(isEdit ? "btn-warning" : "btn-primary") me-2">
+                    @(isEdit ? "Lagre endringer" : "Registrer vin")
+                </button>
+                @if (isEdit)
+                {
+                    <button type="button" class="btn btn-secondary" @onclick="CancelEdit">Avbryt</button>
+                }
+            </div>
+        </EditForm>
+    };
+
+    private string GetGroupDescription(WineGroup group)
+    {
+        return group switch
+        {
+            WineGroup.A1 => "Godkjente sorter friland (Norge)",
+            WineGroup.A2 => "Nordiske gjesteviner",
+            WineGroup.B => "Godkjente sorter veksthus",
+            WineGroup.C => "Prøvesorter friland",
+            WineGroup.D => "Prøvesorter veksthus",
+            _ => ""
+        };
+    }
+
+    private void AddGrape(Wine wine)
+    {
+        if (string.IsNullOrWhiteSpace(newGrapeVariety) || newGrapePercentage <= 0)
+        {
+            ShowStatus("Vennligst fyll inn både druesort og prosent", "alert-warning");
+            return;
+        }
+
+        if (wine.GrapeBlend.ContainsKey(newGrapeVariety))
+        {
+            ShowStatus($"Druesort '{newGrapeVariety}' er allerede lagt til", "alert-warning");
+            return;
+        }
+
+        wine.GrapeBlend[newGrapeVariety] = newGrapePercentage;
+        newGrapeVariety = string.Empty;
+        newGrapePercentage = 0m;
+    }
+
+    private void RemoveGrape(Wine wine, string grapeVariety)
+    {
+        wine.GrapeBlend.Remove(grapeVariety);
+    }
+
+    private void AddNewWine()
+    {
+        // Validate wine
+        var (isValid, errors) = WineValidationService.ValidateWineRegistration(newWine);
+        if (!isValid)
+        {
+            ShowStatus(string.Join("; ", errors), "alert-danger");
+            return;
+        }
+
+        try
+        {
+            WineRepository.AddWine(newWine);
+            ShowStatus($"Vin '{newWine.Name}' er registrert!", "alert-success");
+            
+            // Reload data and reset form
+            LoadData();
+            
+            // Clear grape blend editor inputs
+            newGrapeVariety = string.Empty;
+            newGrapePercentage = 0m;
+            
+            // Force UI update
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Feil ved registrering: {ex.Message}", "alert-danger");
+        }
+    }
+
+    private void StartEdit(Wine wine)
+    {
+        editingWine = new Wine
+        {
+            WineId = wine.WineId,
+            Name = wine.Name,
+            RatingName = wine.RatingName,
+            Vintage = wine.Vintage,
+            AlcoholPercentage = wine.AlcoholPercentage,
+            Group = wine.Group,
+            Class = wine.Class,
+            Category = wine.Category,
+            Country = wine.Country,
+            IsVinbonde = wine.IsVinbonde,
+            WineProducerId = wine.WineProducerId,
+            EventId = wine.EventId,
+            IsPaid = wine.IsPaid,
+            WineNumber = wine.WineNumber,
+            SubmissionDate = wine.SubmissionDate,
+            GrapeBlend = new Dictionary<string, decimal>(wine.GrapeBlend)
+        };
+    }
+
+    private void SaveEdit()
+    {
+        if (editingWine == null) return;
+
+        // Validate wine
+        var (isValid, errors) = WineValidationService.ValidateWineRegistration(editingWine);
+        if (!isValid)
+        {
+            ShowStatus(string.Join("; ", errors), "alert-danger");
+            return;
+        }
+
+        try
+        {
+            WineRepository.UpdateWine(editingWine);
+            ShowStatus($"Vin '{editingWine.Name}' er oppdatert!", "alert-success");
+            editingWine = null;
+            LoadData();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Feil ved oppdatering: {ex.Message}", "alert-danger");
+        }
+    }
+
+    private void CancelEdit()
+    {
+        editingWine = null;
+    }
+
+    private void HandleFormSubmit(bool isEdit)
+    {
+        if (isEdit)
+        {
+            SaveEdit();
+        }
+        else
+        {
+            AddNewWine();
+        }
+    }
+
+    private void DeleteWine(string wineId)
+    {
+        try
+        {
+            WineRepository.DeleteWine(wineId);
+            ShowStatus("Vin er slettet", "alert-success");
+            LoadData();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Feil ved sletting: {ex.Message}", "alert-danger");
+        }
+    }
+
+    private void ViewWine(Wine wine)
+    {
+        viewingWine = wine;
+        showViewModal = true;
+    }
+
+    private void CloseViewModal()
+    {
+        viewingWine = null;
+        showViewModal = false;
+    }
+
+    private void ShowStatus(string message, string cssClass)
+    {
+        statusMessage = message;
+        statusClass = cssClass;
+    }
+}
