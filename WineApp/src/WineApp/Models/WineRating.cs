@@ -18,7 +18,6 @@ public class WineRating
     [Required]
     [Range(0.0, 3.0, ErrorMessage = "Utseende (A) må være mellom 0.0 og 3.0")]
     [DisplayName("Utseende (A)")]
-   [MongoDB.Bson.Serialization.Attributes.BsonElement("Visuality")]
     public decimal Appearance { get; set; }
 
     [Required]
