@@ -1,0 +1,565 @@
+@page "/payment-management"
+@attribute [Authorize(Roles = "Admin")]
+@inject IWineRepository WineRepository
+@inject IWineProducerRepository WineProducerRepository
+@inject IEventRepository EventRepository
+@inject IPaymentRepository PaymentRepository
+@inject IWineNumberService WineNumberService
+@using WineApp.Services
+
+<PageTitle>Betalingshåndtering</PageTitle>
+
+<h3>Betalingshåndtering</h3>
+
+@if (activeEvent == null)
+{
+    <div class="alert alert-warning">
+        <h4>Ingen aktivt arrangement</h4>
+        <p>Det finnes ingen aktive arrangementer for øyeblikket.</p>
+    </div>
+}
+else
+{
+    <div class="alert alert-info mb-4">
+        <div class="row">
+            <div class="col-md-8">
+                <h5>@activeEvent.Name</h5>
+                <p class="mb-0">
+                    <strong>Betalingsfrist:</strong> @activeEvent.PaymentDeadline.ToString("dd.MM.yyyy") | 
+                    <strong>Avgift per vin:</strong> @activeEvent.FeePerWine.ToString("N0") NOK
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <h6>Totalt</h6>
+                <p class="mb-0">
+                    <strong>Registrerte viner:</strong> @totalWines stk<br />
+                    <strong>Betalte:</strong> @paidWines stk (@paidPercentage.ToString("F0")%)<br />
+                    <strong>Ubetalt:</strong> @unpaidWines stk
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted">Produsenter</h6>
+                    <h2 class="mb-0">@producersWithWines</h2>
+                    <small class="text-muted">@producersWithUnpaid med ubetalt</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted">Ubetalt beløp</h6>
+                    <h2 class="mb-0">@unpaidAmount.ToString("N0")</h2>
+                    <small class="text-muted">NOK</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted">Betalt beløp</h6>
+                    <h2 class="mb-0">@paidAmount.ToString("N0")</h2>
+                    <small class="text-muted">NOK</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted">Totalt forventet</h6>
+                    <h2 class="mb-0">@totalAmount.ToString("N0")</h2>
+                    <small class="text-muted">NOK</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter and Actions -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text">📋</span>
+                        <select class="form-select" @bind="filterStatus">
+                            <option value="all">Alle produsenter</option>
+                            <option value="unpaid">Kun ubetalte</option>
+                            <option value="paid">Kun betalte</option>
+                            <option value="partial">Delvis betalt</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    @if (producerPayments.Any(p => p.Value.unpaidCount > 0))
+                    {
+                        <button class="btn btn-success" @onclick="ShowBulkPaymentConfirm">
+                            💰 Merk alle som betalt
+                        </button>
+                        <button class="btn btn-primary ms-2" @onclick="AssignAllWineNumbers">
+                            🔢 Tildel alle vinnummer
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Producer Payment List -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Betalingsoversikt per produsent</h5>
+            
+            @if (!FilteredProducerPayments.Any())
+            {
+                <div class="alert alert-info">Ingen produsenter matcher filteret.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Produsent</th>
+                                <th>Medlemsnr</th>
+                                <th class="text-center">Viner</th>
+                                <th class="text-center">Betalt</th>
+                                <th class="text-center">Ubetalt</th>
+                                <th class="text-end">Beløp</th>
+                                <th>Status</th>
+                                <th>Handlinger</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in FilteredProducerPayments)
+                            {
+                                var producer = item.producer;
+                                var payment = item.payment;
+                                
+                                <tr class="@(payment.unpaidCount == 0 ? "table-success" : "")">
+                                    <td>
+                                        <strong>@producer.WineyardName</strong><br />
+                                        <small class="text-muted">@producer.Email</small>
+                                    </td>
+                                    <td>@producer.MemberNumber</td>
+                                    <td class="text-center">@payment.totalCount</td>
+                                    <td class="text-center">
+                                        @if (payment.paidCount > 0)
+                                        {
+                                            <span class="badge bg-success">@payment.paidCount</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">0</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (payment.unpaidCount > 0)
+                                        {
+                                            <span class="badge bg-warning text-dark">@payment.unpaidCount</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">0</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>@payment.totalAmount.ToString("N0") NOK</strong><br />
+                                        @if (payment.unpaidCount > 0)
+                                        {
+                                            <small class="text-danger">Ubetalt: @payment.unpaidAmount.ToString("N0") NOK</small>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-success">✓ Fullført</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (payment.unpaidCount == 0)
+                                        {
+                                            <span class="badge bg-success">✓ Betalt</span>
+                                        }
+                                        else if (payment.paidCount > 0)
+                                        {
+                                            <span class="badge bg-warning text-dark">⚠️ Delvis</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">✗ Ubetalt</span>
+                                        }
+                                    </td>
+                                    <td class="text-nowrap">
+                                        <button class="btn btn-sm btn-info me-1" @onclick="() => ShowProducerDetails(producer)">
+                                            👁️ Detaljer
+                                        </button>
+                                        @if (payment.unpaidCount > 0)
+                                        {
+                                            <button class="btn btn-sm btn-success" @onclick="() => ConfirmPayment(producer)">
+                                                ✓ Bekreft betaling
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <div class="alert @statusClass alert-dismissible mt-3">
+        @statusMessage
+        <button type="button" class="btn-close" @onclick="() => statusMessage = string.Empty"></button>
+    </div>
+}
+
+<!-- Producer Details Modal -->
+@if (showDetailsModal && selectedProducer != null && activeEvent != null)
+{
+    var wines = allWines.Where(w => w.WineProducerId == selectedProducer.WineProducerId && w.EventId == activeEvent.EventId).ToList();
+    
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Betalingsdetaljer - @selectedProducer.WineyardName</h5>
+                    <button type="button" class="btn-close" @onclick="CloseDetailsModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>Kontaktinformasjon</h6>
+                            <p class="mb-1"><strong>Ansvarlig:</strong> @selectedProducer.ResponsibleProducerName</p>
+                            <p class="mb-1"><strong>E-post:</strong> @selectedProducer.Email</p>
+                            <p class="mb-1"><strong>Telefon:</strong> @selectedProducer.Phone</p>
+                            <p class="mb-0"><strong>Medlemsnr:</strong> @selectedProducer.MemberNumber</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Betalingsinformasjon</h6>
+                            <p class="mb-1"><strong>Totalt antall viner:</strong> @wines.Count stk</p>
+                            <p class="mb-1"><strong>Betalte:</strong> @wines.Count(w => w.IsPaid) stk</p>
+                            <p class="mb-1"><strong>Ubetalte:</strong> @wines.Count(w => !w.IsPaid) stk</p>
+                            <p class="mb-0"><strong>Totalt beløp:</strong> @((wines.Count * activeEvent.FeePerWine).ToString("N0")) NOK</p>
+                        </div>
+                    </div>
+
+                    <h6>Viner (@wines.Count)</h6>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Nr.</th>
+                                <th>Navn</th>
+                                <th>Årgang</th>
+                                <th>Kategori</th>
+                                <th>Status</th>
+                                <th>Handlinger</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var wine in wines.OrderBy(w => w.SubmissionDate))
+                            {
+                                <tr class="@(wine.IsPaid ? "table-success" : "")">
+                                    <td>
+                                        @if (wine.WineNumber.HasValue)
+                                        {
+                                            <strong>@wine.WineNumber</strong>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>@wine.Name</td>
+                                    <td>@wine.Vintage</td>
+                                    <td>@wine.Category</td>
+                                    <td>
+                                        @if (wine.IsPaid)
+                                        {
+                                            <span class="badge bg-success">✓ Betalt</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Venter betaling</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!wine.IsPaid)
+                                        {
+                                            <button class="btn btn-sm btn-success" @onclick="() => MarkWineAsPaid(wine)">
+                                                ✓ Marker betalt
+                                            </button>
+                                        }
+                                        else if (!wine.WineNumber.HasValue)
+                                        {
+                                            <button class="btn btn-sm btn-primary" @onclick="() => AssignSingleWineNumber(wine)">
+                                                🔢 Tildel nummer
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseDetailsModal">Lukk</button>
+                    @if (wines.Any(w => !w.IsPaid))
+                    {
+                        <button type="button" class="btn btn-success" @onclick="() => ConfirmAllWinesForProducer(selectedProducer)">
+                            ✓ Bekreft alle som betalt
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show"></div>
+}
+
+<!-- Bulk Payment Confirmation Modal -->
+@if (showBulkConfirmModal && activeEvent != null)
+{
+    var unpaidProducerCount = producerPayments.Count(p => p.Value.unpaidCount > 0);
+    var unpaidWineCount = producerPayments.Sum(p => p.Value.unpaidCount);
+    var unpaidTotal = unpaidWineCount * activeEvent.FeePerWine;
+    
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title">Bekreft bulk betaling</h5>
+                    <button type="button" class="btn-close" @onclick="CloseBulkConfirmModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <h6>⚠️ Du er i ferd med å markere alle ubetalte viner som betalt</h6>
+                        <p class="mb-0">Dette vil påvirke:</p>
+                    </div>
+                    <ul>
+                        <li><strong>@unpaidProducerCount</strong> produsenter</li>
+                        <li><strong>@unpaidWineCount</strong> viner</li>
+                        <li>Totalt beløp: <strong>@unpaidTotal.ToString("N0") NOK</strong></li>
+                    </ul>
+                    <p>Er du sikker på at du vil fortsette?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseBulkConfirmModal">Avbryt</button>
+                    <button type="button" class="btn btn-success" @onclick="ConfirmBulkPayment">
+                        ✓ Ja, bekreft alle
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show"></div>
+}
+
+@code {
+    private Event? activeEvent;
+    private List<Wine> allWines = new();
+    private List<WineProducer> allProducers = new();
+    
+    private Dictionary<string, (int totalCount, int paidCount, int unpaidCount, decimal totalAmount, decimal paidAmount, decimal unpaidAmount)> producerPayments = new();
+    
+    private WineProducer? selectedProducer;
+    private bool showDetailsModal;
+    private bool showBulkConfirmModal;
+    
+    private string filterStatus = "all";
+    private string statusMessage = string.Empty;
+    private string statusClass = "alert-info";
+
+    // Summary stats
+    private int totalWines => allWines.Count(w => w.EventId == activeEvent?.EventId);
+    private int paidWines => allWines.Count(w => w.EventId == activeEvent?.EventId && w.IsPaid);
+    private int unpaidWines => totalWines - paidWines;
+    private decimal paidPercentage => totalWines > 0 ? (paidWines * 100m / totalWines) : 0;
+    
+    private int producersWithWines => producerPayments.Count;
+    private int producersWithUnpaid => producerPayments.Count(p => p.Value.unpaidCount > 0);
+    
+    private decimal unpaidAmount => producerPayments.Sum(p => p.Value.unpaidAmount);
+    private decimal paidAmount => producerPayments.Sum(p => p.Value.paidAmount);
+    private decimal totalAmount => producerPayments.Sum(p => p.Value.totalAmount);
+
+    private IEnumerable<(WineProducer producer, (int totalCount, int paidCount, int unpaidCount, decimal totalAmount, decimal paidAmount, decimal unpaidAmount) payment)> FilteredProducerPayments
+    {
+        get
+        {
+            var filtered = producerPayments.Select(kvp => 
+                (producer: allProducers.First(p => p.WineProducerId == kvp.Key), payment: kvp.Value));
+
+            return filterStatus switch
+            {
+                "unpaid" => filtered.Where(p => p.payment.unpaidCount > 0),
+                "paid" => filtered.Where(p => p.payment.unpaidCount == 0),
+                "partial" => filtered.Where(p => p.payment.paidCount > 0 && p.payment.unpaidCount > 0),
+                _ => filtered
+            };
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        LoadData();
+    }
+
+    private void LoadData()
+    {
+        activeEvent = EventRepository.GetActiveEvent();
+        allWines = WineRepository.GetAllWines().ToList();
+        allProducers = WineProducerRepository.GetAllWineProducers().ToList();
+
+        if (activeEvent != null)
+        {
+            CalculateProducerPayments();
+        }
+    }
+
+    private void CalculateProducerPayments()
+    {
+        producerPayments.Clear();
+
+        if (activeEvent == null) return;
+
+        var eventWines = allWines.Where(w => w.EventId == activeEvent.EventId).ToList();
+        var producerGroups = eventWines.GroupBy(w => w.WineProducerId);
+
+        foreach (var group in producerGroups)
+        {
+            var wines = group.ToList();
+            var totalCount = wines.Count;
+            var paidCount = wines.Count(w => w.IsPaid);
+            var unpaidCount = totalCount - paidCount;
+            
+            var totalAmount = totalCount * activeEvent.FeePerWine;
+            var paidAmount = paidCount * activeEvent.FeePerWine;
+            var unpaidAmount = unpaidCount * activeEvent.FeePerWine;
+
+            producerPayments[group.Key] = (totalCount, paidCount, unpaidCount, totalAmount, paidAmount, unpaidAmount);
+        }
+    }
+
+    private void ShowProducerDetails(WineProducer producer)
+    {
+        selectedProducer = producer;
+        showDetailsModal = true;
+    }
+
+    private void CloseDetailsModal()
+    {
+        selectedProducer = null;
+        showDetailsModal = false;
+    }
+
+    private void ShowBulkPaymentConfirm()
+    {
+        showBulkConfirmModal = true;
+    }
+
+    private void CloseBulkConfirmModal()
+    {
+        showBulkConfirmModal = false;
+    }
+
+    private async Task ConfirmPayment(WineProducer producer)
+    {
+        if (activeEvent == null) return;
+
+        var wines = allWines.Where(w => w.WineProducerId == producer.WineProducerId && 
+                                        w.EventId == activeEvent.EventId && 
+                                        !w.IsPaid).ToList();
+
+        foreach (var wine in wines)
+        {
+            wine.IsPaid = true;
+            WineRepository.UpdateWine(wine);
+        }
+
+        // Assign wine numbers after payment
+        await WineNumberService.AssignWineNumbersAsync(activeEvent.EventId);
+
+        ShowStatus($"✓ Betaling bekreftet for {producer.WineyardName} ({wines.Count} viner)", "alert-success");
+        LoadData();
+        StateHasChanged();
+    }
+
+    private void MarkWineAsPaid(Wine wine)
+    {
+        wine.IsPaid = true;
+        WineRepository.UpdateWine(wine);
+
+        ShowStatus($"✓ Vin '{wine.Name}' markert som betalt", "alert-success");
+        LoadData();
+        StateHasChanged();
+    }
+
+    private async Task ConfirmAllWinesForProducer(WineProducer producer)
+    {
+        await ConfirmPayment(producer);
+        CloseDetailsModal();
+    }
+
+    private async Task ConfirmBulkPayment()
+    {
+        if (activeEvent == null) return;
+
+        var unpaidWines = allWines.Where(w => w.EventId == activeEvent.EventId && !w.IsPaid).ToList();
+
+        foreach (var wine in unpaidWines)
+        {
+            wine.IsPaid = true;
+            WineRepository.UpdateWine(wine);
+        }
+
+        // Assign wine numbers after payment
+        await WineNumberService.AssignWineNumbersAsync(activeEvent.EventId);
+
+        ShowStatus($"✓ Alle betalinger bekreftet ({unpaidWines.Count} viner)", "alert-success");
+        CloseBulkConfirmModal();
+        LoadData();
+        StateHasChanged();
+    }
+
+    private async Task AssignAllWineNumbers()
+    {
+        if (activeEvent == null) return;
+
+        try
+        {
+            var assignments = await WineNumberService.AssignWineNumbersAsync(activeEvent.EventId);
+            ShowStatus($"✓ Tildelt vinnummer til {assignments.Count} viner", "alert-success");
+            LoadData();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Feil ved tildeling av vinnummer: {ex.Message}", "alert-danger");
+        }
+    }
+
+    private async Task AssignSingleWineNumber(Wine wine)
+    {
+        if (activeEvent == null) return;
+
+        await WineNumberService.AssignWineNumbersAsync(activeEvent.EventId);
+        ShowStatus($"✓ Vinnummer tildelt", "alert-success");
+        LoadData();
+        StateHasChanged();
+    }
+
+    private void ShowStatus(string message, string cssClass)
+    {
+        statusMessage = message;
+        statusClass = cssClass;
+    }
+}

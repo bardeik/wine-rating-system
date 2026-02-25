@@ -1,0 +1,338 @@
+@page "/payment-receipt"
+@attribute [Authorize(Roles = "WineProducer,Admin")]
+@inject IWineRepository WineRepository
+@inject IWineProducerRepository WineProducerRepository
+@inject IEventRepository EventRepository
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using System.Security.Claims
+
+<PageTitle>Betalingsoversikt</PageTitle>
+
+<h3>Betalingsoversikt</h3>
+
+@if (activeEvent == null)
+{
+    <div class="alert alert-warning">
+        <h4>Ingen aktivt arrangement</h4>
+        <p>Det finnes ingen aktive arrangementer for øyeblikket.</p>
+    </div>
+}
+else if (currentProducer == null)
+{
+    <div class="alert alert-danger">
+        <h4>Ingen produsent funnet</h4>
+        <p>Kunne ikke finne produsent-informasjon for din bruker.</p>
+    </div>
+}
+else
+{
+    <div class="row">
+        <!-- Producer Info Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">📋 Produsentinformasjon</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Vingård:</dt>
+                        <dd class="col-sm-7">@currentProducer.WineyardName</dd>
+
+                        <dt class="col-sm-5">Ansvarlig:</dt>
+                        <dd class="col-sm-7">@currentProducer.ResponsibleProducerName</dd>
+
+                        <dt class="col-sm-5">Medlemsnummer:</dt>
+                        <dd class="col-sm-7">@currentProducer.MemberNumber</dd>
+
+                        <dt class="col-sm-5">E-post:</dt>
+                        <dd class="col-sm-7">@currentProducer.Email</dd>
+
+                        <dt class="col-sm-5">Telefon:</dt>
+                        <dd class="col-sm-7">@currentProducer.Phone</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Summary Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header @(allPaid ? "bg-success" : "bg-warning") text-white">
+                    <h5 class="mb-0">💰 Betalingsstatus</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-6">Arrangement:</dt>
+                        <dd class="col-sm-6">@activeEvent.Name</dd>
+
+                        <dt class="col-sm-6">Totalt antall viner:</dt>
+                        <dd class="col-sm-6"><strong>@totalWines stk</strong></dd>
+
+                        <dt class="col-sm-6">Betalte viner:</dt>
+                        <dd class="col-sm-6">
+                            <span class="badge bg-success">@paidWines stk</span>
+                        </dd>
+
+                        <dt class="col-sm-6">Ubetalte viner:</dt>
+                        <dd class="col-sm-6">
+                            @if (unpaidWines > 0)
+                            {
+                                <span class="badge bg-warning text-dark">@unpaidWines stk</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">0 stk</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-6">Avgift per vin:</dt>
+                        <dd class="col-sm-6">@activeEvent.FeePerWine.ToString("N0") NOK</dd>
+
+                        <dt class="col-sm-6">Totalt beløp:</dt>
+                        <dd class="col-sm-6"><strong>@totalAmount.ToString("N0") NOK</strong></dd>
+
+                        @if (!allPaid)
+                        {
+                            <dt class="col-sm-6">Gjenstående:</dt>
+                            <dd class="col-sm-6"><strong class="text-danger">@unpaidAmount.ToString("N0") NOK</strong></dd>
+                        }
+                    </dl>
+
+                    @if (allPaid)
+                    {
+                        <div class="alert alert-success mt-3 mb-0">
+                            <strong>✓ Alle viner er betalt!</strong>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning mt-3 mb-0">
+                            <strong>⚠️ Du har ubetalte viner</strong><br />
+                            Vennligst betal innen @activeEvent.PaymentDeadline.ToString("dd.MM.yyyy")
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bank Information Card -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">🏦 Betalingsinformasjon</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Norske produsenter (Norge):</h6>
+                    <dl class="row">
+                        <dt class="col-sm-4">Bank:</dt>
+                        <dd class="col-sm-8">@activeEvent.BankName</dd>
+
+                        <dt class="col-sm-4">Kontonummer:</dt>
+                        <dd class="col-sm-8"><code>@activeEvent.AccountNumber</code></dd>
+
+                        <dt class="col-sm-4">KID/Melding:</dt>
+                        <dd class="col-sm-8">@currentProducer.MemberNumber</dd>
+
+                        <dt class="col-sm-4">Beløp:</dt>
+                        <dd class="col-sm-8"><strong>@totalAmount.ToString("N0") NOK</strong></dd>
+                    </dl>
+                </div>
+                <div class="col-md-6">
+                    <h6>Utenlandske produsenter (Internasjonal):</h6>
+                    <dl class="row">
+                        <dt class="col-sm-4">Bank:</dt>
+                        <dd class="col-sm-8">@activeEvent.BankName</dd>
+
+                        <dt class="col-sm-4">IBAN:</dt>
+                        <dd class="col-sm-8"><code>@activeEvent.IBAN</code></dd>
+
+                        <dt class="col-sm-4">BIC/SWIFT:</dt>
+                        <dd class="col-sm-8"><code>@activeEvent.BIC</code></dd>
+
+                        <dt class="col-sm-4">Referanse:</dt>
+                        <dd class="col-sm-8">@currentProducer.MemberNumber</dd>
+
+                        <dt class="col-sm-4">Beløp:</dt>
+                        <dd class="col-sm-8"><strong>@totalAmount.ToString("N0") NOK</strong></dd>
+                    </dl>
+                </div>
+            </div>
+            <div class="alert alert-info mt-2 mb-0">
+                <strong>ℹ️ Viktig:</strong> Husk å oppgi medlemsnummer (<strong>@currentProducer.MemberNumber</strong>) som referanse/KID ved betaling.
+            </div>
+        </div>
+    </div>
+
+    <!-- Wine List Card -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">🍷 Dine registrerte viner</h5>
+        </div>
+        <div class="card-body">
+            @if (!wines.Any())
+            {
+                <div class="alert alert-info">Du har ingen registrerte viner for dette arrangementet ennå.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nr.</th>
+                                <th>Navn</th>
+                                <th>Årgang</th>
+                                <th>Gruppe</th>
+                                <th>Kategori</th>
+                                <th>Avgift</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var wine in wines.OrderBy(w => w.SubmissionDate))
+                            {
+                                <tr class="@(wine.IsPaid ? "table-success" : "")">
+                                    <td>
+                                        @if (wine.WineNumber.HasValue)
+                                        {
+                                            <strong class="badge bg-info">@wine.WineNumber</strong>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>@wine.Name</td>
+                                    <td>@wine.Vintage</td>
+                                    <td>@wine.Group</td>
+                                    <td>@wine.Category</td>
+                                    <td>@activeEvent.FeePerWine.ToString("N0") NOK</td>
+                                    <td>
+                                        @if (wine.IsPaid)
+                                        {
+                                            <span class="badge bg-success">✓ Betalt</span>
+                                            @if (wine.WineNumber.HasValue)
+                                            {
+                                                <span class="badge bg-info ms-1">Nr. @wine.WineNumber</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Venter betaling</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-light">
+                                <td colspan="5" class="text-end"><strong>Totalt:</strong></td>
+                                <td><strong>@totalAmount.ToString("N0") NOK</strong></td>
+                                <td>
+                                    @if (allPaid)
+                                    {
+                                        <span class="badge bg-success">✓ Fullført</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark">⚠️ @unpaidAmount.ToString("N0") NOK ubetalt</span>
+                                    }
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Important Dates Card -->
+    <div class="card mt-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">📅 Viktige datoer</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <strong>Påmeldingsfrist:</strong><br />
+                    @activeEvent.RegistrationEndDate.ToString("dd.MM.yyyy")
+                </div>
+                <div class="col-md-3">
+                    <strong>Betalingsfrist:</strong><br />
+                    <span class="@(DateTime.Now > activeEvent.PaymentDeadline ? "text-danger" : "")">
+                        @activeEvent.PaymentDeadline.ToString("dd.MM.yyyy")
+                    </span>
+                </div>
+                <div class="col-md-3">
+                    <strong>Leveringsfrist:</strong><br />
+                    @activeEvent.DeliveryDeadline.ToString("dd.MM.yyyy")
+                </div>
+                <div class="col-md-3">
+                    @if (!string.IsNullOrEmpty(activeEvent.DeliveryAddressNorway))
+                    {
+                        <strong>Leveringsadresse:</strong><br />
+                        <small>@activeEvent.DeliveryAddressNorway</small>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Button -->
+    <div class="text-center mt-4">
+        <button class="btn btn-primary" @onclick="PrintReceipt">
+            🖨️ Skriv ut betalingsoversikt
+        </button>
+    </div>
+}
+
+@code {
+    private Event? activeEvent;
+    private WineProducer? currentProducer;
+    private List<Wine> wines = new();
+
+    private int totalWines => wines.Count;
+    private int paidWines => wines.Count(w => w.IsPaid);
+    private int unpaidWines => totalWines - paidWines;
+    private bool allPaid => unpaidWines == 0;
+    
+    private decimal totalAmount => totalWines * (activeEvent?.FeePerWine ?? 0);
+    private decimal paidAmount => paidWines * (activeEvent?.FeePerWine ?? 0);
+    private decimal unpaidAmount => unpaidWines * (activeEvent?.FeePerWine ?? 0);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId != null)
+        {
+            currentProducer = WineProducerRepository.GetWineProducerByUserId(userId);
+        }
+
+        LoadData();
+    }
+
+    private void LoadData()
+    {
+        activeEvent = EventRepository.GetActiveEvent();
+
+        if (activeEvent != null && currentProducer != null)
+        {
+            wines = WineRepository.GetAllWines()
+                .Where(w => w.WineProducerId == currentProducer.WineProducerId && 
+                           w.EventId == activeEvent.EventId)
+                .ToList();
+        }
+    }
+
+    private void PrintReceipt()
+    {
+        // TODO: Implement print functionality
+        // Could use JavaScript interop to trigger browser print dialog
+        // Or generate a PDF
+    }
+}

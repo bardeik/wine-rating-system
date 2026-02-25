@@ -31,6 +31,15 @@
                 </div>
             </Authorized>
         </AuthorizeView>
+        <AuthorizeView Roles="WineProducer">
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="payment-receipt">
+                        <span class="oi oi-document" aria-hidden="true"></span> Betalingsoversikt
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
         <AuthorizeView Roles="Admin,Judge">
             <Authorized>
                 <div class="nav-item px-3">
@@ -63,6 +72,11 @@
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="events">
                         <span class="oi oi-calendar" aria-hidden="true"></span> Arrangementer
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="payment-management">
+                        <span class="oi oi-dollar" aria-hidden="true"></span> Betalinger
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
