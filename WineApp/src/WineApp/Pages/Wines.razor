@@ -1,5 +1,5 @@
 @page "/wines"
-@attribute [Authorize]
+@attribute [Authorize(Roles = "Admin,WineProducer")]
 @inject IWineRepository WineRepository
 @inject IWineProducerRepository WineProducerRepository
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -8,54 +8,54 @@
 <PageTitle>Viner</PageTitle>
 
 @* ── Wines table ── *@
-@if (isAdmin || (isWineProducer && currentProducer is not null))
-{
-    <h3>@(isAdmin ? "Viner" : "Mine viner")</h3>
-    <div class="card mb-3">
-        <div class="card-body">
-            <table class="table">
-                <thead>
+<h3>@(isAdmin ? "Viner" : isWineProducer ? "Mine viner" : "Viner")</h3>
+<div class="card mb-3">
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    @if (isAdmin) { <th>Vin Id</th> }
+                    <th>Vurderingsnavn</th>
+                    <th>Navn</th>
+                    <th>Gruppe</th>
+                    <th>Klasse</th>
+                    <th>Kategori</th>
+                    @if (isAdmin) { <th>Vinprodusent</th> }
+                    @if (canEdit) { <th></th> }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var wine in VisibleWines)
+                {
                     <tr>
-                        @if (isAdmin) { <th>Vin Id</th> }
-                        <th>Vurderingsnavn</th>
-                        <th>Navn</th>
-                        <th>Gruppe</th>
-                        <th>Klasse</th>
-                        <th>Kategori</th>
-                        @if (isAdmin) { <th>Vinprodusent</th> }
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var wine in VisibleWines)
-                    {
-                        <tr>
-                            @if (isAdmin) { <td>@wine.WineId</td> }
-                            <td>@wine.RatingName</td>
-                            <td>@wine.Name</td>
-                            <td>@wine.Group</td>
-                            <td>@wine.Class</td>
-                            <td>@wine.Category</td>
-                            @if (isAdmin)
-                            {
-                                <td>@(wineProducers.FirstOrDefault(p => p.WineProducerId == wine.WineProducerId)?.WineyardName ?? wine.WineProducerId)</td>
-                            }
+                        @if (isAdmin) { <td>@wine.WineId</td> }
+                        <td>@wine.RatingName</td>
+                        <td>@wine.Name</td>
+                        <td>@wine.Group</td>
+                        <td>@wine.Class</td>
+                        <td>@wine.Category</td>
+                        @if (isAdmin)
+                        {
+                            <td>@(wineProducers.FirstOrDefault(p => p.WineProducerId == wine.WineProducerId)?.WineyardName ?? wine.WineProducerId)</td>
+                        }
+                        @if (canEdit)
+                        {
                             <td class="text-nowrap">
                                 <button @onclick="() => StartEdit(wine)" class="btn btn-sm btn-secondary me-1">✏️</button>
                                 <button @onclick="() => DeleteWine(wine.WineId)" class="btn btn-sm btn-danger">🗑️</button>
                             </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
-}
+</div>
 
 <hr />
 
 @* ── Edit form (shown when a wine is selected for editing) ── *@
-@if (editingWine is not null)
+@if (canEdit && editingWine is not null)
 {
     <div class="card border-warning mb-3">
         <div class="card-header bg-warning text-dark">Rediger vin</div>
@@ -72,6 +72,8 @@
 }
 
 @* ── Add form ── *@
+@if (canEdit)
+{
 <div class="card">
     <div class="card-body">
         <h4>Legg til ny vin</h4>
@@ -83,6 +85,7 @@
         </EditForm>
     </div>
 </div>
+}
 
 @code {
     private List<Wine> wines = new();
@@ -95,8 +98,12 @@
     private bool isWineProducer;
     private WineProducer? currentProducer;
 
+    private bool canEdit => isAdmin || isWineProducer;
+
     private IEnumerable<Wine> VisibleWines =>
-        isAdmin ? wines : wines.Where(w => w.WineProducerId == currentProducer?.WineProducerId);
+        isAdmin ? wines :
+        isWineProducer ? wines.Where(w => w.WineProducerId == currentProducer?.WineProducerId) :
+        wines;
 
     protected override async Task OnInitializedAsync()
     {

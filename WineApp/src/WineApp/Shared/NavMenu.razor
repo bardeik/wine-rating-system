@@ -17,18 +17,26 @@
                 <span class="oi oi-home" aria-hidden="true"></span> Hjem
             </NavLink>
         </div>
-        <AuthorizeView>
+        <AuthorizeView Roles="Admin,WineProducer">
             <Authorized>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="wines">
                         <span class="oi oi-list" aria-hidden="true"></span> Viner
                     </NavLink>
                 </div>
+            </Authorized>
+        </AuthorizeView>
+        <AuthorizeView Roles="Admin,Judge">
+            <Authorized>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="wineratings">
                         <span class="oi oi-star" aria-hidden="true"></span> Vurderinger
                     </NavLink>
                 </div>
+            </Authorized>
+        </AuthorizeView>
+        <AuthorizeView>
+            <Authorized>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="reports">
                         <span class="oi oi-bar-chart" aria-hidden="true"></span> Rapporter

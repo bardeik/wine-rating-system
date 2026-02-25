@@ -1,5 +1,5 @@
 @page "/wineratings"
-@attribute [Authorize]
+@attribute [Authorize(Roles = "Admin,Judge")]
 @inject IWineRatingRepository WineRatingRepository
 @inject IWineRepository WineRepository
 @inject UserManager<ApplicationUser> UserManager
@@ -9,49 +9,51 @@
 <PageTitle>Vurderinger</PageTitle>
 
 @* ── Ratings table (Admin sees all + extra columns, Judge sees own only) ── *@
-@if (isAdmin || (isJudge && currentUser is not null))
-{
-    <h3>@(isAdmin ? "Vurderinger" : "Mine vurderinger")</h3>
-    <div class="card mb-3">
-        <div class="card-body">
-            <table class="table">
-                <thead>
+<h3>@(isAdmin ? "Vurderinger" : isJudge ? "Mine vurderinger" : "Vurderinger")</h3>
+<div class="card mb-3">
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    @if (isAdmin) { <th>Vurdering Id</th> }
+                    <th>Utseende</th>
+                    <th>Nese</th>
+                    <th>Smak</th>
+                    @if (isAdmin) { <th>Dommer</th> }
+                    <th>Vin</th>
+                    @if (canEdit) { <th></th> }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var rating in VisibleRatings)
+                {
                     <tr>
-                        @if (isAdmin) { <th>Vurdering Id</th> }
-                        <th>Utseende</th>
-                        <th>Nese</th>
-                        <th>Smak</th>
-                        @if (isAdmin) { <th>Dommer</th> }
-                        <th>Vin</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var rating in VisibleRatings)
-                    {
-                        <tr>
-                            @if (isAdmin) { <td>@rating.WineRatingId</td> }
-                            <td>@rating.Visuality</td>
-                            <td>@rating.Nose</td>
-                            <td>@rating.Taste</td>
-                            @if (isAdmin) { <td>@rating.JudgeId</td> }
-                            <td>@WineName(rating.WineId)</td>
+                        @if (isAdmin) { <td>@rating.WineRatingId</td> }
+                        <td>@rating.Visuality</td>
+                        <td>@rating.Nose</td>
+                        <td>@rating.Taste</td>
+                        @if (isAdmin) { <td>@rating.JudgeId</td> }
+                        <td>@WineName(rating.WineId)</td>
+                        @if (canEdit)
+                        {
                             <td>
                                 <button @onclick="() => DeleteWineRating(rating.WineRatingId)" class="btn btn-sm btn-danger">
                                     <span>🗑️</span>
                                 </button>
                             </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
-}
+</div>
 
 <hr />
 
-@* ── Shared: add rating form ── *@
+@* ── Add rating form ── *@
+@if (canEdit)
+{
 <div class="card">
     <div class="card-body">
         <h4>Legg til ny vurdering</h4>
@@ -110,6 +112,7 @@
         </EditForm>
     </div>
 </div>
+}
 
 @code {
     // ── State ──────────────────────────────────────────────
@@ -122,6 +125,8 @@
     private bool isAdmin;
     private bool isJudge;
     private ApplicationUser? currentUser;
+
+    private bool canEdit => isAdmin || isJudge;
 
     // ── Lifecycle ──────────────────────────────────────────
     protected override async Task OnInitializedAsync()
@@ -148,7 +153,9 @@
 
     // ── Helpers ────────────────────────────────────────────
     private IEnumerable<WineRating> VisibleRatings =>
-        isAdmin ? wineRatings : wineRatings.Where(r => r.JudgeId == (currentUser?.DisplayName ?? currentUser?.UserName));
+        isAdmin ? wineRatings :
+        isJudge ? wineRatings.Where(r => r.JudgeId == (currentUser?.DisplayName ?? currentUser?.UserName)) :
+        wineRatings;
 
     private string WineName(string wineId)
     {

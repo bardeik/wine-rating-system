@@ -1,8 +1,18 @@
 @page "/"
+@inject NavigationManager Navigation
+@using Microsoft.AspNetCore.WebUtilities
 
 <PageTitle>Wine Rating System</PageTitle>
 
 <div class="container mt-4">
+    @if (accessDenied)
+    {
+        <div class="alert alert-warning alert-dismissible" role="alert">
+            <strong>Ingen tilgang.</strong> Siden du prøvde å åpne er ikke tilgjengelig med din nåværende rolle.
+            <button type="button" class="btn-close" @onclick="() => accessDenied = false"></button>
+        </div>
+    }
+
     <h1>Velkommen til Vinbedømmelsessystemet</h1>
 
     <p class="lead">Dette er et system for bedømming av vin i Norge.</p>
@@ -49,9 +59,11 @@
 </div>
 
 @code {
+    private bool accessDenied;
+
     protected override void OnInitialized()
     {
-        // This ensures the component initializes properly
-        base.OnInitialized();
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        accessDenied = QueryHelpers.ParseQuery(uri.Query).ContainsKey("accessDenied");
     }
 }
