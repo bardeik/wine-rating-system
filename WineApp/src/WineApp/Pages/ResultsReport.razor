@@ -1,0 +1,437 @@
+@page "/results-report"
+@attribute [Authorize(Roles = "Admin,Viewer")]
+@inject IEventRepository EventRepository
+@inject IWineRepository WineRepository
+@inject IWineResultRepository WineResultRepository
+@inject IWineProducerRepository WineProducerRepository
+@inject IScoreAggregationService ScoreAggregationService
+@using WineApp.Services
+
+<PageTitle>Resultatliste</PageTitle>
+
+<h3>📊 Resultatliste</h3>
+
+@if (activeEvent == null)
+{
+    <div class="alert alert-warning">
+        <h4>Ingen aktivt arrangement</h4>
+        <p>Det finnes ingen aktive arrangementer for øyeblikket.</p>
+    </div>
+}
+else
+{
+    <div class="alert alert-info mb-4">
+        <div class="row">
+            <div class="col-md-8">
+                <h5>@activeEvent.Name</h5>
+                <p class="mb-0">Totalt @allResults.Count resultater</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-primary" @onclick="RecalculateAll">
+                    🔄 Beregn alle resultater
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Controls -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <label class="form-label">Gruppe</label>
+                    <select class="form-select" @bind="filterGroup">
+                        <option value="">Alle grupper</option>
+                        @foreach (var group in Enum.GetValues<WineGroup>())
+                        {
+                            <option value="@group">@group</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Klasse</label>
+                    <select class="form-select" @bind="filterClass">
+                        <option value="">Alle klasser</option>
+                        @foreach (var cls in Enum.GetValues<WineClass>())
+                        {
+                            <option value="@cls">@cls</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Kategori</label>
+                    <select class="form-select" @bind="filterCategory">
+                        <option value="">Alle kategorier</option>
+                        @foreach (var cat in Enum.GetValues<WineCategory>())
+                        {
+                            <option value="@cat">@cat</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Klassifisering</label>
+                    <select class="form-select" @bind="filterClassification">
+                        <option value="">Alle klassifiseringer</option>
+                        <option value="Gull">Gull</option>
+                        <option value="Sølv">Sølv</option>
+                        <option value="Bronse">Bronse</option>
+                        <option value="Særlig">Særlig anerkjennelse</option>
+                        <option value="Akseptabel">Akseptabel</option>
+                        <option value="IkkeGodkjent">Ikke godkjent</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <label class="form-label">Søk (vin eller produsent)</label>
+                    <input type="text" class="form-control" @bind="searchTerm" @bind:event="oninput" placeholder="Søk etter vinnavn eller produsent..." />
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Sorter etter</label>
+                    <select class="form-select" @bind="sortBy">
+                        <option value="Score">Total score (høy-lav)</option>
+                        <option value="ScoreAsc">Total score (lav-høy)</option>
+                        <option value="WineNumber">Vinnummer</option>
+                        <option value="WineName">Vinnavn</option>
+                        <option value="Producer">Produsent</option>
+                        <option value="Classification">Klassifisering</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-success w-100" @onclick="ExportToCSV">
+                        📥 Eksporter til CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Resultater (@FilteredResults.Count())</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th @onclick='() => SetSort("WineNumber")' style="cursor: pointer;">
+                                Nr. @SortIndicator("WineNumber")
+                            </th>
+                            <th @onclick='() => SetSort("WineName")' style="cursor: pointer;">
+                                Vinnavn @SortIndicator("WineName")
+                            </th>
+                            <th>Produsent</th>
+                            <th @onclick='() => SetSort("Group")' style="cursor: pointer;">
+                                Gruppe @SortIndicator("Group")
+                            </th>
+                            <th>Klasse</th>
+                            <th>Kategori</th>
+                            <th @onclick='() => SetSort("Score")' style="cursor: pointer;">
+                                Score @SortIndicator("Score")
+                            </th>
+                            <th>Panel snitt (A/B/C)</th>
+                            <th @onclick='() => SetSort("Classification")' style="cursor: pointer;">
+                                Klassifisering @SortIndicator("Classification")
+                            </th>
+                            <th>Dommere</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in FilteredResults)
+                        {
+                            var wine = wines.FirstOrDefault(w => w.WineId == item.result.WineId);
+                            if (wine == null) continue;
+
+                            var producer = producers.FirstOrDefault(p => p.WineProducerId == wine.WineProducerId);
+
+                            <tr class="@GetRowClass(item.result)">
+                                <td><strong>@wine.WineNumber</strong></td>
+                                <td>@wine.Name</td>
+                                <td>@(producer?.WineyardName ?? "Ukjent")</td>
+                                <td>@wine.Group</td>
+                                <td>@wine.Class</td>
+                                <td>@wine.Category</td>
+                                <td class="text-end">
+                                    <strong class="@GetScoreClass(item.result.TotalScore)">
+                                        @item.result.TotalScore.ToString("F1")
+                                    </strong>
+                                </td>
+                                <td class="text-end">
+                                    <small>
+                                        @item.result.AverageAppearance.ToString("F2") /
+                                        @item.result.AverageNose.ToString("F2") /
+                                        @item.result.AverageTaste.ToString("F2")
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-@GetClassificationColor(item.result.Classification)">
+                                        @item.result.Classification
+                                    </span>
+                                </td>
+                                <td class="text-center">@item.result.NumberOfRatings</td>
+                                <td>
+                                    @if (item.result.IsDefective)
+                                    {
+                                        <span class="badge bg-danger" title="Defekt oppdaget">⚠️ Defekt</span>
+                                    }
+                                    @if (item.result.IsOutlier)
+                                    {
+                                        <span class="badge bg-warning text-dark" title="Spread > @activeEvent.OutlierThreshold">🔄 Outlier</span>
+                                    }
+                                    @if (item.result.RequiresLottery)
+                                    {
+                                        <span class="badge bg-info" title="Likt snitt, krever loddtrekning">🎲 Loddtrekning</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Summary -->
+    <div class="row mt-4">
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted mb-0">Totalt</h6>
+                    <h2 class="mb-0">@allResults.Count</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center bg-warning bg-opacity-25">
+                <div class="card-body">
+                    <h6 class="text-muted mb-0">Gull</h6>
+                    <h2 class="mb-0">@allResults.Count(r => r.Classification == "Gull")</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center bg-secondary bg-opacity-25">
+                <div class="card-body">
+                    <h6 class="text-muted mb-0">Sølv</h6>
+                    <h2 class="mb-0">@allResults.Count(r => r.Classification == "Sølv")</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center" style="background-color: #cd7f3222;">
+                <div class="card-body">
+                    <h6 class="text-muted mb-0">Bronse</h6>
+                    <h2 class="mb-0">@allResults.Count(r => r.Classification == "Bronse")</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center bg-danger bg-opacity-10">
+                <div class="card-body">
+                    <h6 class="text-muted mb-0">Outliers</h6>
+                    <h2 class="mb-0">@allResults.Count(r => r.IsOutlier)</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center bg-danger bg-opacity-25">
+                <div class="card-body">
+                    <h6 class="text-muted mb-0">Defekter</h6>
+                    <h2 class="mb-0">@allResults.Count(r => r.IsDefective)</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <div class="alert @statusClass alert-dismissible mt-3">
+        @statusMessage
+        <button type="button" class="btn-close" @onclick="() => statusMessage = string.Empty"></button>
+    </div>
+}
+
+@code {
+    private Event? activeEvent;
+    private List<WineResult> allResults = new();
+    private List<Wine> wines = new();
+    private List<WineProducer> producers = new();
+
+    private string filterGroup = string.Empty;
+    private string filterClass = string.Empty;
+    private string filterCategory = string.Empty;
+    private string filterClassification = string.Empty;
+    private string searchTerm = string.Empty;
+    private string sortBy = "Score";
+
+    private string statusMessage = string.Empty;
+    private string statusClass = "alert-info";
+
+    private IEnumerable<(Wine wine, WineResult result)> FilteredResults
+    {
+        get
+        {
+            var query = allResults
+                .Select(r => (wine: wines.FirstOrDefault(w => w.WineId == r.WineId), result: r))
+                .Where(x => x.wine != null);
+
+            // Apply filters
+            if (!string.IsNullOrEmpty(filterGroup))
+                query = query.Where(x => x.wine!.Group.ToString() == filterGroup);
+
+            if (!string.IsNullOrEmpty(filterClass))
+                query = query.Where(x => x.wine!.Class.ToString() == filterClass);
+
+            if (!string.IsNullOrEmpty(filterCategory))
+                query = query.Where(x => x.wine!.Category.ToString() == filterCategory);
+
+            if (!string.IsNullOrEmpty(filterClassification))
+                query = query.Where(x => x.result.Classification == filterClassification);
+
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                var search = searchTerm.ToLower();
+                query = query.Where(x =>
+                    x.wine!.Name.ToLower().Contains(search) ||
+                    producers.Any(p => p.WineProducerId == x.wine.WineProducerId &&
+                                      p.WineyardName.ToLower().Contains(search)));
+            }
+
+            // Apply sorting
+            query = sortBy switch
+            {
+                "Score" => query.OrderByDescending(x => x.result.TotalScore),
+                "ScoreAsc" => query.OrderBy(x => x.result.TotalScore),
+                "WineNumber" => query.OrderBy(x => x.wine!.WineNumber ?? 0),
+                "WineName" => query.OrderBy(x => x.wine!.Name),
+                "Producer" => query.OrderBy(x => producers.FirstOrDefault(p => p.WineProducerId == x.wine!.WineProducerId)?.WineyardName ?? ""),
+                "Classification" => query.OrderBy(x => GetClassificationOrder(x.result.Classification)),
+                "Group" => query.OrderBy(x => x.wine!.Group).ThenByDescending(x => x.result.TotalScore),
+                _ => query.OrderByDescending(x => x.result.TotalScore)
+            };
+
+            return query!;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        LoadData();
+    }
+
+    private void LoadData()
+    {
+        activeEvent = EventRepository.GetActiveEvent();
+        wines = WineRepository.GetAllWines().ToList();
+        producers = WineProducerRepository.GetAllWineProducers().ToList();
+
+        if (activeEvent != null)
+        {
+            allResults = WineResultRepository.GetAllWineResults()
+                .Where(r => wines.Any(w => w.WineId == r.WineId && w.EventId == activeEvent.EventId))
+                .ToList();
+        }
+    }
+
+    private async Task RecalculateAll()
+    {
+        if (activeEvent == null) return;
+
+        try
+        {
+            var results = await ScoreAggregationService.RecalculateEventResultsAsync(activeEvent.EventId);
+            allResults = results;
+            ShowStatus($"✓ Beregnet resultater for {results.Count} viner", "alert-success");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Feil ved beregning: {ex.Message}", "alert-danger");
+        }
+    }
+
+    private void SetSort(string column)
+    {
+        if (sortBy == column)
+        {
+            sortBy = column + "Asc";
+        }
+        else
+        {
+            sortBy = column;
+        }
+    }
+
+    private string SortIndicator(string column)
+    {
+        if (sortBy == column) return "▼";
+        if (sortBy == column + "Asc") return "▲";
+        return "";
+    }
+
+    private string GetRowClass(WineResult result)
+    {
+        if (result.IsDefective) return "table-danger";
+        if (result.IsOutlier) return "table-warning";
+        return "";
+    }
+
+    private string GetScoreClass(decimal score)
+    {
+        if (activeEvent == null) return "";
+        
+        if (score >= activeEvent.GoldThreshold) return "text-success";
+        if (score >= activeEvent.SilverThreshold) return "text-primary";
+        if (score >= activeEvent.BronzeThreshold) return "text-secondary";
+        return "";
+    }
+
+    private string GetClassificationColor(string classification)
+    {
+        return classification switch
+        {
+            "Gull" => "warning",
+            "Sølv" => "secondary",
+            "Bronse" => "bronze",
+            "Særlig" => "info",
+            "Akseptabel" => "light",
+            _ => "danger"
+        };
+    }
+
+    private int GetClassificationOrder(string classification)
+    {
+        return classification switch
+        {
+            "Gull" => 1,
+            "Sølv" => 2,
+            "Bronse" => 3,
+            "Særlig" => 4,
+            "Akseptabel" => 5,
+            _ => 6
+        };
+    }
+
+    private void ExportToCSV()
+    {
+        // TODO: Implement CSV export
+        ShowStatus("ℹ️ CSV-eksport kommer snart", "alert-info");
+    }
+
+    private void ShowStatus(string message, string cssClass)
+    {
+        statusMessage = message;
+        statusClass = cssClass;
+    }
+}
+

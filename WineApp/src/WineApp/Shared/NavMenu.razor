@@ -54,8 +54,18 @@
                 </div>
             </Authorized>
         </AuthorizeView>
-        <AuthorizeView>
+        <AuthorizeView Roles="Admin,Viewer">
             <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="trophy-reports">
+                        <span class="oi oi-award" aria-hidden="true"></span> Pokaler
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="results-report">
+                        <span class="oi oi-spreadsheet" aria-hidden="true"></span> Resultatliste
+                    </NavLink>
+                </div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="reports">
                         <span class="oi oi-bar-chart" aria-hidden="true"></span> Rapporter
@@ -63,17 +73,13 @@
                 </div>
             </Authorized>
         </AuthorizeView>
-        <AuthorizeView Roles="Admin,WineProducer">
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="wineproducers">
-                        <span class="oi oi-briefcase" aria-hidden="true"></span> Vinprodusenter
-                    </NavLink>
-                </div>
-            </Authorized>
-        </AuthorizeView>
         <AuthorizeView Roles="Admin">
             <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="outlier-management">
+                        <span class="oi oi-warning" aria-hidden="true"></span> Outlier Management
+                    </NavLink>
+                </div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="flight-management">
                         <span class="oi oi-list-rich" aria-hidden="true"></span> Flight Management

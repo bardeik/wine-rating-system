@@ -1,0 +1,395 @@
+@page "/trophy-reports"
+@attribute [Authorize(Roles = "Admin,Viewer")]
+@inject IEventRepository EventRepository
+@inject ITrophyService TrophyService
+@inject IWineRepository WineRepository
+@inject IWineResultRepository WineResultRepository
+@inject IScoreAggregationService ScoreAggregationService
+@using WineApp.Services
+
+<PageTitle>Pokalrapporter</PageTitle>
+
+<h3>🏆 Pokalrapporter</h3>
+
+@if (activeEvent == null)
+{
+    <div class="alert alert-warning">
+        <h4>Ingen aktivt arrangement</h4>
+        <p>Det finnes ingen aktive arrangementer for øyeblikket.</p>
+    </div>
+}
+else
+{
+    <div class="alert alert-info mb-4">
+        <h5>@activeEvent.Name</h5>
+        <p class="mb-0">Pokalvinnere blir automatisk beregnet basert på vurderinger og klassifiseringer.</p>
+    </div>
+
+    <!-- Calculate Button -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <button class="btn btn-primary btn-lg w-100" @onclick="CalculateTrophies">
+                🔄 Beregn pokalvinnere
+            </button>
+            @if (lastCalculated != null)
+            {
+                <small class="text-muted mt-2 d-block text-center">
+                    Sist beregnet: @lastCalculated.Value.ToString("dd.MM.yyyy HH:mm")
+                </small>
+            }
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Årets Vinbonde -->
+        <div class="col-md-4 mb-4">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">🏅 Årets Vinbonde</h5>
+                    <small>Høyest score i Gruppe A1 med Vinbonde-status</small>
+                </div>
+                <div class="card-body">
+                    @if (aaretsVinbonde.wine != null && aaretsVinbonde.result != null)
+                    {
+                        <div class="text-center mb-3">
+                            <div class="display-1 mb-2">🏅</div>
+                            <h4 class="text-primary">@aaretsVinbonde.wine.Name</h4>
+                        </div>
+
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5">Vinnummer:</dt>
+                            <dd class="col-sm-7">
+                                <strong class="badge bg-info fs-6">@aaretsVinbonde.wine.WineNumber</strong>
+                            </dd>
+
+                            <dt class="col-sm-5">Produsent:</dt>
+                            <dd class="col-sm-7">@GetProducerName(aaretsVinbonde.wine.WineProducerId)</dd>
+
+                            <dt class="col-sm-5">Årgang:</dt>
+                            <dd class="col-sm-7">@aaretsVinbonde.wine.Vintage</dd>
+
+                            <dt class="col-sm-5">Total score:</dt>
+                            <dd class="col-sm-7">
+                                <strong class="text-success fs-5">@aaretsVinbonde.result.TotalScore.ToString("F1")</strong>
+                            </dd>
+
+                            <dt class="col-sm-5">Klassifisering:</dt>
+                            <dd class="col-sm-7">
+                                <span class="badge bg-@GetClassificationColor(aaretsVinbonde.result.Classification)">
+                                    @aaretsVinbonde.result.Classification
+                                </span>
+                            </dd>
+
+                            <dt class="col-sm-5">Panel snitt:</dt>
+                            <dd class="col-sm-7">
+                                A: @aaretsVinbonde.result.AverageAppearance.ToString("F2") |
+                                B: @aaretsVinbonde.result.AverageNose.ToString("F2") |
+                                C: @aaretsVinbonde.result.AverageTaste.ToString("F2")
+                            </dd>
+
+                            <dt class="col-sm-5">Antall vurderinger:</dt>
+                            <dd class="col-sm-7">@aaretsVinbonde.result.NumberOfRatings dommere</dd>
+
+                            @if (aaretsVinbonde.result.RequiresLottery)
+                            {
+                                <dt class="col-sm-12">
+                                    <div class="alert alert-warning p-2 mt-2 mb-0">
+                                        <strong>🎲 Loddtrekning påkrevd!</strong><br />
+                                        <small>Likt snitt med annen vin. Høyeste enkeltscore: @aaretsVinbonde.result.HighestSingleScore.ToString("F1")</small>
+                                    </div>
+                                </dt>
+                            }
+                        </dl>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-4">
+                            <p class="mb-0">Ingen kvalifisert vin funnet</p>
+                            <small>Krever: Gruppe A1, Vinbonde-status, medalje (Gull/Sølv/Bronse)</small>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Beste Norske Vin -->
+        <div class="col-md-4 mb-4">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">🇳🇴 Vinskuets beste norske vin</h5>
+                    <small>Høyest score i gruppene A1, B, C, D</small>
+                </div>
+                <div class="card-body">
+                    @if (bestNorwegian.wine != null && bestNorwegian.result != null)
+                    {
+                        <div class="text-center mb-3">
+                            <div class="display-1 mb-2">🥇</div>
+                            <h4 class="text-primary">@bestNorwegian.wine.Name</h4>
+                        </div>
+
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5">Vinnummer:</dt>
+                            <dd class="col-sm-7">
+                                <strong class="badge bg-info fs-6">@bestNorwegian.wine.WineNumber</strong>
+                            </dd>
+
+                            <dt class="col-sm-5">Produsent:</dt>
+                            <dd class="col-sm-7">@GetProducerName(bestNorwegian.wine.WineProducerId)</dd>
+
+                            <dt class="col-sm-5">Gruppe:</dt>
+                            <dd class="col-sm-7">@bestNorwegian.wine.Group</dd>
+
+                            <dt class="col-sm-5">Årgang:</dt>
+                            <dd class="col-sm-7">@bestNorwegian.wine.Vintage</dd>
+
+                            <dt class="col-sm-5">Total score:</dt>
+                            <dd class="col-sm-7">
+                                <strong class="text-success fs-5">@bestNorwegian.result.TotalScore.ToString("F1")</strong>
+                            </dd>
+
+                            <dt class="col-sm-5">Klassifisering:</dt>
+                            <dd class="col-sm-7">
+                                <span class="badge bg-@GetClassificationColor(bestNorwegian.result.Classification)">
+                                    @bestNorwegian.result.Classification
+                                </span>
+                            </dd>
+
+                            <dt class="col-sm-5">Panel snitt:</dt>
+                            <dd class="col-sm-7">
+                                A: @bestNorwegian.result.AverageAppearance.ToString("F2") |
+                                B: @bestNorwegian.result.AverageNose.ToString("F2") |
+                                C: @bestNorwegian.result.AverageTaste.ToString("F2")
+                            </dd>
+
+                            <dt class="col-sm-5">Antall vurderinger:</dt>
+                            <dd class="col-sm-7">@bestNorwegian.result.NumberOfRatings dommere</dd>
+
+                            @if (bestNorwegian.result.RequiresLottery)
+                            {
+                                <dt class="col-sm-12">
+                                    <div class="alert alert-warning p-2 mt-2 mb-0">
+                                        <strong>🎲 Loddtrekning påkrevd!</strong><br />
+                                        <small>Likt snitt med annen vin. Høyeste enkeltscore: @bestNorwegian.result.HighestSingleScore.ToString("F1")</small>
+                                    </div>
+                                </dt>
+                            }
+                        </dl>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-4">
+                            <p class="mb-0">Ingen kvalifisert vin funnet</p>
+                            <small>Krever: Gruppe A1/B/C/D, medalje (Gull/Sølv/Bronse)</small>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Beste Nordiske Vin -->
+        <div class="col-md-4 mb-4">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">🌍 Vinskuets beste nordiske vin</h5>
+                    <small>Høyest score i gruppene A1 og A2</small>
+                </div>
+                <div class="card-body">
+                    @if (bestNordic.wine != null && bestNordic.result != null)
+                    {
+                        <div class="text-center mb-3">
+                            <div class="display-1 mb-2">🏆</div>
+                            <h4 class="text-primary">@bestNordic.wine.Name</h4>
+                        </div>
+
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5">Vinnummer:</dt>
+                            <dd class="col-sm-7">
+                                <strong class="badge bg-info fs-6">@bestNordic.wine.WineNumber</strong>
+                            </dd>
+
+                            <dt class="col-sm-5">Produsent:</dt>
+                            <dd class="col-sm-7">@GetProducerName(bestNordic.wine.WineProducerId)</dd>
+
+                            <dt class="col-sm-5">Gruppe:</dt>
+                            <dd class="col-sm-7">@bestNordic.wine.Group</dd>
+
+                            <dt class="col-sm-5">Land:</dt>
+                            <dd class="col-sm-7">@bestNordic.wine.Country</dd>
+
+                            <dt class="col-sm-5">Årgang:</dt>
+                            <dd class="col-sm-7">@bestNordic.wine.Vintage</dd>
+
+                            <dt class="col-sm-5">Total score:</dt>
+                            <dd class="col-sm-7">
+                                <strong class="text-success fs-5">@bestNordic.result.TotalScore.ToString("F1")</strong>
+                            </dd>
+
+                            <dt class="col-sm-5">Klassifisering:</dt>
+                            <dd class="col-sm-7">
+                                <span class="badge bg-@GetClassificationColor(bestNordic.result.Classification)">
+                                    @bestNordic.result.Classification
+                                </span>
+                            </dd>
+
+                            <dt class="col-sm-5">Panel snitt:</dt>
+                            <dd class="col-sm-7">
+                                A: @bestNordic.result.AverageAppearance.ToString("F2") |
+                                B: @bestNordic.result.AverageNose.ToString("F2") |
+                                C: @bestNordic.result.AverageTaste.ToString("F2")
+                            </dd>
+
+                            <dt class="col-sm-5">Antall vurderinger:</dt>
+                            <dd class="col-sm-7">@bestNordic.result.NumberOfRatings dommere</dd>
+
+                            @if (bestNordic.result.RequiresLottery)
+                            {
+                                <dt class="col-sm-12">
+                                    <div class="alert alert-warning p-2 mt-2 mb-0">
+                                        <strong>🎲 Loddtrekning påkrevd!</strong><br />
+                                        <small>Likt snitt med annen vin. Høyeste enkeltscore: @bestNordic.result.HighestSingleScore.ToString("F1")</small>
+                                    </div>
+                                </dt>
+                            }
+                        </dl>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-4">
+                            <p class="mb-0">Ingen kvalifisert vin funnet</p>
+                            <small>Krever: Gruppe A1/A2, medalje (Gull/Sølv/Bronse)</small>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print / Export Options -->
+    <div class="card">
+        <div class="card-body">
+            <h5>Handlinger</h5>
+            <div class="btn-group" role="group">
+                <button class="btn btn-outline-primary" @onclick="PrintTrophyReport">
+                    🖨️ Skriv ut rapport
+                </button>
+                <button class="btn btn-outline-success" @onclick="ExportTrophyReport">
+                    📄 Eksporter til PDF
+                </button>
+                <button class="btn btn-outline-info" @onclick="ShareResults">
+                    📧 Del resultater
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <div class="alert @statusClass alert-dismissible mt-3">
+        @statusMessage
+        <button type="button" class="btn-close" @onclick="() => statusMessage = string.Empty"></button>
+    </div>
+}
+
+@code {
+    private Event? activeEvent;
+    private (Wine? wine, WineResult? result) aaretsVinbonde;
+    private (Wine? wine, WineResult? result) bestNorwegian;
+    private (Wine? wine, WineResult? result) bestNordic;
+    
+    private DateTime? lastCalculated;
+    private string statusMessage = string.Empty;
+    private string statusClass = "alert-info";
+
+    private Dictionary<string, string> producerNames = new();
+
+    protected override void OnInitialized()
+    {
+        LoadData();
+    }
+
+    private void LoadData()
+    {
+        activeEvent = EventRepository.GetActiveEvent();
+        
+        if (activeEvent != null)
+        {
+            // Cache producer names
+            var producers = WineRepository.GetAllWines()
+                .Where(w => w.EventId == activeEvent.EventId)
+                .Select(w => w.WineProducerId)
+                .Distinct();
+
+            // This would need WineProducerRepository injected
+            // For now, just show producer IDs
+        }
+    }
+
+    private void CalculateTrophies()
+    {
+        if (activeEvent == null) return;
+
+        try
+        {
+            // First ensure all results are calculated
+            var results = ScoreAggregationService.RecalculateEventResultsAsync(activeEvent.EventId).Result;
+            
+            // Calculate trophies
+            aaretsVinbonde = TrophyService.GetAaretsVinbonde(activeEvent.EventId);
+            bestNorwegian = TrophyService.GetBestNorwegianWine(activeEvent.EventId);
+            bestNordic = TrophyService.GetBestNordicWine(activeEvent.EventId);
+            
+            lastCalculated = DateTime.Now;
+            
+            ShowStatus($"✓ Pokalvinnere beregnet! Totalt {results.Count} resultater oppdatert.", "alert-success");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Feil ved beregning: {ex.Message}", "alert-danger");
+        }
+    }
+
+    private string GetProducerName(string producerId)
+    {
+        // This would use WineProducerRepository
+        // For now, return ID
+        return producerId;
+    }
+
+    private string GetClassificationColor(string classification)
+    {
+        return classification switch
+        {
+            "Gull" => "warning",
+            "Sølv" => "secondary",
+            "Bronse" => "bronze",
+            _ => "light"
+        };
+    }
+
+    private void PrintTrophyReport()
+    {
+        // TODO: Implement print functionality
+        ShowStatus("ℹ️ Utskrift kommer snart", "alert-info");
+    }
+
+    private void ExportTrophyReport()
+    {
+        // TODO: Implement PDF export
+        ShowStatus("ℹ️ PDF-eksport kommer snart", "alert-info");
+    }
+
+    private void ShareResults()
+    {
+        // TODO: Implement email sharing
+        ShowStatus("ℹ️ E-postdeling kommer snart", "alert-info");
+    }
+
+    private void ShowStatus(string message, string cssClass)
+    {
+        statusMessage = message;
+        statusClass = cssClass;
+    }
+}
+
