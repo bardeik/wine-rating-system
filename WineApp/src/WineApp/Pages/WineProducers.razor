@@ -1,127 +1,292 @@
 @page "/wineproducers"
 @attribute [Authorize(Roles = "Admin,WineProducer")]
 @inject IWineProducerRepository WineProducerRepository
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using System.Security.Claims
 
 <PageTitle>Vinprodusenter</PageTitle>
 
-<h3>Vinprodusenter</h3>
-
-<div class="card">
-    <div class="card-body">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Vinprodusent Id</th>
-                    <th>Vingårdsnavn</th>
-                    <th>Organisasjonsnummer</th>
-                    <th>Ansvarlig produsent</th>
-                    <th>Adresse</th>
-                    <th>Postnummer</th>
-                    <th>By</th>
-                    <th>Land</th>
-                    <th>E-post</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var producer in wineProducers)
-                {
+@* ── Admin: full list + create with linked user account ── *@
+@if (isAdmin)
+{
+    <h3>Vinprodusenter</h3>
+    <div class="card mb-3">
+        <div class="card-body">
+            <table class="table">
+                <thead>
                     <tr>
-                        <td>@producer.WineProducerId</td>
-                        <td>@producer.WineyardName</td>
-                        <td>@producer.OrganisationNumber</td>
-                        <td>@producer.ResponsibleProducerName</td>
-                        <td>@producer.Address</td>
-                        <td>@producer.Zip</td>
-                        <td>@producer.City</td>
-                        <td>@producer.Country</td>
-                        <td>@producer.Email</td>
-                        <td>
-                            <button @onclick="() => DeleteWineProducer(producer.WineProducerId)" class="btn btn-sm btn-danger">
-                                <span>🗑️</span>
-                            </button>
-                        </td>
+                        <th>Vingårdsnavn</th>
+                        <th>Org.nr</th>
+                        <th>Ansvarlig</th>
+                        <th>By</th>
+                        <th>Land</th>
+                        <th>E-post</th>
+                        <th>Brukerkonto</th>
+                        <th></th>
                     </tr>
-                }
-            </tbody>
-        </table>
-
-        <hr />
-
-        <h4>Legg til ny vinprodusent</h4>
-        <EditForm Model="@newProducer" OnValidSubmit="@AddNewWineProducer">
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" />
-
-            <div class="mb-3">
-                <label class="form-label">Vingårdsnavn</label>
-                <InputText @bind-Value="newProducer.WineyardName" class="form-control" placeholder="Vingårdsnavn" />
-                <ValidationMessage For="@(() => newProducer.WineyardName)" class="text-danger" />
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Organisasjonsnummer</label>
-                <InputText @bind-Value="newProducer.OrganisationNumber" class="form-control" placeholder="Organisasjonsnummer" />
-                <ValidationMessage For="@(() => newProducer.OrganisationNumber)" class="text-danger" />
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Ansvarlig produsent</label>
-                <InputText @bind-Value="newProducer.ResponsibleProducerName" class="form-control" placeholder="Ansvarlig produsent" />
-                <ValidationMessage For="@(() => newProducer.ResponsibleProducerName)" class="text-danger" />
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Adresse</label>
-                <InputText @bind-Value="newProducer.Address" class="form-control" placeholder="Adresse" />
-                <ValidationMessage For="@(() => newProducer.Address)" class="text-danger" />
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Postnummer</label>
-                <InputText @bind-Value="newProducer.Zip" class="form-control" placeholder="Postnummer" />
-                <ValidationMessage For="@(() => newProducer.Zip)" class="text-danger" />
-            </div>
-            <div class="mb-3">
-                <label class="form-label">By</label>
-                <InputText @bind-Value="newProducer.City" class="form-control" placeholder="By" />
-                <ValidationMessage For="@(() => newProducer.City)" class="text-danger" />
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Land</label>
-                <InputText @bind-Value="newProducer.Country" class="form-control" placeholder="Land" />
-                <ValidationMessage For="@(() => newProducer.Country)" class="text-danger" />
-            </div>
-            <div class="mb-3">
-                <label class="form-label">E-post</label>
-                <InputText @bind-Value="newProducer.Email" class="form-control" placeholder="E-post" />
-                <ValidationMessage For="@(() => newProducer.Email)" class="text-danger" />
-            </div>
-            <button type="submit" class="btn btn-primary">Legg til</button>
-        </EditForm>
+                </thead>
+                <tbody>
+                    @foreach (var producer in wineProducers)
+                    {
+                        <tr>
+                            <td>@producer.WineyardName</td>
+                            <td>@producer.OrganisationNumber</td>
+                            <td>@producer.ResponsibleProducerName</td>
+                            <td>@producer.City</td>
+                            <td>@producer.Country</td>
+                            <td>@producer.Email</td>
+                            <td>@(producerEmails.TryGetValue(producer.WineProducerId, out var email) ? email : "–")</td>
+                            <td>
+                                <button @onclick="() => DeleteWineProducer(producer.WineProducerId)" class="btn btn-sm btn-danger">
+                                    <span>🗑️</span>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
+
+    <div class="card">
+        <div class="card-body">
+            <h4>Legg til ny vinprodusent</h4>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+
+            <EditForm Model="@formModel" OnValidSubmit="@AddWineProducer">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger" />
+
+                <h5>Produsent</h5>
+                <div class="mb-3">
+                    <label class="form-label">Vingårdsnavn</label>
+                    <InputText @bind-Value="formModel.WineyardName" class="form-control" />
+                    <ValidationMessage For="@(() => formModel.WineyardName)" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Organisasjonsnummer</label>
+                    <InputText @bind-Value="formModel.OrganisationNumber" class="form-control" />
+                    <ValidationMessage For="@(() => formModel.OrganisationNumber)" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Ansvarlig produsent</label>
+                    <InputText @bind-Value="formModel.ResponsibleProducerName" class="form-control" />
+                    <ValidationMessage For="@(() => formModel.ResponsibleProducerName)" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Adresse</label>
+                    <InputText @bind-Value="formModel.Address" class="form-control" />
+                    <ValidationMessage For="@(() => formModel.Address)" class="text-danger" />
+                </div>
+                <div class="row">
+                    <div class="col mb-3">
+                        <label class="form-label">Postnummer</label>
+                        <InputText @bind-Value="formModel.Zip" class="form-control" />
+                        <ValidationMessage For="@(() => formModel.Zip)" class="text-danger" />
+                    </div>
+                    <div class="col mb-3">
+                        <label class="form-label">By</label>
+                        <InputText @bind-Value="formModel.City" class="form-control" />
+                        <ValidationMessage For="@(() => formModel.City)" class="text-danger" />
+                    </div>
+                    <div class="col mb-3">
+                        <label class="form-label">Land</label>
+                        <InputText @bind-Value="formModel.Country" class="form-control" />
+                        <ValidationMessage For="@(() => formModel.Country)" class="text-danger" />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">E-post (produsent)</label>
+                    <InputText @bind-Value="formModel.ProducerEmail" class="form-control" />
+                    <ValidationMessage For="@(() => formModel.ProducerEmail)" class="text-danger" />
+                </div>
+
+                <h5 class="mt-3">Brukerkonto</h5>
+                <div class="mb-3">
+                    <label class="form-label">Påloggings-e-post</label>
+                    <InputText @bind-Value="formModel.LoginEmail" class="form-control" />
+                    <ValidationMessage For="@(() => formModel.LoginEmail)" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Passord</label>
+                    <input type="password" @bind="formModel.Password" class="form-control" placeholder="Passord (minst 8 tegn)" />
+                    <ValidationMessage For="@(() => formModel.Password)" class="text-danger" />
+                </div>
+
+                <button type="submit" class="btn btn-primary">Legg til</button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@* ── WineProducer: own profile ── *@
+@if (isWineProducer && currentProducer is not null)
+{
+    <h3>Min vinprodusent</h3>
+    <div class="card">
+        <div class="card-body">
+            <EditForm Model="@currentProducer" OnValidSubmit="@SaveProfile">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger" />
+                <div class="mb-3">
+                    <label class="form-label">Vingårdsnavn</label>
+                    <InputText @bind-Value="currentProducer.WineyardName" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Ansvarlig produsent</label>
+                    <InputText @bind-Value="currentProducer.ResponsibleProducerName" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Adresse</label>
+                    <InputText @bind-Value="currentProducer.Address" class="form-control" />
+                </div>
+                <div class="row">
+                    <div class="col mb-3">
+                        <label class="form-label">Postnummer</label>
+                        <InputText @bind-Value="currentProducer.Zip" class="form-control" />
+                    </div>
+                    <div class="col mb-3">
+                        <label class="form-label">By</label>
+                        <InputText @bind-Value="currentProducer.City" class="form-control" />
+                    </div>
+                    <div class="col mb-3">
+                        <label class="form-label">Land</label>
+                        <InputText @bind-Value="currentProducer.Country" class="form-control" />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">E-post</label>
+                    <InputText @bind-Value="currentProducer.Email" class="form-control" />
+                </div>
+                @if (profileSaved)
+                {
+                    <div class="alert alert-success">Lagret!</div>
+                }
+                <button type="submit" class="btn btn-primary">Lagre</button>
+            </EditForm>
+        </div>
+    </div>
+}
 
 @code {
     private List<WineProducer> wineProducers = new();
-    private WineProducer newProducer = new();
+    private Dictionary<string, string> producerEmails = new();
+    private WineProducerFormModel formModel = new();
+    private string errorMessage = string.Empty;
+    private bool profileSaved;
 
-    protected override void OnInitialized()
+    // ── Auth ───────────────────────────────────────────────
+    private bool isAdmin;
+    private bool isWineProducer;
+    private WineProducer? currentProducer;
+
+    protected override async Task OnInitializedAsync()
     {
-        LoadWineProducers();
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        isAdmin = user.IsInRole("Admin");
+        isWineProducer = user.IsInRole("WineProducer");
+
+        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (isAdmin)
+        {
+            wineProducers = WineProducerRepository.GetAllWineProducers().ToList();
+            await LoadProducerEmailsAsync();
+        }
+
+        if (isWineProducer && userId is not null)
+            currentProducer = WineProducerRepository.GetWineProducerByUserId(userId);
     }
 
-    private void LoadWineProducers()
+    private async Task LoadProducerEmailsAsync()
     {
+        producerEmails.Clear();
+        foreach (var p in wineProducers.Where(p => !string.IsNullOrEmpty(p.UserId)))
+        {
+            var u = await UserManager.FindByIdAsync(p.UserId!);
+            if (u is not null)
+                producerEmails[p.WineProducerId] = u.Email ?? string.Empty;
+        }
+    }
+
+    private async Task AddWineProducer()
+    {
+        errorMessage = string.Empty;
+        var user = new ApplicationUser
+        {
+            UserName = formModel.LoginEmail,
+            Email = formModel.LoginEmail,
+            DisplayName = formModel.WineyardName,
+            EmailConfirmed = true
+        };
+        var result = await UserManager.CreateAsync(user, formModel.Password);
+        if (!result.Succeeded)
+        {
+            errorMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+            return;
+        }
+        await UserManager.AddToRoleAsync(user, "WineProducer");
+
+        WineProducerRepository.AddWineProducer(new WineProducer
+        {
+            WineProducerId = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),
+            UserId = user.Id.ToString(),
+            WineyardName = formModel.WineyardName,
+            OrganisationNumber = formModel.OrganisationNumber,
+            ResponsibleProducerName = formModel.ResponsibleProducerName,
+            Address = formModel.Address,
+            Zip = formModel.Zip,
+            City = formModel.City,
+            Country = formModel.Country,
+            Email = formModel.ProducerEmail
+        });
+
+        formModel = new WineProducerFormModel();
         wineProducers = WineProducerRepository.GetAllWineProducers().ToList();
+        await LoadProducerEmailsAsync();
     }
 
-    private void AddNewWineProducer()
+    private async Task DeleteWineProducer(string producerId)
     {
-        WineProducerRepository.AddWineProducer(newProducer);
-        newProducer = new WineProducer();
-        LoadWineProducers();
+        var producer = WineProducerRepository.GetWineProducerById(producerId);
+        if (producer?.UserId is not null)
+        {
+            var u = await UserManager.FindByIdAsync(producer.UserId);
+            if (u is not null)
+                await UserManager.DeleteAsync(u);
+        }
+        WineProducerRepository.DeleteWineProducer(producerId);
+        wineProducers = WineProducerRepository.GetAllWineProducers().ToList();
+        await LoadProducerEmailsAsync();
     }
 
-    private void DeleteWineProducer(string wineProducerId)
+    private void SaveProfile()
     {
-        WineProducerRepository.DeleteWineProducer(wineProducerId);
-        LoadWineProducers();
+        if (currentProducer is not null)
+        {
+            WineProducerRepository.UpdateWineProducer(currentProducer);
+            profileSaved = true;
+        }
+    }
+
+    private class WineProducerFormModel
+    {
+        [System.ComponentModel.DataAnnotations.Required] public string WineyardName { get; set; } = string.Empty;
+        [System.ComponentModel.DataAnnotations.Required] public string OrganisationNumber { get; set; } = string.Empty;
+        [System.ComponentModel.DataAnnotations.Required] public string ResponsibleProducerName { get; set; } = string.Empty;
+        [System.ComponentModel.DataAnnotations.Required] public string Address { get; set; } = string.Empty;
+        [System.ComponentModel.DataAnnotations.Required] public string Zip { get; set; } = string.Empty;
+        [System.ComponentModel.DataAnnotations.Required] public string City { get; set; } = string.Empty;
+        [System.ComponentModel.DataAnnotations.Required] public string Country { get; set; } = string.Empty;
+        [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.EmailAddress] public string ProducerEmail { get; set; } = string.Empty;
+        [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.EmailAddress] public string LoginEmail { get; set; } = string.Empty;
+        [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.MinLength(8)] public string Password { get; set; } = string.Empty;
     }
 }

@@ -22,6 +22,12 @@ public class WineProducerRepository : IWineProducerRepository
         return wineProducer.WineProducerId;
     }
 
+    public void UpdateWineProducer(WineProducer wineProducer) =>
+        _collection.ReplaceOne(p => p.WineProducerId == wineProducer.WineProducerId, wineProducer);
+
     public void DeleteWineProducer(string id) =>
         _collection.DeleteOne(p => p.WineProducerId == id);
+
+    public WineProducer? GetWineProducerByUserId(string userId) =>
+        _collection.Find(p => p.UserId == userId).FirstOrDefault();
 }

@@ -25,6 +25,9 @@ public class WineRepository : IWineRepository
         return wine.WineId;
     }
 
+    public void UpdateWine(Wine wine) =>
+        _collection.ReplaceOne(w => w.WineId == wine.WineId, wine);
+
     public void DeleteWine(string id) =>
         _collection.DeleteOne(w => w.WineId == id);
 }

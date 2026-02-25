@@ -54,4 +54,7 @@ public class WineProducer
     [StringLength(100, ErrorMessage = "E-post kan ikke overstige 100 tegn")]
     [DisplayName("E-post")]
     public string Email { get; set; } = string.Empty;
+
+    [DisplayName("Bruker Id")]
+    public string? UserId { get; set; }
 }

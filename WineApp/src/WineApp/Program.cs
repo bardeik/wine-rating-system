@@ -105,9 +105,29 @@ async Task SeedAsync(IServiceProvider services)
 
     if (wineProducerRepo.GetAllWineProducers().Count == 0)
     {
-        var p1 = new WineProducer { WineProducerId = ObjectId.GenerateNewId().ToString(), Address = "Test adresse 21", City = "Oslo", Country = "Norway", Email = "bestWines@fluffy.com", OrganisationNumber = "111122223333445", ResponsibleProducerName = "Test Testersen", WineyardName = "Oslo Vest Wines AS", Zip = "0125" };
-        var p2 = new WineProducer { WineProducerId = ObjectId.GenerateNewId().ToString(), Address = "Test adresse Ny 15", City = "Grimstad", Country = "Norway", Email = "bestWinesEver@fluffier.com", OrganisationNumber = "111122234567890", ResponsibleProducerName = "Petter Testeren", WineyardName = "Grimstad Vin og Vann AS", Zip = "4525" };
-        var p3 = new WineProducer { WineProducerId = ObjectId.GenerateNewId().ToString(), Address = "Agder Alle 21", City = "Kristiansand", Country = "Norway", Email = "bardeh@gmail.com", OrganisationNumber = "222222223333445", ResponsibleProducerName = "Bård Eik", WineyardName = "Tech Wine AS", Zip = "4631" };
+        // Helper: create ApplicationUser with WineProducer role, return UserId
+        async Task<string?> CreateProducerUserAsync(string email, string displayName)
+        {
+            var u = new ApplicationUser
+            {
+                UserName = email,
+                Email = email,
+                DisplayName = displayName,
+                EmailConfirmed = true
+            };
+            var r = await userManager.CreateAsync(u, "Producer123!");
+            if (!r.Succeeded) return null;
+            await userManager.AddToRoleAsync(u, "WineProducer");
+            return u.Id.ToString();
+        }
+
+        var p1UserId = await CreateProducerUserAsync("oslo@wineapp.com",     "Oslo Vest Wines AS");
+        var p2UserId = await CreateProducerUserAsync("grimstad@wineapp.com",  "Grimstad Vin og Vann AS");
+        var p3UserId = await CreateProducerUserAsync("techwine@wineapp.com",  "Tech Wine AS");
+
+        var p1 = new WineProducer { WineProducerId = ObjectId.GenerateNewId().ToString(), UserId = p1UserId, Address = "Test adresse 21",  City = "Oslo",         Country = "Norway", Email = "oslo@wineapp.com",    OrganisationNumber = "111122223333445", ResponsibleProducerName = "Test Testersen", WineyardName = "Oslo Vest Wines AS",       Zip = "0125" };
+        var p2 = new WineProducer { WineProducerId = ObjectId.GenerateNewId().ToString(), UserId = p2UserId, Address = "Test adresse Ny 15", City = "Grimstad",     Country = "Norway", Email = "grimstad@wineapp.com", OrganisationNumber = "111122234567890", ResponsibleProducerName = "Petter Testeren", WineyardName = "Grimstad Vin og Vann AS", Zip = "4525" };
+        var p3 = new WineProducer { WineProducerId = ObjectId.GenerateNewId().ToString(), UserId = p3UserId, Address = "Agder Alle 21",      City = "Kristiansand", Country = "Norway", Email = "techwine@wineapp.com", OrganisationNumber = "222222223333445", ResponsibleProducerName = "Bård Eik",       WineyardName = "Tech Wine AS",             Zip = "4631" };
         wineProducerRepo.AddWineProducer(p1);
         wineProducerRepo.AddWineProducer(p2);
         wineProducerRepo.AddWineProducer(p3);
