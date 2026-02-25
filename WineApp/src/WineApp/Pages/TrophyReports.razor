@@ -6,8 +6,7 @@
 @inject IWineResultRepository WineResultRepository
 @inject IWineProducerRepository WineProducerRepository
 @inject IScoreAggregationService ScoreAggregationService
-@inject IExportService ExportService
-@inject IJSRuntime JS
+@inject NavigationManager Navigation
 @using WineApp.Services
 
 <PageTitle>Pokalrapporter</PageTitle>
@@ -272,11 +271,11 @@ else
         <div class="card-body">
             <h5>Handlinger</h5>
             <div class="btn-group" role="group">
-                <button class="btn btn-outline-primary" @onclick="PrintTrophyReport">
-                    🖨️ Skriv ut rapport
+                <button class="btn btn-outline-success" @onclick="ExportTrophyPdf">
+                    📄 Last ned PDF
                 </button>
-                <button class="btn btn-outline-success" @onclick="ExportTrophyReport">
-                    📄 Eksporter til PDF
+                <button class="btn btn-outline-primary" @onclick="ExportTrophyCsv">
+                    📊 Last ned CSV
                 </button>
                 <button class="btn btn-outline-info" @onclick="ShareResults">
                     📧 Del resultater
@@ -371,27 +370,16 @@ else
         };
     }
 
-    private async Task PrintTrophyReport()
+    private void ExportTrophyPdf()
     {
-        await JS.InvokeVoidAsync("printPage");
+        if (activeEvent == null) return;
+        Navigation.NavigateTo($"/api/download/trophy-pdf/{activeEvent.EventId}", forceLoad: true);
     }
 
-    private async Task ExportTrophyReport()
+    private void ExportTrophyCsv()
     {
-        try
-        {
-            var producers = WineProducerRepository.GetAllWineProducers().ToList();
-            var csv = ExportService.ExportTrophiesToCSV(aaretsVinbonde, bestNorwegian, bestNordic, producers);
-            var bytes = ExportService.GetCSVBytes(csv);
-            var fileName = $"Pokaler_{activeEvent?.Name}_{DateTime.Now:yyyyMMdd}.csv";
-            
-            await JS.InvokeVoidAsync("downloadFile", fileName, "text/csv", Convert.ToBase64String(bytes));
-            ShowStatus("✓ CSV eksportert", "alert-success");
-        }
-        catch (Exception ex)
-        {
-            ShowStatus($"Feil ved eksport: {ex.Message}", "alert-danger");
-        }
+        if (activeEvent == null) return;
+        Navigation.NavigateTo($"/api/download/trophies/{activeEvent.EventId}", forceLoad: true);
     }
 
     private void ShareResults()

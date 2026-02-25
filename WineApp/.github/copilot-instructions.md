@@ -134,6 +134,7 @@ A comprehensive Norwegian wine judging system (Norsk Vinskue) built on .NET 10 w
 - **NuGet packages**: 
   - `AspNetCore.Identity.MongoDbCore` 7.0.0
   - `MongoDB.Driver` 3.6.0
+  - `QuestPDF` 2026.2.2
 - **Project file**: modern SDK-style `.csproj` with `ImplicitUsings` and `Nullable` enabled
 - **Connection string**: `appsettings.json` → `ConnectionStrings:MongoDB` and `MongoDbSettings:DatabaseName`
 
@@ -286,6 +287,19 @@ public class Flight
 - UTF-8 with BOM for Excel compatibility
 - Comprehensive data export for archival
 
+### 9. **IPdfService / PdfService**
+**Purpose:** Generate PDF documents for reports
+
+**Key Methods:**
+- `GenerateTrophyReport(event, trophies, producers)` - Professional PDF report
+
+**Features:**
+- QuestPDF-based generation
+- Professional layout with colors and styling
+- Trophy winner details with all metadata
+- Lottery warnings for tied scores
+- A4 page format with proper margins
+
 ---
 
 ## Key Conventions
@@ -311,6 +325,7 @@ builder.Services.AddSingleton<IOutlierDetectionService, OutlierDetectionService>
 builder.Services.AddSingleton<IWineValidationService, WineValidationService>();
 builder.Services.AddSingleton<IFlightService, FlightService>();
 builder.Services.AddSingleton<IExportService, ExportService>();
+builder.Services.AddSingleton<IPdfService, PdfService>();
 ```
 
 Identity registered with:
@@ -342,27 +357,40 @@ builder.Services.AddControllers()
 ```
 
 ### JavaScript Interop
-File: `wwwroot/js/site.js`
-```javascript
-window.downloadFile = function (fileName, contentType, base64Content) {
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', `data:${contentType};base64,${base64Content}`);
-    linkElement.setAttribute('download', fileName);
-    linkElement.click();
-};
 
-window.printPage = function () {
-    window.print();
-};
-```
+**Note:** No JavaScript is needed in this application. All file downloads (CSV, PDF) are handled server-side via minimal API endpoints. See Download Endpoints section below.
 
-Usage in Blazor:
+---
+
+## Download Endpoints (Minimal API)
+
+File downloads are handled server-side via minimal API endpoints in `Program.cs`:
+
+**CSV Endpoints:**
+- `GET /api/download/results/{eventId}` - Export complete results (requires authentication)
+- `GET /api/download/trophies/{eventId}` - Export trophy winners as CSV (requires authentication)
+- `GET /api/download/event/{eventId}` - Export event archive (requires Admin role)
+- `GET /api/download/flights/{eventId}` - Export flight list (requires Admin role)
+
+**PDF Endpoints:**
+- `GET /api/download/trophy-pdf/{eventId}` - Export trophy report as PDF (requires authentication)
+
+**Usage in Blazor:**
 ```csharp
-@inject IJSRuntime JS
+@inject NavigationManager Navigation
 
-await JS.InvokeVoidAsync("downloadFile", fileName, "text/csv", Convert.ToBase64String(bytes));
-await JS.InvokeVoidAsync("printPage");
+private void ExportData()
+{
+    Navigation.NavigateTo($"/api/download/results/{eventId}", forceLoad: true);
+}
 ```
+
+**Benefits:**
+- No JavaScript required
+- Browser handles file download natively
+- Direct file streaming (more efficient)
+- Proper authorization via ASP.NET Core policies
+- Professional PDF generation with QuestPDF
 
 ---
 
@@ -722,8 +750,9 @@ Viewer:
 ### CSV Export
 - Always use `ExportService` for CSV generation
 - Files include UTF-8 BOM for Excel compatibility
-- Download via `IJSRuntime` and `downloadFile` JavaScript function
+- Download via **minimal API endpoints** and `NavigationManager.NavigateTo()`
 - Proper escaping for quotes, commas, and newlines
+- Server-side file streaming (no JavaScript needed for downloads)
 
 ### Flight Organization
 - Flights stored in-memory (can be moved to MongoDB if needed)

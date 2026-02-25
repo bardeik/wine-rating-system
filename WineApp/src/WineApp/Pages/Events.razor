@@ -7,8 +7,6 @@
 @inject IWineProducerRepository WineProducerRepository
 @inject IWineNumberService WineNumberService
 @inject IScoreAggregationService ScoreAggregationService
-@inject IExportService ExportService
-@inject IJSRuntime JS
 @inject NavigationManager Navigation
 @using WineApp.Services
 
@@ -411,37 +409,9 @@ else
         }
     }
 
-    private async Task ExportEventData(string eventId)
+    private void ExportEventData(string eventId)
     {
-        try
-        {
-            var eventData = events.FirstOrDefault(e => e.EventId == eventId);
-            if (eventData == null)
-            {
-                ShowStatus("Feil: Arrangement ikke funnet", "alert-danger");
-                return;
-            }
-
-            var wines = WineRepository.GetAllWines().Where(w => w.EventId == eventId).ToList();
-            var ratings = WineRatingRepository.GetAllWineRatings()
-                .Where(r => wines.Any(w => w.WineId == r.WineId))
-                .ToList();
-            var results = WineResultRepository.GetAllWineResults()
-                .Where(r => wines.Any(w => w.WineId == r.WineId))
-                .ToList();
-            var producers = WineProducerRepository.GetAllWineProducers().ToList();
-
-            var csv = ExportService.ExportEventData(eventData, wines, ratings, results, producers);
-            var bytes = ExportService.GetCSVBytes(csv);
-            var fileName = $"Arkiv_{eventData.Name}_{eventData.Year}.csv";
-            
-            await JS.InvokeVoidAsync("downloadFile", fileName, "text/csv", Convert.ToBase64String(bytes));
-            ShowStatus($"✓ {eventData.Name} eksportert", "alert-success");
-        }
-        catch (Exception ex)
-        {
-            ShowStatus($"Feil ved eksport av data: {ex.Message}", "alert-danger");
-        }
+        Navigation.NavigateTo($"/api/download/event/{eventId}", forceLoad: true);
     }
 
     private void ShowStatus(string message, string cssClass)
