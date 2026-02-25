@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using MongoDB.Bson;
 using WineApp.Data;
 using WineApp.Models;
+using WineApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,132 +50,20 @@ builder.Services.AddSingleton<IEventRepository, EventRepository>();
 builder.Services.AddSingleton<IWineResultRepository, WineResultRepository>();
 builder.Services.AddSingleton<IPaymentRepository, PaymentRepository>();
 
+// Register business logic services
+builder.Services.AddSingleton<IClassificationService, ClassificationService>();
+builder.Services.AddSingleton<IScoreAggregationService, ScoreAggregationService>();
+builder.Services.AddSingleton<IWineNumberService, WineNumberService>();
+builder.Services.AddSingleton<ITrophyService, TrophyService>();
+builder.Services.AddSingleton<IOutlierDetectionService, OutlierDetectionService>();
+builder.Services.AddSingleton<IWineValidationService, WineValidationService>();
+
 var app = builder.Build();
 
 // Seed roles, default admin and sample data on startup
 using (var scope = app.Services.CreateScope())
 {
-    await SeedAsync(scope.ServiceProvider);
-}
-
-async Task SeedAsync(IServiceProvider services)
-{
-    var roleManager = services.GetRequiredService<RoleManager<MongoIdentityRole<Guid>>>();
-    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-
-    foreach (var role in new[] { "Admin", "Judge", "Viewer", "WineProducer" })
-    {
-        if (!await roleManager.RoleExistsAsync(role))
-            await roleManager.CreateAsync(new MongoIdentityRole<Guid>(role));
-    }
-
-    if (await userManager.FindByEmailAsync("admin@wineapp.com") is null)
-    {
-        var admin = new ApplicationUser
-        {
-            UserName = "admin@wineapp.com",
-            Email = "admin@wineapp.com",
-            DisplayName = "Administrator",
-            EmailConfirmed = true
-        };
-        await userManager.CreateAsync(admin, "Admin123!");
-        await userManager.AddToRoleAsync(admin, "Admin");
-        await userManager.AddToRoleAsync(admin, "Viewer");
-    }
-
-    if (await userManager.FindByEmailAsync("viewer@wineapp.com") is null)
-    {
-        var viewer = new ApplicationUser
-        {
-            UserName = "viewer@wineapp.com",
-            Email = "viewer@wineapp.com",
-            DisplayName = "Gjest",
-            EmailConfirmed = true
-        };
-        await userManager.CreateAsync(viewer, "Viewer123!");
-        await userManager.AddToRoleAsync(viewer, "Viewer");
-    }
-
-    // Seed sample data if collections are empty
-    var wineProducerRepo = services.GetRequiredService<IWineProducerRepository>();
-    var wineRepo = services.GetRequiredService<IWineRepository>();
-    var wineRatingRepo = services.GetRequiredService<IWineRatingRepository>();
-
-    // Seed judge users if none exist with the Judge role
-    var judgeUsers = await userManager.GetUsersInRoleAsync("Judge");
-    if (judgeUsers.Count == 0)
-    {
-        foreach (var name in new[] { "Frans", "Hans", "Ola", "Petter" })
-        {
-            var email = $"{name.ToLower()}@wineapp.com";
-            var judgeUser = new ApplicationUser
-            {
-                UserName = email,
-                Email = email,
-                DisplayName = name,
-                EmailConfirmed = true
-            };
-            var result = await userManager.CreateAsync(judgeUser, "Judge123!");
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(judgeUser, "Judge");
-                await userManager.AddToRoleAsync(judgeUser, "Viewer");
-            }
-        }
-    }
-
-    if (wineProducerRepo.GetAllWineProducers().Count == 0)
-    {
-        // Helper: create ApplicationUser with WineProducer role, return UserId
-        async Task<string?> CreateProducerUserAsync(string email, string displayName)
-        {
-            var u = new ApplicationUser
-            {
-                UserName = email,
-                Email = email,
-                DisplayName = displayName,
-                EmailConfirmed = true
-            };
-            var r = await userManager.CreateAsync(u, "Producer123!");
-            if (!r.Succeeded) return null;
-            await userManager.AddToRoleAsync(u, "WineProducer");
-            await userManager.AddToRoleAsync(u, "Viewer");
-            return u.Id.ToString();
-        }
-
-        var p1UserId = await CreateProducerUserAsync("oslo@wineapp.com",     "Oslo Vest Wines AS");
-        var p2UserId = await CreateProducerUserAsync("grimstad@wineapp.com",  "Grimstad Vin og Vann AS");
-        var p3UserId = await CreateProducerUserAsync("techwine@wineapp.com",  "Tech Wine AS");
-
-        var p1 = new WineProducer { WineProducerId = ObjectId.GenerateNewId().ToString(), UserId = p1UserId, Address = "Test adresse 21",  City = "Oslo",         Country = "Norway", Email = "oslo@wineapp.com",    OrganisationNumber = "111122223333445", ResponsibleProducerName = "Test Testersen", WineyardName = "Oslo Vest Wines AS",       Zip = "0125", Phone = "+47 12345678" };
-        var p2 = new WineProducer { WineProducerId = ObjectId.GenerateNewId().ToString(), UserId = p2UserId, Address = "Test adresse Ny 15", City = "Grimstad",     Country = "Norway", Email = "grimstad@wineapp.com", OrganisationNumber = "111122234567890", ResponsibleProducerName = "Petter Testeren", WineyardName = "Grimstad Vin og Vann AS", Zip = "4525", Phone = "+47 23456789" };
-        var p3 = new WineProducer { WineProducerId = ObjectId.GenerateNewId().ToString(), UserId = p3UserId, Address = "Agder Alle 21",      City = "Kristiansand", Country = "Norway", Email = "techwine@wineapp.com", OrganisationNumber = "222222223333445", ResponsibleProducerName = "Bård Eik",       WineyardName = "Tech Wine AS",             Zip = "4631", Phone = "+47 34567890" };
-        wineProducerRepo.AddWineProducer(p1);
-        wineProducerRepo.AddWineProducer(p2);
-        wineProducerRepo.AddWineProducer(p3);
-
-        if (wineRepo.GetAllWines().Count == 0)
-        {
-            var w1 = new Wine { WineId = ObjectId.GenerateNewId().ToString(), Name = "Polets røde", RatingName = "Hemmelig Polets Røde", WineProducerId = p1.WineProducerId, Category = WineCategory.Rodvin, Class = WineClass.Eldre, Group = WineGroup.A1, Vintage = 2023, AlcoholPercentage = 13.5m, Country = "Norge", IsVinbonde = true };
-            var w2 = new Wine { WineId = ObjectId.GenerateNewId().ToString(), Name = "Polets andre røde", RatingName = "Hemmelig Andre Polets Røde", WineProducerId = p1.WineProducerId, Category = WineCategory.Rodvin, Class = WineClass.Unge, Group = WineGroup.C, Vintage = 2024, AlcoholPercentage = 12.0m, Country = "Norge", IsVinbonde = false };
-            var w3 = new Wine { WineId = ObjectId.GenerateNewId().ToString(), Name = "Polets røde", RatingName = "Hemmelig Tredje Polets Røde", WineProducerId = p2.WineProducerId, Category = WineCategory.Rodvin, Class = WineClass.Unge, Group = WineGroup.B, Vintage = 2024, AlcoholPercentage = 11.5m, Country = "Norge", IsVinbonde = true };
-            w1.GrapeBlend.Add("Rondo", 100m);
-            w2.GrapeBlend.Add("Solaris", 60m);
-            w2.GrapeBlend.Add("Phoenix", 40m);
-            w3.GrapeBlend.Add("Regent", 100m);
-            wineRepo.AddWine(w1);
-            wineRepo.AddWine(w2);
-            wineRepo.AddWine(w3);
-
-            if (wineRatingRepo.GetAllWineRatings().Count == 0)
-            {
-                wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Hans",   Nose = 2.5m, Taste = 8.5m, Appearance = 2.0m, WineId = w1.WineId });
-                wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Petter", Nose = 2.0m, Taste = 7.5m, Appearance = 1.8m, WineId = w1.WineId });
-                wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Frans",  Nose = 3.0m, Taste = 9.0m, Appearance = 2.5m, WineId = w1.WineId });
-                wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Ola",    Nose = 2.8m, Taste = 8.0m, Appearance = 2.2m, WineId = w1.WineId });
-            }
-        }
-    }
+    await DatabaseSeeder.SeedAsync(scope.ServiceProvider);
 }
 
 // Configure the HTTP request pipeline

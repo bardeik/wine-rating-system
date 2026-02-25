@@ -1,0 +1,522 @@
+@page "/event-details/{EventId}"
+@attribute [Authorize(Roles = "Admin")]
+@inject IEventRepository EventRepository
+@inject IWineRepository WineRepository
+@inject IWineResultRepository WineResultRepository
+@inject IWineRatingRepository WineRatingRepository
+@inject ITrophyService TrophyService
+@inject IOutlierDetectionService OutlierDetectionService
+@inject NavigationManager Navigation
+@using WineApp.Services
+
+<PageTitle>Arrangementsdetaljer</PageTitle>
+
+@if (eventItem == null)
+{
+    <div class="alert alert-warning">Arrangement ikke funnet</div>
+    <button class="btn btn-secondary" @onclick="GoBack">
+        ← Tilbake til arrangementer
+    </button>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>@eventItem.Name (@eventItem.Year)</h3>
+        <div>
+            @if (eventItem.IsActive)
+            {
+                <span class="badge bg-success fs-6">Aktiv</span>
+            }
+            else
+            {
+                <span class="badge bg-secondary fs-6">Inaktiv</span>
+            }
+            <button class="btn btn-secondary ms-2" @onclick="GoBack">
+                ← Tilbake
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Viner totalt</h5>
+                    <h2 class="display-4">@wines.Count</h2>
+                    <small class="text-muted">@paidWines betalte</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Vurderinger</h5>
+                    <h2 class="display-4">@totalRatings</h2>
+                    <small class="text-muted">@ratedWines viner vurdert</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Medaljer</h5>
+                    <h2 class="display-4">@medalCount</h2>
+                    <small class="text-muted">
+                        🥇@goldCount 🥈@silverCount 🥉@bronzeCount
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Avvik</h5>
+                    <h2 class="display-4 @(outlierCount > 0 ? "text-danger" : "text-success")">@outlierCount</h2>
+                    <small class="text-muted">krever ombedømming</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+            <a class="nav-link @(activeTab == "info" ? "active" : "")" @onclick='() => activeTab = "info"' style="cursor: pointer;">
+                ℹ️ Informasjon
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(activeTab == "thresholds" ? "active" : "")" @onclick='() => activeTab = "thresholds"' style="cursor: pointer;">
+                🏆 Grenseverdier
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(activeTab == "wines" ? "active" : "")" @onclick='() => activeTab = "wines"' style="cursor: pointer;">
+                🍷 Viner (@wines.Count)
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(activeTab == "trophies" ? "active" : "")" @onclick='() => activeTab = "trophies"' style="cursor: pointer;">
+                🏆 Pokaler
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(activeTab == "outliers" ? "active" : "")" @onclick='() => activeTab = "outliers"' style="cursor: pointer;">
+                ⚠️ Avvik (@outlierCount)
+            </a>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    @if (activeTab == "info")
+    {
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Arrangementsinformasjon</h5>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="mt-3">Datoer</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Påmeldingsstart:</strong></td><td>@eventItem.RegistrationStartDate.ToString("dd.MM.yyyy")</td></tr>
+                            <tr><td><strong>Påmeldingsslutt:</strong></td><td>@eventItem.RegistrationEndDate.ToString("dd.MM.yyyy")</td></tr>
+                            <tr><td><strong>Betalingsfrist:</strong></td><td>@eventItem.PaymentDeadline.ToString("dd.MM.yyyy")</td></tr>
+                            <tr><td><strong>Leveringsfrist:</strong></td><td>@eventItem.DeliveryDeadline.ToString("dd.MM.yyyy")</td></tr>
+                        </table>
+
+                        <h6 class="mt-3">Økonomi</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Avgift per vin:</strong></td><td>@eventItem.FeePerWine.ToString("N0") NOK</td></tr>
+                            <tr><td><strong>Total forventet inntekt:</strong></td><td>@((eventItem.FeePerWine * wines.Count).ToString("N0")) NOK</td></tr>
+                        </table>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h6 class="mt-3">Bankinformasjon</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Bank:</strong></td><td>@eventItem.BankName</td></tr>
+                            <tr><td><strong>Kontonummer:</strong></td><td>@eventItem.AccountNumber</td></tr>
+                            <tr><td><strong>IBAN:</strong></td><td>@eventItem.IBAN</td></tr>
+                            <tr><td><strong>BIC/SWIFT:</strong></td><td>@eventItem.BIC</td></tr>
+                            <tr><td><strong>Org.nr:</strong></td><td>@eventItem.OrganizationNumber</td></tr>
+                        </table>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(eventItem.DeliveryAddressNorway))
+                {
+                    <h6 class="mt-3">Leveringsadresse Norge</h6>
+                    <p class="ms-3">@eventItem.DeliveryAddressNorway</p>
+                }
+
+                @if (!string.IsNullOrEmpty(eventItem.ImporterInfoNordic))
+                {
+                    <h6 class="mt-3">Importørinfo nordiske gjester</h6>
+                    <p class="ms-3">@eventItem.ImporterInfoNordic</p>
+                }
+            </div>
+        </div>
+    }
+    else if (activeTab == "thresholds")
+    {
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Grenseverdier for klassifisering</h5>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="mt-3">Primære medaljegrenser</h6>
+                        <table class="table table-striped">
+                            <tr>
+                                <td><span class="badge" style="background-color: gold; color: black;">🥇 Gull</span></td>
+                                <td>≥ @eventItem.GoldThreshold.ToString("F1") poeng</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge" style="background-color: silver; color: black;">🥈 Sølv</span></td>
+                                <td>≥ @eventItem.SilverThreshold.ToString("F1") poeng</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge" style="background-color: #CD7F32; color: white;">🥉 Bronse</span></td>
+                                <td>≥ @eventItem.BronzeThreshold.ToString("F1") poeng</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-info">⭐ Særlig</span></td>
+                                <td>≥ @eventItem.SpecialMeritThreshold.ToString("F1") poeng</td>
+                            </tr>
+                        </table>
+
+                        <h6 class="mt-4">Gate-verdier (minimum)</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Utseende (A):</strong></td><td>≥ @eventItem.AppearanceGateValue.ToString("F1")</td></tr>
+                            <tr><td><strong>Nese (B):</strong></td><td>≥ @eventItem.NoseGateValue.ToString("F1")</td></tr>
+                            <tr><td><strong>Smak (C):</strong></td><td>≥ @eventItem.TasteGateValue.ToString("F1")</td></tr>
+                        </table>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h6 class="mt-3">Nedjusterte grenser (hvis ingen gull)</h6>
+                        <table class="table table-striped">
+                            <tr>
+                                <td><span class="badge" style="background-color: gold; color: black;">🥇 Gull</span></td>
+                                <td>≥ @eventItem.AdjustedGoldThreshold.ToString("F1") poeng</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge" style="background-color: silver; color: black;">🥈 Sølv</span></td>
+                                <td>≥ @eventItem.AdjustedSilverThreshold.ToString("F1") poeng</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge" style="background-color: #CD7F32; color: white;">🥉 Bronse</span></td>
+                                <td>≥ @eventItem.AdjustedBronzeThreshold.ToString("F1") poeng</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-info">⭐ Særlig</span></td>
+                                <td>≥ @eventItem.AdjustedSpecialMeritThreshold.ToString("F1") poeng</td>
+                            </tr>
+                        </table>
+
+                        <div class="alert @(eventItem.UseAdjustedThresholds ? "alert-warning" : "alert-success") mt-3">
+                            <strong>Status:</strong> 
+                            @if (eventItem.UseAdjustedThresholds)
+                            {
+                                <span>⚠️ Nedjusterte grenser er aktivert</span>
+                            }
+                            else
+                            {
+                                <span>✅ Bruker primære grenser</span>
+                            }
+                        </div>
+
+                        <h6 class="mt-4">Avviksdeteksjon</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Avviksterskel:</strong></td>
+                                <td>> @eventItem.OutlierThreshold.ToString("F1") poeng spredning</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (activeTab == "wines")
+    {
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Viner i arrangementet</h5>
+                
+                @if (!wines.Any())
+                {
+                    <div class="alert alert-info">Ingen viner registrert ennå.</div>
+                }
+                else
+                {
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nr.</th>
+                                <th>Navn</th>
+                                <th>Gruppe</th>
+                                <th>Klasse</th>
+                                <th>Kategori</th>
+                                <th>Status</th>
+                                <th>Resultat</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var wine in wines.OrderBy(w => w.WineNumber ?? 999999))
+                            {
+                                var result = results.FirstOrDefault(r => r.WineId == wine.WineId);
+                                <tr>
+                                    <td>
+                                        @if (wine.WineNumber.HasValue)
+                                        {
+                                            <strong>@wine.WineNumber</strong>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>@wine.Name</td>
+                                    <td>@wine.Group</td>
+                                    <td>@wine.Class</td>
+                                    <td>@wine.Category</td>
+                                    <td>
+                                        @if (wine.IsPaid)
+                                        {
+                                            <span class="badge bg-success">✓ Betalt</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Venter betaling</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (result != null)
+                                        {
+                                            <span class="badge @GetClassificationBadgeClass(result.Classification)">
+                                                @result.Classification (@result.TotalScore.ToString("F1"))
+                                            </span>
+                                            @if (result.IsOutlier)
+                                            {
+                                                <span class="badge bg-danger ms-1" title="Krever ombedømming">⚠️</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Ikke vurdert</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    }
+    else if (activeTab == "trophies")
+    {
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Pokaler og utmerkelser</h5>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-header bg-warning">
+                                <h6 class="mb-0">🏆 Årets Vinbonde</h6>
+                            </div>
+                            <div class="card-body">
+                                @if (aaretsVinbonde.wine != null)
+                                {
+                                    <p><strong>Vin:</strong> @aaretsVinbonde.wine.Name</p>
+                                    <p><strong>Poeng:</strong> @aaretsVinbonde.result.TotalScore.ToString("F1")</p>
+                                    <p><strong>Klassifisering:</strong> @aaretsVinbonde.result.Classification</p>
+                                    @if (aaretsVinbonde.result.RequiresLottery)
+                                    {
+                                        <div class="alert alert-warning p-2 mb-0">
+                                            🎲 Loddtrekning påkrevd
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <p class="text-muted">Ingen vinner ennå</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0">🇳🇴 Beste norske vin</h6>
+                            </div>
+                            <div class="card-body">
+                                @if (bestNorwegian.wine != null)
+                                {
+                                    <p><strong>Vin:</strong> @bestNorwegian.wine.Name</p>
+                                    <p><strong>Poeng:</strong> @bestNorwegian.result.TotalScore.ToString("F1")</p>
+                                    <p><strong>Gruppe:</strong> @bestNorwegian.wine.Group</p>
+                                    <p><strong>Klassifisering:</strong> @bestNorwegian.result.Classification</p>
+                                }
+                                else
+                                {
+                                    <p class="text-muted">Ingen vinner ennå</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">🌍 Beste nordiske vin</h6>
+                            </div>
+                            <div class="card-body">
+                                @if (bestNordic.wine != null)
+                                {
+                                    <p><strong>Vin:</strong> @bestNordic.wine.Name</p>
+                                    <p><strong>Poeng:</strong> @bestNordic.result.TotalScore.ToString("F1")</p>
+                                    <p><strong>Gruppe:</strong> @bestNordic.wine.Group</p>
+                                    <p><strong>Land:</strong> @bestNordic.wine.Country</p>
+                                    <p><strong>Klassifisering:</strong> @bestNordic.result.Classification</p>
+                                }
+                                else
+                                {
+                                    <p class="text-muted">Ingen vinner ennå</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (activeTab == "outliers")
+    {
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Viner som krever ombedømming</h5>
+                
+                @if (!outliers.Any())
+                {
+                    <div class="alert alert-success">
+                        ✅ Ingen viner med høy spredning funnet. Alle vurderinger er konsistente.
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning">
+                        ⚠️ @outliers.Count vin(er) har spredning > @eventItem.OutlierThreshold.ToString("F1") poeng og bør ombedømmes.
+                    </div>
+
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nr.</th>
+                                <th>Navn</th>
+                                <th>Spredning</th>
+                                <th>Totalscore</th>
+                                <th>Antall vurderinger</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var outlier in outliers)
+                            {
+                                <tr class="table-danger">
+                                    <td><strong>@outlier.Item1.WineNumber</strong></td>
+                                    <td>@outlier.Item1.Name</td>
+                                    <td>
+                                        <span class="badge bg-danger">
+                                            @outlier.Item3.ToString("F1") poeng
+                                        </span>
+                                    </td>
+                                    <td>@outlier.Item2.TotalScore.ToString("F1")</td>
+                                    <td>@outlier.Item2.NumberOfRatings</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter]
+    public string EventId { get; set; } = string.Empty;
+
+    private Event? eventItem;
+    private List<Wine> wines = new();
+    private List<WineResult> results = new();
+    private List<WineRating> allRatings = new();
+    private List<(Wine, WineResult, decimal)> outliers = new();
+    
+    private (Wine? wine, WineResult? result) aaretsVinbonde;
+    private (Wine? wine, WineResult? result) bestNorwegian;
+    private (Wine? wine, WineResult? result) bestNordic;
+
+    private string activeTab = "info";
+    
+    private int paidWines => wines.Count(w => w.IsPaid);
+    private int ratedWines => results.Count;
+    private int totalRatings => allRatings.Count(r => wines.Any(w => w.WineId == r.WineId));
+    private int goldCount => results.Count(r => r.Classification == "Gull");
+    private int silverCount => results.Count(r => r.Classification == "Sølv");
+    private int bronzeCount => results.Count(r => r.Classification == "Bronse");
+    private int medalCount => goldCount + silverCount + bronzeCount;
+    private int outlierCount => outliers.Count;
+
+    protected override void OnInitialized()
+    {
+        LoadData();
+    }
+
+    private void LoadData()
+    {
+        eventItem = EventRepository.GetEventById(EventId);
+        if (eventItem == null) return;
+
+        wines = WineRepository.GetAllWines()
+            .Where(w => w.EventId == EventId)
+            .ToList();
+
+        results = WineResultRepository.GetAllWineResults()
+            .Where(r => wines.Any(w => w.WineId == r.WineId))
+            .ToList();
+
+        allRatings = WineRatingRepository.GetAllWineRatings()
+            .Where(r => wines.Any(w => w.WineId == r.WineId))
+            .ToList();
+
+        outliers = OutlierDetectionService.GetOutlierWines(EventId);
+
+        // Load trophy winners
+        aaretsVinbonde = TrophyService.GetAaretsVinbonde(EventId);
+        bestNorwegian = TrophyService.GetBestNorwegianWine(EventId);
+        bestNordic = TrophyService.GetBestNordicWine(EventId);
+    }
+
+    private string GetClassificationBadgeClass(string classification)
+    {
+        return classification switch
+        {
+            "Gull" => "bg-warning text-dark",
+            "Sølv" => "bg-secondary",
+            "Bronse" => "bg-light text-dark",
+            "Særlig" => "bg-info",
+            "Akseptabel" => "bg-primary",
+            "IkkeGodkjent" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/events");
+    }
+}

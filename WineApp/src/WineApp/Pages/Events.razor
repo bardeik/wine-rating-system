@@ -1,0 +1,406 @@
+@page "/events"
+@attribute [Authorize(Roles = "Admin")]
+@inject IEventRepository EventRepository
+@inject IWineNumberService WineNumberService
+@inject IScoreAggregationService ScoreAggregationService
+@inject NavigationManager Navigation
+@using WineApp.Services
+
+<PageTitle>Arrangementshåndtering</PageTitle>
+
+<h3>Arrangementshåndtering</h3>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="ShowAddForm">
+        ➕ Nytt arrangement
+    </button>
+</div>
+
+@if (events.Any())
+{
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Navn</th>
+                        <th>År</th>
+                        <th>Status</th>
+                        <th>Påmeldingsfrist</th>
+                        <th>Avgift per vin</th>
+                        <th>Handlinger</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var evt in events)
+                    {
+                        <tr class="@(evt.IsActive ? "table-success" : "")">
+                            <td>@evt.Name</td>
+                            <td>@evt.Year</td>
+                            <td>
+                                @if (evt.IsActive)
+                                {
+                                    <span class="badge bg-success">Aktiv</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inaktiv</span>
+                                }
+                            </td>
+                            <td>@evt.RegistrationEndDate.ToString("dd.MM.yyyy")</td>
+                            <td>@evt.FeePerWine.ToString("N0") NOK</td>
+                            <td>
+                                <button class="btn btn-sm btn-info" @onclick="() => ViewEvent(evt)">
+                                    👁️ Detaljer
+                                </button>
+                                <button class="btn btn-sm btn-warning" @onclick="() => EditEvent(evt)">
+                                    ✏️ Rediger
+                                </button>
+                                @if (evt.IsActive)
+                                {
+                                    <button class="btn btn-sm btn-secondary" @onclick="() => DeactivateEvent(evt)">
+                                        ⏸️ Deaktiver
+                                    </button>
+                                    <button class="btn btn-sm btn-primary" @onclick="() => AssignNumbers(evt.EventId)">
+                                        🔢 Tildel numre
+                                    </button>
+                                    <button class="btn btn-sm btn-success" @onclick="() => CalculateResults(evt.EventId)">
+                                        📊 Beregn resultater
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-success" @onclick="() => ActivateEvent(evt)">
+                                        ▶️ Aktiver
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">Ingen arrangementer registrert.</div>
+}
+
+@if (showForm)
+{
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(isEditing ? "Rediger arrangement" : "Nytt arrangement")</h5>
+                    <button type="button" class="btn-close" @onclick="HideForm"></button>
+                </div>
+                <EditForm Model="@currentEvent" OnValidSubmit="@SaveEvent">
+                    <DataAnnotationsValidator />
+                    <div class="modal-body">
+                        <ValidationSummary class="text-danger" />
+
+                        <div class="mb-3">
+                            <label class="form-label">Arrangementsnavn</label>
+                            <InputText @bind-Value="currentEvent.Name" class="form-control" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">År</label>
+                            <InputNumber @bind-Value="currentEvent.Year" class="form-control" />
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Påmeldingsstart</label>
+                                <InputDate @bind-Value="currentEvent.RegistrationStartDate" class="form-control" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Påmeldingsslutt</label>
+                                <InputDate @bind-Value="currentEvent.RegistrationEndDate" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Betalingsfrist</label>
+                                <InputDate @bind-Value="currentEvent.PaymentDeadline" class="form-control" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Leveringsfrist</label>
+                                <InputDate @bind-Value="currentEvent.DeliveryDeadline" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Avgift per vin (NOK)</label>
+                            <InputNumber @bind-Value="currentEvent.FeePerWine" class="form-control" />
+                        </div>
+
+                        <h6 class="mt-4">Bankinformasjon</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Banknavn *</label>
+                            <InputText @bind-Value="currentEvent.BankName" class="form-control" />
+                            <ValidationMessage For="@(() => currentEvent.BankName)" class="text-danger" />
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Kontonummer *</label>
+                            <InputText @bind-Value="currentEvent.AccountNumber" class="form-control" />
+                            <ValidationMessage For="@(() => currentEvent.AccountNumber)" class="text-danger" />
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">IBAN *</label>
+                                <InputText @bind-Value="currentEvent.IBAN" class="form-control" />
+                                <ValidationMessage For="@(() => currentEvent.IBAN)" class="text-danger" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">BIC/SWIFT *</label>
+                                <InputText @bind-Value="currentEvent.BIC" class="form-control" />
+                                <ValidationMessage For="@(() => currentEvent.BIC)" class="text-danger" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Organisasjonsnummer *</label>
+                            <InputText @bind-Value="currentEvent.OrganizationNumber" class="form-control" />
+                            <ValidationMessage For="@(() => currentEvent.OrganizationNumber)" class="text-danger" />
+                        </div>
+
+                        <h6 class="mt-4">Logistikk</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Leveringsadresse Norge</label>
+                            <InputTextArea @bind-Value="currentEvent.DeliveryAddressNorway" class="form-control" rows="2" />
+                            <small class="form-text text-muted">Adresse for innsending av flasker fra norske produsenter</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Importørinfo for nordiske gjester</label>
+                            <InputTextArea @bind-Value="currentEvent.ImporterInfoNordic" class="form-control" rows="2" />
+                            <small class="form-text text-muted">Informasjon om godkjent importør for nordiske viner</small>
+                        </div>
+
+                        <h6 class="mt-4">Medaljegrenser</h6>
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Gull</label>
+                                <InputNumber @bind-Value="currentEvent.GoldThreshold" class="form-control" step="0.1" />
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Sølv</label>
+                                <InputNumber @bind-Value="currentEvent.SilverThreshold" class="form-control" step="0.1" />
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Bronse</label>
+                                <InputNumber @bind-Value="currentEvent.BronzeThreshold" class="form-control" step="0.1" />
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Særlig</label>
+                                <InputNumber @bind-Value="currentEvent.SpecialMeritThreshold" class="form-control" step="0.1" />
+                            </div>
+                        </div>
+
+                        <h6 class="mt-4">Gate-verdier</h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Utseende (A)</label>
+                                <InputNumber @bind-Value="currentEvent.AppearanceGateValue" class="form-control" step="0.1" />
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Nese (B)</label>
+                                <InputNumber @bind-Value="currentEvent.NoseGateValue" class="form-control" step="0.1" />
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Smak (C)</label>
+                                <InputNumber @bind-Value="currentEvent.TasteGateValue" class="form-control" step="0.1" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Avviksterskel</label>
+                            <InputNumber @bind-Value="currentEvent.OutlierThreshold" class="form-control" step="0.1" />
+                            <small class="form-text text-muted">Viner med spredning over denne verdien flagges for ombedømming</small>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <InputCheckbox @bind-Value="currentEvent.IsActive" class="form-check-input" id="isActive" />
+                            <label class="form-check-label" for="isActive">Aktiv</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="HideForm">Avbryt</button>
+                        <button type="submit" class="btn btn-primary">Lagre</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show"></div>
+}
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <div class="alert @statusClass alert-dismissible mt-3">
+        @statusMessage
+        <button type="button" class="btn-close" @onclick="() => statusMessage = string.Empty"></button>
+    </div>
+}
+
+@code {
+    private List<Event> events = new();
+    private Event currentEvent = new();
+    private bool showForm = false;
+    private bool isEditing = false;
+    private string statusMessage = string.Empty;
+    private string statusClass = "alert-info";
+
+    protected override void OnInitialized()
+    {
+        LoadEvents();
+    }
+
+    private void LoadEvents()
+    {
+        events = EventRepository.GetAllEvents().OrderByDescending(e => e.Year).ToList();
+    }
+
+    private void ShowAddForm()
+    {
+        currentEvent = new Event
+        {
+            Year = DateTime.Now.Year,
+            RegistrationStartDate = DateTime.Now,
+            RegistrationEndDate = DateTime.Now.AddMonths(3),
+            PaymentDeadline = DateTime.Now.AddMonths(4),
+            DeliveryDeadline = DateTime.Now.AddMonths(5),
+            FeePerWine = 500,
+            BankName = "Landkreditt Bank",
+            AccountNumber = "1234.56.78901",
+            IBAN = "NO93 1234 5678 901",
+            BIC = "NOLILNOX",
+            OrganizationNumber = "123456789",
+            GoldThreshold = 17.0m,
+            SilverThreshold = 15.5m,
+            BronzeThreshold = 14.0m,
+            SpecialMeritThreshold = 12.0m,
+            AdjustedGoldThreshold = 15.0m,
+            AdjustedSilverThreshold = 14.0m,
+            AdjustedBronzeThreshold = 13.0m,
+            AdjustedSpecialMeritThreshold = 11.5m,
+            AppearanceGateValue = 1.8m,
+            NoseGateValue = 1.8m,
+            TasteGateValue = 5.8m,
+            OutlierThreshold = 4.0m,
+            IsActive = true
+        };
+        isEditing = false;
+        showForm = true;
+    }
+
+    private void EditEvent(Event evt)
+    {
+        currentEvent = evt;
+        isEditing = true;
+        showForm = true;
+    }
+
+    private void ViewEvent(Event evt)
+    {
+        Navigation.NavigateTo($"/event-details/{evt.EventId}");
+    }
+
+    private void HideForm()
+    {
+        showForm = false;
+        currentEvent = new();
+    }
+
+    private void SaveEvent()
+    {
+        try
+        {
+            if (isEditing)
+            {
+                EventRepository.UpdateEvent(currentEvent);
+                ShowStatus("Arrangement oppdatert", "alert-success");
+            }
+            else
+            {
+                // Deactivate other active events
+                var activeEvents = events.Where(e => e.IsActive).ToList();
+                foreach (var evt in activeEvents)
+                {
+                    evt.IsActive = false;
+                    EventRepository.UpdateEvent(evt);
+                }
+
+                EventRepository.AddEvent(currentEvent);
+                ShowStatus("Arrangement opprettet", "alert-success");
+            }
+            LoadEvents();
+            HideForm();
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Feil: {ex.Message}", "alert-danger");
+        }
+    }
+
+    private void ActivateEvent(Event evt)
+    {
+        // Deactivate all other events
+        foreach (var e in events.Where(e => e.IsActive))
+        {
+            e.IsActive = false;
+            EventRepository.UpdateEvent(e);
+        }
+
+        evt.IsActive = true;
+        EventRepository.UpdateEvent(evt);
+        LoadEvents();
+        ShowStatus($"Arrangement '{evt.Name}' aktivert", "alert-success");
+    }
+
+    private void DeactivateEvent(Event evt)
+    {
+        evt.IsActive = false;
+        EventRepository.UpdateEvent(evt);
+        LoadEvents();
+        ShowStatus($"Arrangement '{evt.Name}' deaktivert", "alert-warning");
+    }
+
+    private async Task AssignNumbers(string eventId)
+    {
+        try
+        {
+            var assignments = await WineNumberService.AssignWineNumbersAsync(eventId);
+            ShowStatus($"Tildelt {assignments.Count} vinnumre", "alert-success");
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Feil ved tildeling av numre: {ex.Message}", "alert-danger");
+        }
+    }
+
+    private async Task CalculateResults(string eventId)
+    {
+        try
+        {
+            var results = await ScoreAggregationService.RecalculateEventResultsAsync(eventId);
+            ShowStatus($"Beregnet resultater for {results.Count} viner", "alert-success");
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Feil ved beregning av resultater: {ex.Message}", "alert-danger");
+        }
+    }
+
+    private void ShowStatus(string message, string cssClass)
+    {
+        statusMessage = message;
+        statusClass = cssClass;
+    }
+}

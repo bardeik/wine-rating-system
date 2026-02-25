@@ -70,10 +70,22 @@ A Norwegian wine judging system (Norsk Vinskue) built on .NET 10 with Blazor Ser
 ### Dependency Injection
 Services registered in `Program.cs`:
 ```csharp
+// Repositories
 builder.Services.AddSingleton<WineMongoDbContext>();
 builder.Services.AddSingleton<IWineProducerRepository, WineProducerRepository>();
 builder.Services.AddSingleton<IWineRatingRepository, WineRatingRepository>();
 builder.Services.AddSingleton<IWineRepository, WineRepository>();
+builder.Services.AddSingleton<IEventRepository, EventRepository>();
+builder.Services.AddSingleton<IWineResultRepository, WineResultRepository>();
+builder.Services.AddSingleton<IPaymentRepository, PaymentRepository>();
+
+// Business Logic Services
+builder.Services.AddSingleton<IClassificationService, ClassificationService>();
+builder.Services.AddSingleton<IScoreAggregationService, ScoreAggregationService>();
+builder.Services.AddSingleton<IWineNumberService, WineNumberService>();
+builder.Services.AddSingleton<ITrophyService, TrophyService>();
+builder.Services.AddSingleton<IOutlierDetectionService, OutlierDetectionService>();
+builder.Services.AddSingleton<IWineValidationService, WineValidationService>();
 ```
 Identity registered with:
 ```csharp
@@ -81,7 +93,7 @@ builder.Services.AddIdentity<ApplicationUser, MongoIdentityRole<Guid>>(...)
     .AddMongoDbStores<ApplicationUser, MongoIdentityRole<Guid>, Guid>(connectionString, dbName)
     .AddDefaultTokenProviders();
 ```
-- Blazor components inject repositories via `@inject IWineRepository WineRepository`
+- Blazor components inject repositories and services via `@inject`
 - Auth-aware Blazor pages also inject `UserManager<ApplicationUser>` and `AuthenticationStateProvider`
 - Controllers inject via constructor parameters
 
