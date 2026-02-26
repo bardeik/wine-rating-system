@@ -1,4 +1,8 @@
+using System.Globalization;
 using System.Text;
+using CsvHelper;
+using CsvHelper.Configuration;
+using CsvHelper.Configuration.Attributes;
 using WineApp.Models;
 
 namespace WineApp.Services;
@@ -9,7 +13,7 @@ public interface IExportService
     /// Exports results to CSV format
     /// </summary>
     string ExportResultsToCSV(List<WineResult> results, List<Wine> wines, List<WineProducer> producers);
-    
+
     /// <summary>
     /// Exports trophy winners to CSV format
     /// </summary>
@@ -18,7 +22,7 @@ public interface IExportService
         (Wine? wine, WineResult? result) bestNorwegian,
         (Wine? wine, WineResult? result) bestNordic,
         List<WineProducer> producers);
-    
+
     /// <summary>
     /// Exports complete event data (wines, ratings, results)
     /// </summary>
@@ -28,12 +32,12 @@ public interface IExportService
         List<WineRating> ratings,
         List<WineResult> results,
         List<WineProducer> producers);
-    
+
     /// <summary>
     /// Exports flight lists for printing
     /// </summary>
     string ExportFlightList(List<Flight> flights, List<Wine> wines);
-    
+
     /// <summary>
     /// Downloads CSV content as file (returns bytes)
     /// </summary>
@@ -42,42 +46,46 @@ public interface IExportService
 
 public class ExportService : IExportService
 {
+    private static readonly CsvConfiguration CsvConfig = new(CultureInfo.InvariantCulture)
+    {
+        Delimiter = ";",
+    };
+
+    private static readonly CsvConfiguration CsvConfigNoHeader = new(CultureInfo.InvariantCulture)
+    {
+        Delimiter = ";",
+        HasHeaderRecord = false,
+    };
+
     public string ExportResultsToCSV(List<WineResult> results, List<Wine> wines, List<WineProducer> producers)
     {
-        var sb = new StringBuilder();
-        
-        // Header
-        sb.AppendLine("Vinnummer,Vinnavn,Produsent,Gruppe,Klasse,Kategori,Total Score,Utseende,Nese,Smak,Klassifisering,Antall Vurderinger,Spread,Defekt,Outlier,Loddtrekning");
-        
-        // Data rows
-        foreach (var result in results.OrderByDescending(r => r.TotalScore))
-        {
-            var wine = wines.FirstOrDefault(w => w.WineId == result.WineId);
-            if (wine == null) continue;
-            
-            var producer = producers.FirstOrDefault(p => p.WineProducerId == wine.WineProducerId);
-            
-            sb.AppendLine(string.Join(",",
-                EscapeCSV(wine.WineNumber?.ToString() ?? ""),
-                EscapeCSV(wine.Name),
-                EscapeCSV(producer?.WineyardName ?? ""),
-                EscapeCSV(wine.Group.ToString()),
-                EscapeCSV(wine.Class.ToString()),
-                EscapeCSV(wine.Category.ToString()),
-                result.TotalScore.ToString("F1"),
-                result.AverageAppearance.ToString("F2"),
-                result.AverageNose.ToString("F2"),
-                result.AverageTaste.ToString("F2"),
-                EscapeCSV(result.Classification),
-                result.NumberOfRatings.ToString(),
-                result.Spread.ToString("F1"),
-                result.IsDefective ? "Ja" : "Nei",
-                result.IsOutlier ? "Ja" : "Nei",
-                result.RequiresLottery ? "Ja" : "Nei"
-            ));
-        }
-        
-        return sb.ToString();
+        var rows = results
+            .OrderByDescending(r => r.TotalScore)
+            .Select(result =>
+            {
+                var wine = wines.FirstOrDefault(w => w.WineId == result.WineId);
+                var producer = wine != null ? producers.FirstOrDefault(p => p.WineProducerId == wine.WineProducerId) : null;
+                return new WineResultRow(
+                    wine?.WineNumber?.ToString() ?? "",
+                    wine?.Name ?? "",
+                    producer?.WineyardName ?? "",
+                    wine?.Group.ToString() ?? "",
+                    wine?.Class.ToString() ?? "",
+                    wine?.Category.ToString() ?? "",
+                    result.TotalScore.ToString("F1"),
+                    result.AverageAppearance.ToString("F2"),
+                    result.AverageNose.ToString("F2"),
+                    result.AverageTaste.ToString("F2"),
+                    result.Classification,
+                    result.NumberOfRatings.ToString(),
+                    result.Spread.ToString("F1"),
+                    result.IsDefective ? "Ja" : "Nei",
+                    result.IsOutlier ? "Ja" : "Nei",
+                    result.RequiresLottery ? "Ja" : "Nei"
+                );
+            });
+
+        return WriteRecords(rows);
     }
 
     public string ExportTrophiesToCSV(
@@ -86,66 +94,31 @@ public class ExportService : IExportService
         (Wine? wine, WineResult? result) bestNordic,
         List<WineProducer> producers)
     {
-        var sb = new StringBuilder();
-        
-        // Header
-        sb.AppendLine("Pokal,Vinnummer,Vinnavn,Produsent,Gruppe,Land,Årgang,Total Score,Klassifisering,Loddtrekning");
-        
-        // Årets Vinbonde
-        if (aaretsVinbonde.wine != null && aaretsVinbonde.result != null)
+        var rows = new List<TrophyRow>();
+
+        void AddRow(string trophy, Wine? wine, WineResult? result)
         {
-            var producer = producers.FirstOrDefault(p => p.WineProducerId == aaretsVinbonde.wine.WineProducerId);
-            sb.AppendLine(string.Join(",",
-                "Årets Vinbonde",
-                aaretsVinbonde.wine.WineNumber?.ToString() ?? "",
-                EscapeCSV(aaretsVinbonde.wine.Name),
-                EscapeCSV(producer?.WineyardName ?? ""),
-                aaretsVinbonde.wine.Group.ToString(),
-                EscapeCSV(aaretsVinbonde.wine.Country),
-                aaretsVinbonde.wine.Vintage.ToString(),
-                aaretsVinbonde.result.TotalScore.ToString("F1"),
-                EscapeCSV(aaretsVinbonde.result.Classification),
-                aaretsVinbonde.result.RequiresLottery ? "Ja" : "Nei"
+            if (wine == null || result == null) return;
+            var producer = producers.FirstOrDefault(p => p.WineProducerId == wine.WineProducerId);
+            rows.Add(new TrophyRow(
+                trophy,
+                wine.WineNumber?.ToString() ?? "",
+                wine.Name,
+                producer?.WineyardName ?? "",
+                wine.Group.ToString(),
+                wine.Country,
+                wine.Vintage.ToString(),
+                result.TotalScore.ToString("F1"),
+                result.Classification,
+                result.RequiresLottery ? "Ja" : "Nei"
             ));
         }
-        
-        // Beste Norske
-        if (bestNorwegian.wine != null && bestNorwegian.result != null)
-        {
-            var producer = producers.FirstOrDefault(p => p.WineProducerId == bestNorwegian.wine.WineProducerId);
-            sb.AppendLine(string.Join(",",
-                "Beste Norske Vin",
-                bestNorwegian.wine.WineNumber?.ToString() ?? "",
-                EscapeCSV(bestNorwegian.wine.Name),
-                EscapeCSV(producer?.WineyardName ?? ""),
-                bestNorwegian.wine.Group.ToString(),
-                EscapeCSV(bestNorwegian.wine.Country),
-                bestNorwegian.wine.Vintage.ToString(),
-                bestNorwegian.result.TotalScore.ToString("F1"),
-                EscapeCSV(bestNorwegian.result.Classification),
-                bestNorwegian.result.RequiresLottery ? "Ja" : "Nei"
-            ));
-        }
-        
-        // Beste Nordiske
-        if (bestNordic.wine != null && bestNordic.result != null)
-        {
-            var producer = producers.FirstOrDefault(p => p.WineProducerId == bestNordic.wine.WineProducerId);
-            sb.AppendLine(string.Join(",",
-                "Beste Nordiske Vin",
-                bestNordic.wine.WineNumber?.ToString() ?? "",
-                EscapeCSV(bestNordic.wine.Name),
-                EscapeCSV(producer?.WineyardName ?? ""),
-                bestNordic.wine.Group.ToString(),
-                EscapeCSV(bestNordic.wine.Country),
-                bestNordic.wine.Vintage.ToString(),
-                bestNordic.result.TotalScore.ToString("F1"),
-                EscapeCSV(bestNordic.result.Classification),
-                bestNordic.result.RequiresLottery ? "Ja" : "Nei"
-            ));
-        }
-        
-        return sb.ToString();
+
+        AddRow("Årets Vinbonde", aaretsVinbonde.wine, aaretsVinbonde.result);
+        AddRow("Beste Norske Vin", bestNorwegian.wine, bestNorwegian.result);
+        AddRow("Beste Nordiske Vin", bestNordic.wine, bestNordic.result);
+
+        return WriteRecords(rows);
     }
 
     public string ExportEventData(
@@ -156,113 +129,109 @@ public class ExportService : IExportService
         List<WineProducer> producers)
     {
         var sb = new StringBuilder();
-        
-        // Event metadata
+
+        // Event metadata (narrative comment lines)
         sb.AppendLine($"# {eventData.Name} - Komplett data-eksport");
         sb.AppendLine($"# Eksportert: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
         sb.AppendLine();
-        
-        // Event info
+
+        // Event info as key-value rows (no header row)
         sb.AppendLine("## ARRANGEMENT");
-        sb.AppendLine($"Navn,{EscapeCSV(eventData.Name)}");
-        sb.AppendLine($"År,{eventData.Year}");
-        sb.AppendLine($"Påmeldingsfrist,{eventData.RegistrationEndDate:yyyy-MM-dd}");
-        sb.AppendLine($"Betalingsfrist,{eventData.PaymentDeadline:yyyy-MM-dd}");
-        sb.AppendLine($"Leveringsfrist,{eventData.DeliveryDeadline:yyyy-MM-dd}");
-        sb.AppendLine($"Avgift per vin,{eventData.FeePerWine}");
+        sb.Append(WriteRecords(new[]
+        {
+            new KeyValueRow("Navn", eventData.Name),
+            new KeyValueRow("År", eventData.Year.ToString()),
+            new KeyValueRow("Påmeldingsfrist", eventData.RegistrationEndDate.ToString("yyyy-MM-dd")),
+            new KeyValueRow("Betalingsfrist", eventData.PaymentDeadline.ToString("yyyy-MM-dd")),
+            new KeyValueRow("Leveringsfrist", eventData.DeliveryDeadline.ToString("yyyy-MM-dd")),
+            new KeyValueRow("Avgift per vin", eventData.FeePerWine.ToString()),
+        }, CsvConfigNoHeader));
         sb.AppendLine();
-        
-        // Wines
+
+        // Wines section
         sb.AppendLine("## VINER");
-        sb.AppendLine("Vinnummer,Navn,Vurderingsnavn,Produsent,Gruppe,Klasse,Kategori,Årgang,Alkohol%,Land,Vinbonde,Betalt");
-        foreach (var wine in wines.OrderBy(w => w.WineNumber))
+        var wineRows = wines.OrderBy(w => w.WineNumber).Select(wine =>
         {
             var producer = producers.FirstOrDefault(p => p.WineProducerId == wine.WineProducerId);
-            sb.AppendLine(string.Join(",",
+            return new EventWineRow(
                 wine.WineNumber?.ToString() ?? "",
-                EscapeCSV(wine.Name),
-                EscapeCSV(wine.RatingName),
-                EscapeCSV(producer?.WineyardName ?? ""),
+                wine.Name,
+                wine.RatingName,
+                producer?.WineyardName ?? "",
                 wine.Group.ToString(),
                 wine.Class.ToString(),
                 wine.Category.ToString(),
                 wine.Vintage.ToString(),
                 wine.AlcoholPercentage.ToString("F1"),
-                EscapeCSV(wine.Country),
+                wine.Country,
                 wine.IsVinbonde ? "Ja" : "Nei",
                 wine.IsPaid ? "Ja" : "Nei"
-            ));
-        }
+            );
+        });
+        sb.Append(WriteRecords(wineRows));
         sb.AppendLine();
-        
-        // Ratings
+
+        // Ratings section
         sb.AppendLine("## VURDERINGER");
-        sb.AppendLine("Vinnummer,Dommer,Utseende,Nese,Smak,Total,Kommentar,Dato");
-        foreach (var rating in ratings.OrderBy(r => r.WineId).ThenBy(r => r.JudgeId))
+        var ratingRows = ratings.OrderBy(r => r.WineId).ThenBy(r => r.JudgeId).Select(rating =>
         {
             var wine = wines.FirstOrDefault(w => w.WineId == rating.WineId);
             var total = rating.Appearance + rating.Nose + rating.Taste;
-            sb.AppendLine(string.Join(",",
+            return new EventRatingRow(
                 wine?.WineNumber?.ToString() ?? "",
-                EscapeCSV(rating.JudgeId),
+                rating.JudgeId,
                 rating.Appearance.ToString("F1"),
                 rating.Nose.ToString("F1"),
                 rating.Taste.ToString("F1"),
                 total.ToString("F1"),
-                EscapeCSV(rating.Comment ?? ""),
+                rating.Comment ?? "",
                 rating.RatingDate.ToString("yyyy-MM-dd HH:mm")
-            ));
-        }
+            );
+        });
+        sb.Append(WriteRecords(ratingRows));
         sb.AppendLine();
-        
-        // Results
+
+        // Results section
         sb.AppendLine("## RESULTATER");
-        sb.AppendLine("Vinnummer,Vinnavn,Total Score,Klassifisering,Antall Vurderinger,Spread,Defekt,Outlier");
-        foreach (var result in results.OrderByDescending(r => r.TotalScore))
+        var resultRows = results.OrderByDescending(r => r.TotalScore).Select(result =>
         {
             var wine = wines.FirstOrDefault(w => w.WineId == result.WineId);
-            sb.AppendLine(string.Join(",",
+            return new EventResultRow(
                 wine?.WineNumber?.ToString() ?? "",
-                EscapeCSV(wine?.Name ?? ""),
+                wine?.Name ?? "",
                 result.TotalScore.ToString("F1"),
-                EscapeCSV(result.Classification),
+                result.Classification,
                 result.NumberOfRatings.ToString(),
                 result.Spread.ToString("F1"),
                 result.IsDefective ? "Ja" : "Nei",
                 result.IsOutlier ? "Ja" : "Nei"
-            ));
-        }
-        
+            );
+        });
+        sb.Append(WriteRecords(resultRows));
+
         return sb.ToString();
     }
 
     public string ExportFlightList(List<Flight> flights, List<Wine> wines)
     {
-        var sb = new StringBuilder();
-        
-        sb.AppendLine("Flight,Vinnummer,Vinnavn,Kategori,Gruppe,Klasse");
-        
-        foreach (var flight in flights.OrderBy(f => f.FlightNumber))
-        {
-            var flightWines = flight.WineIds
-                .Select(wineId => wines.FirstOrDefault(w => w.WineId == wineId))
-                .Where(w => w != null)
-                .OrderBy(w => w!.WineNumber);
-            
-            foreach (var wine in flightWines)
-            {
-                sb.AppendLine(string.Join(",",
-                    EscapeCSV(flight.FlightName),
-                    wine!.WineNumber?.ToString() ?? "",
-                    EscapeCSV(wine.RatingName),
-                    wine.Category.ToString(),
-                    wine.Group.ToString(),
-                    wine.Class.ToString()
-                ));
-            }
-        }
-        
-        return sb.ToString();
+        var rows = flights
+            .OrderBy(f => f.FlightNumber)
+            .SelectMany(flight =>
+                flight.WineIds
+                    .Select(wineId => wines.FirstOrDefault(w => w.WineId == wineId))
+                    .Where(w => w != null)
+                    .OrderBy(w => w!.WineNumber)
+                    .Select(wine => new FlightListRow(
+                        flight.FlightName,
+                        wine!.WineNumber?.ToString() ?? "",
+                        wine.RatingName,
+                        wine.Category.ToString(),
+                        wine.Group.ToString(),
+                        wine.Class.ToString()
+                    ))
+            );
+
+        return WriteRecords(rows);
     }
 
     public byte[] GetCSVBytes(string csvContent)
@@ -271,24 +240,100 @@ public class ExportService : IExportService
         var preamble = Encoding.UTF8.GetPreamble();
         var content = Encoding.UTF8.GetBytes(csvContent);
         var result = new byte[preamble.Length + content.Length];
-        
+
         Buffer.BlockCopy(preamble, 0, result, 0, preamble.Length);
         Buffer.BlockCopy(content, 0, result, preamble.Length, content.Length);
-        
+
         return result;
     }
 
-    private string EscapeCSV(string? value)
+    private static string WriteRecords<T>(IEnumerable<T> records, CsvConfiguration? config = null)
     {
-        if (string.IsNullOrEmpty(value))
-            return "";
-        
-        // Escape quotes and wrap in quotes if contains comma, quote, or newline
-        if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
-        {
-            return $"\"{value.Replace("\"", "\"\"")}\"";
-        }
-        
-        return value;
+        using var sw = new StringWriter();
+        using var csv = new CsvWriter(sw, config ?? CsvConfig);
+        csv.WriteRecords(records);
+        return sw.ToString();
     }
 }
+
+// ── Row record types ──────────────────────────────────────────────────────────
+
+file sealed record WineResultRow(
+    [property: Name("Vinnummer")] string WineNumber,
+    [property: Name("Vinnavn")] string WineName,
+    [property: Name("Produsent")] string Producer,
+    [property: Name("Gruppe")] string Group,
+    [property: Name("Klasse")] string Class,
+    [property: Name("Kategori")] string Category,
+    [property: Name("Total Score")] string TotalScore,
+    [property: Name("Utseende")] string Appearance,
+    [property: Name("Nese")] string Nose,
+    [property: Name("Smak")] string Taste,
+    [property: Name("Klassifisering")] string Classification,
+    [property: Name("Antall Vurderinger")] string NumberOfRatings,
+    [property: Name("Spread")] string Spread,
+    [property: Name("Defekt")] string IsDefective,
+    [property: Name("Outlier")] string IsOutlier,
+    [property: Name("Loddtrekning")] string RequiresLottery
+);
+
+file sealed record TrophyRow(
+    [property: Name("Pokal")] string Trophy,
+    [property: Name("Vinnummer")] string WineNumber,
+    [property: Name("Vinnavn")] string WineName,
+    [property: Name("Produsent")] string Producer,
+    [property: Name("Gruppe")] string Group,
+    [property: Name("Land")] string Country,
+    [property: Name("Årgang")] string Vintage,
+    [property: Name("Total Score")] string TotalScore,
+    [property: Name("Klassifisering")] string Classification,
+    [property: Name("Loddtrekning")] string RequiresLottery
+);
+
+file sealed record KeyValueRow(string Key, string Value);
+
+file sealed record EventWineRow(
+    [property: Name("Vinnummer")] string WineNumber,
+    [property: Name("Navn")] string Name,
+    [property: Name("Vurderingsnavn")] string RatingName,
+    [property: Name("Produsent")] string Producer,
+    [property: Name("Gruppe")] string Group,
+    [property: Name("Klasse")] string Class,
+    [property: Name("Kategori")] string Category,
+    [property: Name("Årgang")] string Vintage,
+    [property: Name("Alkohol%")] string AlcoholPercentage,
+    [property: Name("Land")] string Country,
+    [property: Name("Vinbonde")] string IsVinbonde,
+    [property: Name("Betalt")] string IsPaid
+);
+
+file sealed record EventRatingRow(
+    [property: Name("Vinnummer")] string WineNumber,
+    [property: Name("Dommer")] string JudgeId,
+    [property: Name("Utseende")] string Appearance,
+    [property: Name("Nese")] string Nose,
+    [property: Name("Smak")] string Taste,
+    [property: Name("Total")] string Total,
+    [property: Name("Kommentar")] string Comment,
+    [property: Name("Dato")] string RatingDate
+);
+
+file sealed record EventResultRow(
+    [property: Name("Vinnummer")] string WineNumber,
+    [property: Name("Vinnavn")] string WineName,
+    [property: Name("Total Score")] string TotalScore,
+    [property: Name("Klassifisering")] string Classification,
+    [property: Name("Antall Vurderinger")] string NumberOfRatings,
+    [property: Name("Spread")] string Spread,
+    [property: Name("Defekt")] string IsDefective,
+    [property: Name("Outlier")] string IsOutlier
+);
+
+file sealed record FlightListRow(
+    [property: Name("Flight")] string FlightName,
+    [property: Name("Vinnummer")] string WineNumber,
+    [property: Name("Vinnavn")] string WineName,
+    [property: Name("Kategori")] string Category,
+    [property: Name("Gruppe")] string Group,
+    [property: Name("Klasse")] string Class
+);
