@@ -1,68 +1,48 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Threading.Tasks;
 using WineApp.Data;
 using WineApp.Models;
 
-namespace WineApp.Controllers
+namespace WineApp.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class WineProducersController : ControllerBase
 {
-    [Route("api/[controller]")]
-    public class WineProducersController : Controller
+    private readonly IWineProducerRepository _repo;
+
+    public WineProducersController(IWineProducerRepository repo) => _repo = repo;
+
+    [HttpGet]
+    public IEnumerable<WineProducer> Get() => _repo.GetAllWineProducers();
+
+    [HttpGet("{id}", Name = "GetWineProducerByIdRoute")]
+    public ActionResult<WineProducer> Get(string id)
     {
-        public IWineProducerRepository Repo { get; set; }
+        var producer = _repo.GetWineProducerById(id);
+        return producer is null ? NotFound() : Ok(producer);
+    }
 
-        public WineProducersController([FromServices] IWineProducerRepository repo)
+    [HttpPost]
+    public IActionResult Post(WineProducer wineProducer)
+    {
+        try
         {
-            Repo = repo;
+            var wineProducerId = _repo.AddWineProducer(wineProducer);
+            var url = Url.RouteUrl("GetWineProducerByIdRoute", new { id = wineProducerId }, Request.Scheme,
+                Request.Host.ToUriComponent());
+            return Created(url, wineProducer);
         }
-
-        // GET api/todos
-        [HttpGet]
-        public IEnumerable<WineProducer> Get()
+        catch
         {
-            return Repo.GetAllWineProducers();
+            return BadRequest();
         }
+    }
 
-        // GET api/wineproducers/2
-        [HttpGet("{id}")]
-        [Route("{id}", Name = "GetWineProducerByIdRoute")]
-        public IActionResult Get(string id)
-        {
-            var producer = Repo.GetWineProducerById(id);
-            if (producer == null)
-                return NotFound();
-            return Ok(producer);
-        }
-
-        [HttpPost]
-        public IActionResult Post([FromBody] WineProducer wineProducer)
-        {
-            if (!ModelState.IsValid) return BadRequest();
-
-            try
-            {
-                var wineProducerId = Repo.AddWineProducer(wineProducer);
-                var url = Url.RouteUrl("GetWineProducerByIdRoute", new { id = wineProducerId }, Request.Scheme,
-                    Request.Host.ToUriComponent());
-                return Created(url, wineProducer);
-
-            }
-            catch
-            {
-                return BadRequest();
-            }
-        }
-
-        [HttpDelete]
-        [Route("{id}")]
-        public IActionResult Delete(string id)
-        {
-            if (Repo.GetWineProducerById(id) == null) return NotFound();
-            Repo.DeleteWineProducer(id);
-            return new StatusCodeResult(200);
-        }
+    [HttpDelete("{id}")]
+    public IActionResult Delete(string id)
+    {
+        if (_repo.GetWineProducerById(id) is null) return NotFound();
+        _repo.DeleteWineProducer(id);
+        return Ok();
     }
 }

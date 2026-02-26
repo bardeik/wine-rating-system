@@ -1,68 +1,48 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Threading.Tasks;
 using WineApp.Data;
 using WineApp.Models;
 
-namespace WineApp.Controllers
+namespace WineApp.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class WinesController : ControllerBase
 {
-    [Route("api/[controller]")]
-    public class WinesController : Controller
+    private readonly IWineRepository _repo;
+
+    public WinesController(IWineRepository repo) => _repo = repo;
+
+    [HttpGet]
+    public IEnumerable<Wine> Get() => _repo.GetAllWines();
+
+    [HttpGet("{id}", Name = "GetWineByIdRoute")]
+    public ActionResult<Wine> Get(string id)
     {
-        public IWineRepository Repo { get; set; }
+        var wine = _repo.GetWineById(id);
+        return wine is null ? NotFound() : Ok(wine);
+    }
 
-        public WinesController([FromServices] IWineRepository repo)
+    [HttpPost]
+    public IActionResult Post(Wine wine)
+    {
+        try
         {
-            Repo = repo;
+            var wineId = _repo.AddWine(wine);
+            var url = Url.RouteUrl("GetWineByIdRoute", new { id = wineId }, Request.Scheme,
+                Request.Host.ToUriComponent());
+            return Created(url, wine);
         }
-
-        // GET api/todos
-        [HttpGet]
-        public IEnumerable<Wine> Get()
+        catch
         {
-            return Repo.GetAllWines();
+            return BadRequest();
         }
+    }
 
-        // GET api/wines/2
-        [HttpGet("{id}")]
-        [Route("{id}", Name = "GetWineByIdRoute")]
-        public IActionResult Get(string id)
-        {
-            var wine = Repo.GetWineById(id);
-            if (wine == null)
-                return NotFound();
-            return Ok(wine);
-        }
-
-        [HttpPost]
-        public IActionResult Post([FromBody] Wine wine)
-        {
-            if (!ModelState.IsValid) return BadRequest();
-
-            try
-            {
-                var wineId = Repo.AddWine(wine);
-                var url = Url.RouteUrl("GetWineByIdRoute", new { id = wineId }, Request.Scheme,
-                    Request.Host.ToUriComponent());
-                return Created(url, wine);
-
-            }
-            catch
-            {
-                return BadRequest();
-            }
-        }
-
-        [HttpDelete]
-        [Route("{id}")]
-        public IActionResult Delete(string id)
-        {
-            if (Repo.GetWineById(id) == null) return NotFound();
-            Repo.DeleteWine(id);
-            return new StatusCodeResult(200);
-        }
+    [HttpDelete("{id}")]
+    public IActionResult Delete(string id)
+    {
+        if (_repo.GetWineById(id) is null) return NotFound();
+        _repo.DeleteWine(id);
+        return Ok();
     }
 }

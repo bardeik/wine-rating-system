@@ -1,69 +1,48 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Threading.Tasks;
 using WineApp.Data;
 using WineApp.Models;
 
-namespace WineApp.Controllers
+namespace WineApp.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class WineRatingsController : ControllerBase
 {
+    private readonly IWineRatingRepository _repo;
 
-    [Route("api/[controller]")]
-    public class WineRatingsController : Controller
+    public WineRatingsController(IWineRatingRepository repo) => _repo = repo;
+
+    [HttpGet]
+    public IEnumerable<WineRating> Get() => _repo.GetAllWineRatings();
+
+    [HttpGet("{id}", Name = "GetWineRatingByIdRoute")]
+    public ActionResult<WineRating> Get(string id)
     {
-        public IWineRatingRepository Repo { get; set; }
+        var rating = _repo.GetWineRatingById(id);
+        return rating is null ? NotFound() : Ok(rating);
+    }
 
-        public WineRatingsController([FromServices] IWineRatingRepository repo)
+    [HttpPost]
+    public IActionResult Post(WineRating wineRating)
+    {
+        try
         {
-            Repo = repo;
+            var wineRatingId = _repo.AddWineRating(wineRating);
+            var url = Url.RouteUrl("GetWineRatingByIdRoute", new { id = wineRatingId }, Request.Scheme,
+                Request.Host.ToUriComponent());
+            return Created(url, wineRating);
         }
-
-        // GET api/todos
-        [HttpGet]
-        public IEnumerable<WineRating> Get()
+        catch
         {
-            return Repo.GetAllWineRatings();
+            return BadRequest();
         }
+    }
 
-        // GET api/wineratings/2
-        [HttpGet("{id}")]
-        [Route("{id}", Name = "GetWineRatingByIdRoute")]
-        public IActionResult Get(string id)
-        {
-            var rating = Repo.GetWineRatingById(id);
-            if (rating == null)
-                return NotFound();
-            return Ok(rating);
-        }
-
-        [HttpPost]
-        public IActionResult Post([FromBody] WineRating wineRating)
-        {
-            if (!ModelState.IsValid) return BadRequest();
-
-            try
-            {
-                var wineRatingId = Repo.AddWineRating(wineRating);
-                var url = Url.RouteUrl("GetWineRatingByIdRoute", new { id = wineRatingId }, Request.Scheme,
-                    Request.Host.ToUriComponent());
-                return Created(url, wineRating);
-
-            }
-            catch
-            {
-                return BadRequest();
-            }
-        }
-
-        [HttpDelete]
-        [Route("{id}")]
-        public IActionResult Delete(string id)
-        {
-            if (Repo.GetWineRatingById(id) == null) return NotFound();
-            Repo.DeleteWineRating(id);
-            return new StatusCodeResult(200);
-        }
-    }   
+    [HttpDelete("{id}")]
+    public IActionResult Delete(string id)
+    {
+        if (_repo.GetWineRatingById(id) is null) return NotFound();
+        _repo.DeleteWineRating(id);
+        return Ok();
+    }
 }

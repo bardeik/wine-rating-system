@@ -1,18 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading.Tasks;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace WineApp.Models;
 
 public class WineProducer
 {
     [DisplayName("Vinprodusent Id")]
-    [MongoDB.Bson.Serialization.Attributes.BsonId]
-    [MongoDB.Bson.Serialization.Attributes.BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
-    public string WineProducerId { get; set; } = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string WineProducerId { get; set; } = ObjectId.GenerateNewId().ToString();
 
     [StringLength(50, ErrorMessage = "Medlemsnummer kan ikke overstige 50 tegn")]
     [DisplayName("Medlemsnummer")]

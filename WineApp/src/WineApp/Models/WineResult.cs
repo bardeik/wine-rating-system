@@ -1,15 +1,16 @@
-using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace WineApp.Models;
 
 public class WineResult
 {
     [DisplayName("Resultat Id")]
-    [MongoDB.Bson.Serialization.Attributes.BsonId]
-    [MongoDB.Bson.Serialization.Attributes.BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
-    public string WineResultId { get; set; } = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string WineResultId { get; set; } = ObjectId.GenerateNewId().ToString();
 
     [Required(ErrorMessage = "Vin-ID er påkrevd")]
     [DisplayName("Vin")]

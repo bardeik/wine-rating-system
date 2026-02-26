@@ -1,19 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace WineApp.Models;
 
 public class WineRating
 {
     [DisplayName("Vurdering Id")]
-    [MongoDB.Bson.Serialization.Attributes.BsonId]
-    [MongoDB.Bson.Serialization.Attributes.BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
-    public string WineRatingId { get; set; } = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string WineRatingId { get; set; } = ObjectId.GenerateNewId().ToString();
 
     [Required]
     [Range(0.0, 3.0, ErrorMessage = "Utseende (A) må være mellom 0.0 og 3.0")]
