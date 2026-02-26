@@ -32,4 +32,7 @@ public class WineMongoDbContext
 
     public IMongoCollection<Payment> Payments =>
         _database.GetCollection<Payment>("payments");
+
+    public IMongoCollection<Flight> Flights =>
+        _database.GetCollection<Flight>("flights");
 }

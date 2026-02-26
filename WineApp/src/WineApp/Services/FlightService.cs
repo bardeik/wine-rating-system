@@ -6,11 +6,12 @@ namespace WineApp.Services;
 public class FlightService : IFlightService
 {
     private readonly IWineRepository _wineRepository;
-    private readonly List<Flight> _flights = new(); // In-memory for now, could be moved to MongoDB
+    private readonly IFlightRepository _flightRepository;
 
-    public FlightService(IWineRepository wineRepository)
+    public FlightService(IWineRepository wineRepository, IFlightRepository flightRepository)
     {
         _wineRepository = wineRepository;
+        _flightRepository = flightRepository;
     }
 
     public List<Flight> OrganizeFlights(string eventId, int winesPerFlight = 6)
@@ -20,26 +21,26 @@ public class FlightService : IFlightService
             .OrderBy(w => w.WineNumber)
             .ToList();
 
-        _flights.RemoveAll(f => f.EventId == eventId);
+        foreach (var existing in _flightRepository.GetFlightsForEvent(eventId))
+            _flightRepository.DeleteFlight(existing.FlightId);
 
         var flightNumber = 1;
+        var created = new List<Flight>();
         for (int i = 0; i < wines.Count; i += winesPerFlight)
         {
-            var flightWines = wines.Skip(i).Take(winesPerFlight).ToList();
-            
             var flight = new Flight
             {
                 EventId = eventId,
                 FlightNumber = flightNumber,
                 FlightName = $"Flight {flightNumber}",
-                WineIds = flightWines.Select(w => w.WineId).ToList()
+                WineIds = wines.Skip(i).Take(winesPerFlight).Select(w => w.WineId).ToList()
             };
-
-            _flights.Add(flight);
+            _flightRepository.AddFlight(flight);
+            created.Add(flight);
             flightNumber++;
         }
 
-        return _flights.Where(f => f.EventId == eventId).ToList();
+        return created;
     }
 
     public List<Flight> AutoOrganizeFlights(string eventId)
@@ -51,46 +52,40 @@ public class FlightService : IFlightService
             .ThenBy(w => w.WineNumber)
             .ToList();
 
-        _flights.RemoveAll(f => f.EventId == eventId);
+        foreach (var existing in _flightRepository.GetFlightsForEvent(eventId))
+            _flightRepository.DeleteFlight(existing.FlightId);
 
-        var categorizedGroups = wines.GroupBy(w => new { w.Category, w.Group });
         var flightNumber = 1;
+        var created = new List<Flight>();
 
-        foreach (var group in categorizedGroups)
+        foreach (var group in wines.GroupBy(w => new { w.Category, w.Group }))
         {
-            var groupWines = group.ToList();
-            
-            for (int i = 0; i < groupWines.Count; i += 6)
+            for (int i = 0; i < group.Count(); i += 6)
             {
-                var flightWines = groupWines.Skip(i).Take(6).ToList();
-                
                 var flight = new Flight
                 {
                     EventId = eventId,
                     FlightNumber = flightNumber,
                     FlightName = $"Flight {flightNumber} - {group.Key.Category} ({group.Key.Group})",
-                    WineIds = flightWines.Select(w => w.WineId).ToList(),
+                    WineIds = group.Skip(i).Take(6).Select(w => w.WineId).ToList(),
                     Category = group.Key.Category,
                     Group = group.Key.Group
                 };
-
-                _flights.Add(flight);
+                _flightRepository.AddFlight(flight);
+                created.Add(flight);
                 flightNumber++;
             }
         }
 
-        return _flights.Where(f => f.EventId == eventId).ToList();
+        return created;
     }
 
-    public List<Flight> GetFlightsForEvent(string eventId)
-    {
-        return _flights.Where(f => f.EventId == eventId).OrderBy(f => f.FlightNumber).ToList();
-    }
+    public List<Flight> GetFlightsForEvent(string eventId) =>
+        _flightRepository.GetFlightsForEvent(eventId);
 
     public Flight CreateFlight(string eventId, string flightName, List<string> wineIds)
     {
-        var maxFlightNumber = _flights
-            .Where(f => f.EventId == eventId)
+        var maxFlightNumber = _flightRepository.GetFlightsForEvent(eventId)
             .Select(f => f.FlightNumber)
             .DefaultIfEmpty(0)
             .Max();
@@ -102,31 +97,17 @@ public class FlightService : IFlightService
             FlightNumber = maxFlightNumber + 1,
             WineIds = wineIds
         };
-
-        _flights.Add(flight);
+        _flightRepository.AddFlight(flight);
         return flight;
     }
 
-    public void UpdateFlight(Flight flight)
-    {
-        var existing = _flights.FirstOrDefault(f => f.FlightId == flight.FlightId);
-        if (existing != null)
-        {
-            existing.FlightName = flight.FlightName;
-            existing.WineIds = flight.WineIds;
-            existing.Category = flight.Category;
-            existing.Group = flight.Group;
-        }
-    }
+    public void UpdateFlight(Flight flight) => _flightRepository.UpdateFlight(flight);
 
-    public void DeleteFlight(string flightId)
-    {
-        _flights.RemoveAll(f => f.FlightId == flightId);
-    }
+    public void DeleteFlight(string flightId) => _flightRepository.DeleteFlight(flightId);
 
     public List<Wine> GetWinesInFlight(string flightId)
     {
-        var flight = _flights.FirstOrDefault(f => f.FlightId == flightId);
+        var flight = _flightRepository.GetFlightById(flightId);
         if (flight == null) return new List<Wine>();
 
         var allWines = _wineRepository.GetAllWines();

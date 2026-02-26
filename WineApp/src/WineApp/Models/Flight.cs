@@ -1,4 +1,5 @@
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace WineApp.Models;
 
@@ -7,6 +8,8 @@ namespace WineApp.Models;
 /// </summary>
 public class Flight
 {
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
     public string FlightId { get; set; } = ObjectId.GenerateNewId().ToString();
     public string EventId { get; set; } = string.Empty;
     public string FlightName { get; set; } = string.Empty;

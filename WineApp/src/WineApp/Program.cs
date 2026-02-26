@@ -49,6 +49,7 @@ builder.Services.AddSingleton<IWineRepository, WineRepository>();
 builder.Services.AddSingleton<IEventRepository, EventRepository>();
 builder.Services.AddSingleton<IWineResultRepository, WineResultRepository>();
 builder.Services.AddSingleton<IPaymentRepository, PaymentRepository>();
+builder.Services.AddSingleton<IFlightRepository, FlightRepository>();
 
 // Register business logic services
 builder.Services.AddSingleton<IClassificationService, ClassificationService>();
