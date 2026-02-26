@@ -101,6 +101,10 @@ main {
 
 /* Small/medium screens: hamburger + overlay */
 @media (max-width: 1099.98px) {
+    .page {
+        flex-direction: column;
+    }
+
     .sidebar {
         position: fixed;
         top: 0;
@@ -115,6 +119,11 @@ main {
     .sidebar.open {
         transform: translateX(0);
         box-shadow: 6px 0 24px rgba(0, 0, 0, 0.35);
+    }
+
+    main {
+        width: 100%;
+        flex: 1;
     }
 
     .hamburger-btn {
