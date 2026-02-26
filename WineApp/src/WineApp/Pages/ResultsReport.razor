@@ -344,13 +344,13 @@ else
         }
     }
 
-    private async Task RecalculateAll()
+    private void RecalculateAll()
     {
         if (activeEvent == null) return;
 
         try
         {
-            var results = await ScoreAggregationService.RecalculateEventResultsAsync(activeEvent.EventId);
+            var results = ScoreAggregationService.RecalculateEventResults(activeEvent.EventId);
             allResults = results;
             ShowStatus($"✓ Beregnet resultater for {results.Count} viner", "alert-success");
             StateHasChanged();

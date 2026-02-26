@@ -12,7 +12,7 @@ public interface IScoreAggregationService
     /// <summary>
     /// Recalculates results for all wines in an event
     /// </summary>
-    Task<List<WineResult>> RecalculateEventResultsAsync(string eventId);
+    List<WineResult> RecalculateEventResults(string eventId);
     
     /// <summary>
     /// Gets the highest single score from any judge for a wine

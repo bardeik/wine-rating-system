@@ -15,6 +15,5 @@ public static class Classification
     /// <summary>
     /// Classifications that count as a medal (Bronze or higher).
     /// </summary>
-    public static readonly IReadOnlyList<string> MedalClassifications =
-        new[] { Gold, Silver, Bronze };
+    public static readonly IReadOnlyList<string> MedalClassifications = [Gold, Silver, Bronze];
 }

@@ -212,8 +212,8 @@ public class DatabaseSeeder
         string? p3UserId, 
         string? p4UserId)
     {
-        return new List<WineProducer>
-        {
+        return
+        [
             new WineProducer 
             { 
                 WineProducerId = ObjectId.GenerateNewId().ToString(), 
@@ -274,12 +274,12 @@ public class DatabaseSeeder
                 Zip = "12345", 
                 Phone = "+46 123456789" 
             }
-        };
+        ];
     }
 
     private static List<Wine> CreateWines(List<WineProducer> producers, string eventId)
     {
-        var wines = new List<Wine>
+        var wines = new List<Wine>()
         {
             // Producer 1 - Oslo (A1 wines, Vinbonde eligible)
             new Wine 

@@ -20,124 +20,64 @@ public class TrophyService : ITrophyService
     {
         // Group A1, Vinbonde status, medal classification, highest score
         var wines = _wineRepository.GetAllWines()
-            .Where(w => w.EventId == eventId && 
-                       w.Group == WineGroup.A1 && 
-                       w.IsVinbonde)
-            .ToList();
+            .Where(w => w.EventId == eventId && w.Group == WineGroup.A1 && w.IsVinbonde);
 
-        var results = _wineResultRepository.GetAllWineResults();
-
-        var candidates = wines
-            .Select(w => new
-            {
-                Wine = w,
-                Result = results.FirstOrDefault(r => r.WineId == w.WineId)
-            })
-            .Where(x => x.Result != null && Classification.MedalClassifications.Contains(x.Result.Classification))
-            .OrderByDescending(x => x.Result!.TotalScore)
-            .ThenByDescending(x => x.Result!.HighestSingleScore)
-            .ToList();
-
+        var candidates = FindMedalCandidates(wines);
         if (!candidates.Any())
             return (null, null);
 
         var winner = candidates.First();
-        
-        // Check for tie
-        var topScore = winner.Result!.TotalScore;
-        var tiedCandidates = candidates
-            .Where(x => x.Result!.TotalScore == topScore)
-            .ToList();
+
+        // Check for tie on TotalScore
+        var topScore = winner.result.TotalScore;
+        var tiedCandidates = candidates.Where(x => x.result.TotalScore == topScore).ToList();
 
         if (tiedCandidates.Count > 1)
         {
             // Use highest single score as tie-breaker
-            var topSingleScore = tiedCandidates.Max(x => x.Result!.HighestSingleScore);
-            var finalCandidates = tiedCandidates
-                .Where(x => x.Result!.HighestSingleScore == topSingleScore)
-                .ToList();
+            var topSingleScore = tiedCandidates.Max(x => x.result.HighestSingleScore);
+            var finalCandidates = tiedCandidates.Where(x => x.result.HighestSingleScore == topSingleScore).ToList();
 
             if (finalCandidates.Count > 1)
             {
-                // Mark as requiring lottery
                 foreach (var candidate in finalCandidates)
                 {
-                    candidate.Result!.RequiresLottery = true;
-                    _wineResultRepository.UpdateWineResult(candidate.Result);
+                    candidate.result.RequiresLottery = true;
+                    _wineResultRepository.UpdateWineResult(candidate.result);
                 }
             }
 
-            return (finalCandidates.First().Wine, finalCandidates.First().Result);
+            return (finalCandidates.First().wine, finalCandidates.First().result);
         }
 
-        return (winner.Wine, winner.Result);
+        return (winner.wine, winner.result);
     }
 
     public (Wine? wine, WineResult? result) GetBestNorwegianWine(string eventId)
     {
         // Groups A1, B, C, D (Norwegian wines), medal classification, highest score
-        var norwegianGroups = new[] { WineGroup.A1, WineGroup.B, WineGroup.C, WineGroup.D };
-        
+        WineGroup[] norwegianGroups = [WineGroup.A1, WineGroup.B, WineGroup.C, WineGroup.D];
         var wines = _wineRepository.GetAllWines()
-            .Where(w => w.EventId == eventId && 
-                       norwegianGroups.Contains(w.Group))
-            .ToList();
+            .Where(w => w.EventId == eventId && norwegianGroups.Contains(w.Group));
 
-        var results = _wineResultRepository.GetAllWineResults();
-
-        var candidates = wines
-            .Select(w => new
-            {
-                Wine = w,
-                Result = results.FirstOrDefault(r => r.WineId == w.WineId)
-            })
-            .Where(x => x.Result != null && Classification.MedalClassifications.Contains(x.Result.Classification))
-            .OrderByDescending(x => x.Result!.TotalScore)
-            .ThenByDescending(x => x.Result!.HighestSingleScore)
-            .ToList();
-
-        if (!candidates.Any())
-            return (null, null);
-
-        var winner = candidates.First();
-        return (winner.Wine, winner.Result);
+        return GetTopMedalWine(wines);
     }
 
     public (Wine? wine, WineResult? result) GetBestNordicWine(string eventId)
     {
         // Groups A1 and A2 (Norwegian + Nordic guests), medal classification, highest score
-        var nordicGroups = new[] { WineGroup.A1, WineGroup.A2 };
-        
+        WineGroup[] nordicGroups = [WineGroup.A1, WineGroup.A2];
         var wines = _wineRepository.GetAllWines()
-            .Where(w => w.EventId == eventId && 
-                       nordicGroups.Contains(w.Group))
-            .ToList();
+            .Where(w => w.EventId == eventId && nordicGroups.Contains(w.Group));
 
-        var results = _wineResultRepository.GetAllWineResults();
-
-        var candidates = wines
-            .Select(w => new
-            {
-                Wine = w,
-                Result = results.FirstOrDefault(r => r.WineId == w.WineId)
-            })
-            .Where(x => x.Result != null && Classification.MedalClassifications.Contains(x.Result.Classification))
-            .OrderByDescending(x => x.Result!.TotalScore)
-            .ThenByDescending(x => x.Result!.HighestSingleScore)
-            .ToList();
-
-        if (!candidates.Any())
-            return (null, null);
-
-        var winner = candidates.First();
-        return (winner.Wine, winner.Result);
+        return GetTopMedalWine(wines);
     }
 
     public List<(Wine wine, WineResult result, bool requiresLottery)> ResolveTieBreaks(
         List<(Wine wine, WineResult result)> candidates)
     {
         if (!candidates.Any())
-            return new List<(Wine, WineResult, bool)>();
+            return [];
 
         var topScore = candidates.Max(c => c.result.TotalScore);
         var tiedCandidates = candidates
@@ -145,7 +85,7 @@ public class TrophyService : ITrophyService
             .ToList();
 
         if (tiedCandidates.Count == 1)
-            return new List<(Wine, WineResult, bool)> { (tiedCandidates[0].wine, tiedCandidates[0].result, false) };
+            return [(tiedCandidates[0].wine, tiedCandidates[0].result, false)];
 
         // Apply tie-break: highest single judge score
         var topSingleScore = tiedCandidates.Max(c => c.result.HighestSingleScore);
@@ -157,6 +97,28 @@ public class TrophyService : ITrophyService
 
         return finalCandidates
             .Select(c => (c.wine, c.result, requiresLottery))
+            .ToList();
+    }
+
+    private (Wine? wine, WineResult? result) GetTopMedalWine(IEnumerable<Wine> wines)
+    {
+        var candidates = FindMedalCandidates(wines);
+        return candidates.Count > 0 ? (candidates[0].wine, candidates[0].result) : (null, null);
+    }
+
+    private List<(Wine wine, WineResult result)> FindMedalCandidates(IEnumerable<Wine> wines)
+    {
+        var wineList = wines.ToList();
+        var resultLookup = _wineResultRepository.GetAllWineResults()
+            .Where(r => wineList.Any(w => w.WineId == r.WineId))
+            .ToDictionary(r => r.WineId);
+
+        return wineList
+            .Where(w => resultLookup.TryGetValue(w.WineId, out var r)
+                        && Classification.MedalClassifications.Contains(r.Classification))
+            .Select(w => (w, resultLookup[w.WineId]))
+            .OrderByDescending(x => x.Item2.TotalScore)
+            .ThenByDescending(x => x.Item2.HighestSingleScore)
             .ToList();
     }
 }

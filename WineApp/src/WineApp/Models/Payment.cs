@@ -21,7 +21,7 @@ public class Payment
     public string EventId { get; set; } = string.Empty;
 
     [DisplayName("Vin-IDer")]
-    public List<string> WineIds { get; set; } = new List<string>();
+    public List<string> WineIds { get; set; } = [];
 
     [Required(ErrorMessage = "Beløp er påkrevd")]
     [Range(0, 1000000, ErrorMessage = "Beløp må være mellom 0 og 1000000")]

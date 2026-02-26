@@ -396,11 +396,11 @@ else
         }
     }
 
-    private async Task CalculateResults(string eventId)
+    private void CalculateResults(string eventId)
     {
         try
         {
-            var results = await ScoreAggregationService.RecalculateEventResultsAsync(eventId);
+            var results = ScoreAggregationService.RecalculateEventResults(eventId);
             ShowStatus($"Beregnet resultater for {results.Count} viner", "alert-success");
         }
         catch (Exception ex)

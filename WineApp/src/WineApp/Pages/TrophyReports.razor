@@ -334,7 +334,7 @@ else
         try
         {
             // First ensure all results are calculated
-            var results = ScoreAggregationService.RecalculateEventResultsAsync(activeEvent.EventId).Result;
+            var results = ScoreAggregationService.RecalculateEventResults(activeEvent.EventId);
             
             // Calculate trophies
             aaretsVinbonde = TrophyService.GetAaretsVinbonde(activeEvent.EventId);

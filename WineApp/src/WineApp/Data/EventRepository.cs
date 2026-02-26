@@ -7,10 +7,8 @@ public class EventRepository : IEventRepository
 {
     private readonly IMongoCollection<Event> _events;
 
-    public EventRepository(WineMongoDbContext context)
-    {
+    public EventRepository(WineMongoDbContext context) =>
         _events = context.Events;
-    }
 
     public List<Event> GetAllEvents() => 
         _events.Find(_ => true).ToList();

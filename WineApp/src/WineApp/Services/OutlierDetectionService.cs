@@ -8,42 +8,28 @@ public class OutlierDetectionService : IOutlierDetectionService
     private readonly IWineRepository _wineRepository;
     private readonly IWineResultRepository _wineResultRepository;
     private readonly IWineRatingRepository _wineRatingRepository;
-    private readonly IScoreAggregationService _scoreAggregationService;
 
     public OutlierDetectionService(
         IWineRepository wineRepository,
         IWineResultRepository wineResultRepository,
-        IWineRatingRepository wineRatingRepository,
-        IScoreAggregationService scoreAggregationService)
+        IWineRatingRepository wineRatingRepository)
     {
         _wineRepository = wineRepository;
         _wineResultRepository = wineResultRepository;
         _wineRatingRepository = wineRatingRepository;
-        _scoreAggregationService = scoreAggregationService;
     }
 
     public List<(Wine wine, WineResult result, decimal spread)> GetOutlierWines(string eventId)
     {
         var wines = _wineRepository.GetAllWines()
             .Where(w => w.EventId == eventId)
+            .ToDictionary(w => w.WineId);
+
+        return _wineResultRepository.GetOutlierWineResults()
+            .Where(r => wines.ContainsKey(r.WineId))
+            .Select(r => (wines[r.WineId], r, r.Spread))
+            .OrderByDescending(o => o.Spread)
             .ToList();
-
-        var results = _wineResultRepository.GetAllWineResults()
-            .Where(r => r.IsOutlier)
-            .ToList();
-
-        var outliers = new List<(Wine, WineResult, decimal)>();
-
-        foreach (var result in results)
-        {
-            var wine = wines.FirstOrDefault(w => w.WineId == result.WineId);
-            if (wine != null)
-            {
-                outliers.Add((wine, result, result.Spread));
-            }
-        }
-
-        return outliers.OrderByDescending(o => o.Item3).ToList();
     }
 
     public bool RequiresReJudging(string wineId, decimal outlierThreshold)

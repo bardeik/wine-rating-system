@@ -25,17 +25,8 @@ public class WineRatingsController : ControllerBase
     [HttpPost]
     public IActionResult Post(WineRating wineRating)
     {
-        try
-        {
-            var wineRatingId = _repo.AddWineRating(wineRating);
-            var url = Url.RouteUrl("GetWineRatingByIdRoute", new { id = wineRatingId }, Request.Scheme,
-                Request.Host.ToUriComponent());
-            return Created(url, wineRating);
-        }
-        catch
-        {
-            return BadRequest();
-        }
+        var wineRatingId = _repo.AddWineRating(wineRating);
+        return CreatedAtRoute("GetWineRatingByIdRoute", new { id = wineRatingId }, wineRating);
     }
 
     [HttpDelete("{id}")]
@@ -43,6 +34,6 @@ public class WineRatingsController : ControllerBase
     {
         if (_repo.GetWineRatingById(id) is null) return NotFound();
         _repo.DeleteWineRating(id);
-        return Ok();
+        return NoContent();
     }
 }

@@ -36,7 +36,7 @@ public class Wine
     public decimal AlcoholPercentage { get; set; }
 
     [DisplayName("Drueblanding (%)")]
-    public Dictionary<string, decimal> GrapeBlend { get; set; } = new Dictionary<string, decimal>();
+    public Dictionary<string, decimal> GrapeBlend { get; set; } = [];
 
     [DisplayName("Vinbonde (≥100 vinstokker)")]
     public bool IsVinbonde { get; set; }

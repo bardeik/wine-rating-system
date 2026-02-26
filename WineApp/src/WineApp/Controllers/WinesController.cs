@@ -25,17 +25,8 @@ public class WinesController : ControllerBase
     [HttpPost]
     public IActionResult Post(Wine wine)
     {
-        try
-        {
-            var wineId = _repo.AddWine(wine);
-            var url = Url.RouteUrl("GetWineByIdRoute", new { id = wineId }, Request.Scheme,
-                Request.Host.ToUriComponent());
-            return Created(url, wine);
-        }
-        catch
-        {
-            return BadRequest();
-        }
+        var wineId = _repo.AddWine(wine);
+        return CreatedAtRoute("GetWineByIdRoute", new { id = wineId }, wine);
     }
 
     [HttpDelete("{id}")]
@@ -43,6 +34,6 @@ public class WinesController : ControllerBase
     {
         if (_repo.GetWineById(id) is null) return NotFound();
         _repo.DeleteWine(id);
-        return Ok();
+        return NoContent();
     }
 }

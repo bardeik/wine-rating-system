@@ -91,7 +91,7 @@ public class ScoreAggregationService : IScoreAggregationService
         };
     }
 
-    public Task<List<WineResult>> RecalculateEventResultsAsync(string eventId)
+    public List<WineResult> RecalculateEventResults(string eventId)
     {
         var eventConfig = _eventRepository.GetEventById(eventId);
         if (eventConfig == null)
@@ -131,7 +131,7 @@ public class ScoreAggregationService : IScoreAggregationService
             // This could trigger a workflow or notification
         }
 
-        return Task.FromResult(results);
+        return results;
     }
 
     public (decimal highestScore, string judgeId) GetHighestSingleScore(List<WineRating> ratings)

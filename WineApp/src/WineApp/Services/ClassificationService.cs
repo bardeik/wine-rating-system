@@ -22,32 +22,16 @@ public class ClassificationService : IClassificationService
             return Classification.NotApproved;
 
         // Rule 3: Apply medal thresholds
-        var goldThreshold = eventConfig.UseAdjustedThresholds 
-            ? eventConfig.AdjustedGoldThreshold 
-            : eventConfig.GoldThreshold;
-        
-        var silverThreshold = eventConfig.UseAdjustedThresholds 
-            ? eventConfig.AdjustedSilverThreshold 
-            : eventConfig.SilverThreshold;
-        
-        var bronzeThreshold = eventConfig.UseAdjustedThresholds 
-            ? eventConfig.AdjustedBronzeThreshold 
-            : eventConfig.BronzeThreshold;
-        
-        var specialMeritThreshold = eventConfig.UseAdjustedThresholds 
-            ? eventConfig.AdjustedSpecialMeritThreshold 
-            : eventConfig.SpecialMeritThreshold;
-
-        if (totalScore >= goldThreshold)
+        if (totalScore >= GetThreshold(Classification.Gold, eventConfig))
             return Classification.Gold;
-        
-        if (totalScore >= silverThreshold)
+
+        if (totalScore >= GetThreshold(Classification.Silver, eventConfig))
             return Classification.Silver;
-        
-        if (totalScore >= bronzeThreshold)
+
+        if (totalScore >= GetThreshold(Classification.Bronze, eventConfig))
             return Classification.Bronze;
-        
-        if (totalScore >= specialMeritThreshold)
+
+        if (totalScore >= GetThreshold(Classification.SpecialMerit, eventConfig))
             return Classification.SpecialMerit;
         
         return Classification.Acceptable;

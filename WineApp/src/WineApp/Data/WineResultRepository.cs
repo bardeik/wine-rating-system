@@ -7,10 +7,8 @@ public class WineResultRepository : IWineResultRepository
 {
     private readonly IMongoCollection<WineResult> _wineResults;
 
-    public WineResultRepository(WineMongoDbContext context)
-    {
+    public WineResultRepository(WineMongoDbContext context) =>
         _wineResults = context.WineResults;
-    }
 
     public List<WineResult> GetAllWineResults() => 
         _wineResults.Find(_ => true).ToList();

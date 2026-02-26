@@ -7,10 +7,8 @@ public class PaymentRepository : IPaymentRepository
 {
     private readonly IMongoCollection<Payment> _payments;
 
-    public PaymentRepository(WineMongoDbContext context)
-    {
+    public PaymentRepository(WineMongoDbContext context) =>
         _payments = context.Payments;
-    }
 
     public List<Payment> GetAllPayments() => 
         _payments.Find(_ => true).ToList();
