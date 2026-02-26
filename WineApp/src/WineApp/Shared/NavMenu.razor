@@ -55,40 +55,16 @@
                 </div>
             </Authorized>
         </AuthorizeView>
-        <AuthorizeView Roles="Admin,Viewer">
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="trophy-reports">
-                        <span class="oi oi-award" aria-hidden="true"></span> Pokaler
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="results-report">
-                        <span class="oi oi-spreadsheet" aria-hidden="true"></span> Resultatliste
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="reports">
-                        <span class="oi oi-bar-chart" aria-hidden="true"></span> Rapporter
-                    </NavLink>
-                </div>
-            </Authorized>
-        </AuthorizeView>
         <AuthorizeView Roles="Admin">
             <Authorized>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="outlier-management">
-                        <span class="oi oi-warning" aria-hidden="true"></span> Outlier Management
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="flight-management">
-                        <span class="oi oi-list-rich" aria-hidden="true"></span> Flight Management
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
                     <NavLink class="nav-link" href="events">
                         <span class="oi oi-calendar" aria-hidden="true"></span> Arrangementer
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="judges">
+                        <span class="oi oi-people" aria-hidden="true"></span> Dommere
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
@@ -97,8 +73,32 @@
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="judges">
-                        <span class="oi oi-people" aria-hidden="true"></span> Dommere
+                    <NavLink class="nav-link" href="flight-management">
+                        <span class="oi oi-list-rich" aria-hidden="true"></span> Flight Management
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="outlier-management">
+                        <span class="oi oi-warning" aria-hidden="true"></span> Outlier Management
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+        <AuthorizeView Roles="Admin,Viewer">
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="reports">
+                        <span class="oi oi-bar-chart" aria-hidden="true"></span> Rapporter
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="results-report">
+                        <span class="oi oi-spreadsheet" aria-hidden="true"></span> Resultatliste
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="trophy-reports">
+                        <span class="oi oi-award" aria-hidden="true"></span> Pokaler
                     </NavLink>
                 </div>
             </Authorized>
