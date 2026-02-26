@@ -1,79 +1,33 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @inject NavigationManager NavigationManager
+@implements IDisposable
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Wine App</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-    </div>
+<div class="nav-brand px-3">
+    <a href="" class="navbar-brand">Wine App</a>
 </div>
 
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-
-    <!-- Floating expand button when collapsed -->
-    @if (isSidebarCollapsed)
-    {
-        <div class="floating-expand-btn">
-            <button class="btn btn-primary"
-                    @onclick="ToggleSidebarCollapse"
-                    @onclick:stopPropagation="true"
-                    title="Klikk for å ekspandere menyen">
-                <span class="oi oi-chevron-right" aria-hidden="true"></span>
-                <div class="expand-text">MENY</div>
-            </button>
-        </div>
-    }
-
-    <!-- Desktop collapse button -->
-    <div class="nav-item px-3 desktop-collapse-btn">
-        <button class="btn btn-link nav-link w-100 text-start" @onclick="ToggleSidebarCollapse" @onclick:stopPropagation="true">
-            <span class="oi @(isSidebarCollapsed ? "oi-chevron-right" : "oi-chevron-left")" aria-hidden="true"></span>
-            @if (!isSidebarCollapsed)
-            {
-                <span>Skjul meny</span>
-            }
-        </button>
-    </div>
-
+<div class="nav-scrollable">
     <nav class="flex-column">
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All" title="Hjem">
-                <span class="oi oi-home" aria-hidden="true"></span>
-                @if (!isSidebarCollapsed)
-                {
-                    <span>Hjem</span>
-                }
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-home" aria-hidden="true"></span> Hjem
             </NavLink>
         </div>
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="public-results" title="Publiserte resultater">
-                <span class="oi oi-eye" aria-hidden="true"></span>
-                @if (!isSidebarCollapsed)
-                {
-                    <span>Publiserte resultater</span>
-                }
+            <NavLink class="nav-link" href="public-results">
+                <span class="oi oi-eye" aria-hidden="true"></span> Publiserte resultater
             </NavLink>
         </div>
         <AuthorizeView Roles="Admin,WineProducer">
             <Authorized>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="wine-registration" title="Registrer vin">
-                        <span class="oi oi-plus" aria-hidden="true"></span>
-                        @if (!isSidebarCollapsed)
-                        {
-                            <span>Registrer vin</span>
-                        }
+                    <NavLink class="nav-link" href="wine-registration">
+                        <span class="oi oi-plus" aria-hidden="true"></span> Registrer vin
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="wines" title="Viner">
-                        <span class="oi oi-list" aria-hidden="true"></span>
-                        @if (!isSidebarCollapsed)
-                        {
-                            <span>Viner</span>
-                        }
+                    <NavLink class="nav-link" href="wines">
+                        <span class="oi oi-list" aria-hidden="true"></span> Viner
                     </NavLink>
                 </div>
             </Authorized>
@@ -81,12 +35,8 @@
         <AuthorizeView Roles="WineProducer">
             <Authorized>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="payment-receipt" title="Betalingsoversikt">
-                        <span class="oi oi-document" aria-hidden="true"></span>
-                        @if (!isSidebarCollapsed)
-                        {
-                            <span>Betalingsoversikt</span>
-                        }
+                    <NavLink class="nav-link" href="payment-receipt">
+                        <span class="oi oi-document" aria-hidden="true"></span> Betalingsoversikt
                     </NavLink>
                 </div>
             </Authorized>
@@ -94,21 +44,13 @@
         <AuthorizeView Roles="Judge,Admin">
             <Authorized>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="judge-rating" title="Dommerbedømming">
-                        <span class="oi oi-tablet" aria-hidden="true"></span>
-                        @if (!isSidebarCollapsed)
-                        {
-                            <span>Dommerbedømming</span>
-                        }
+                    <NavLink class="nav-link" href="judge-rating">
+                        <span class="oi oi-tablet" aria-hidden="true"></span> Dommerbedømming
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="wineratings" title="Vurderinger">
-                        <span class="oi oi-star" aria-hidden="true"></span>
-                        @if (!isSidebarCollapsed)
-                        {
-                            <span>Vurderinger</span>
-                        }
+                    <NavLink class="nav-link" href="wineratings">
+                        <span class="oi oi-star" aria-hidden="true"></span> Vurderinger
                     </NavLink>
                 </div>
             </Authorized>
@@ -116,30 +58,18 @@
         <AuthorizeView Roles="Admin,Viewer">
             <Authorized>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="trophy-reports" title="Pokaler">
-                        <span class="oi oi-award" aria-hidden="true"></span>
-                        @if (!isSidebarCollapsed)
-                        {
-                            <span>Pokaler</span>
-                        }
+                    <NavLink class="nav-link" href="trophy-reports">
+                        <span class="oi oi-award" aria-hidden="true"></span> Pokaler
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="results-report" title="Resultatliste">
-                        <span class="oi oi-spreadsheet" aria-hidden="true"></span>
-                        @if (!isSidebarCollapsed)
-                        {
-                            <span>Resultatliste</span>
-                        }
+                    <NavLink class="nav-link" href="results-report">
+                        <span class="oi oi-spreadsheet" aria-hidden="true"></span> Resultatliste
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="reports" title="Rapporter">
-                        <span class="oi oi-bar-chart" aria-hidden="true"></span>
-                        @if (!isSidebarCollapsed)
-                        {
-                            <span>Rapporter</span>
-                        }
+                    <NavLink class="nav-link" href="reports">
+                        <span class="oi oi-bar-chart" aria-hidden="true"></span> Rapporter
                     </NavLink>
                 </div>
             </Authorized>
@@ -147,48 +77,28 @@
         <AuthorizeView Roles="Admin">
             <Authorized>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="outlier-management" title="Outlier Management">
-                        <span class="oi oi-warning" aria-hidden="true"></span>
-                        @if (!isSidebarCollapsed)
-                        {
-                            <span>Outlier Management</span>
-                        }
+                    <NavLink class="nav-link" href="outlier-management">
+                        <span class="oi oi-warning" aria-hidden="true"></span> Outlier Management
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="flight-management" title="Flight Management">
-                        <span class="oi oi-list-rich" aria-hidden="true"></span>
-                        @if (!isSidebarCollapsed)
-                        {
-                            <span>Flight Management</span>
-                        }
+                    <NavLink class="nav-link" href="flight-management">
+                        <span class="oi oi-list-rich" aria-hidden="true"></span> Flight Management
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="events" title="Arrangementer">
-                        <span class="oi oi-calendar" aria-hidden="true"></span>
-                        @if (!isSidebarCollapsed)
-                        {
-                            <span>Arrangementer</span>
-                        }
+                    <NavLink class="nav-link" href="events">
+                        <span class="oi oi-calendar" aria-hidden="true"></span> Arrangementer
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="payment-management" title="Betalinger">
-                        <span class="oi oi-dollar" aria-hidden="true"></span>
-                        @if (!isSidebarCollapsed)
-                        {
-                            <span>Betalinger</span>
-                        }
+                    <NavLink class="nav-link" href="payment-management">
+                        <span class="oi oi-dollar" aria-hidden="true"></span> Betalinger
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="judges" title="Dommere">
-                        <span class="oi oi-people" aria-hidden="true"></span>
-                        @if (!isSidebarCollapsed)
-                        {
-                            <span>Dommere</span>
-                        }
+                    <NavLink class="nav-link" href="judges">
+                        <span class="oi oi-people" aria-hidden="true"></span> Dommere
                     </NavLink>
                 </div>
             </Authorized>
@@ -198,21 +108,13 @@
     <div class="nav-bottom px-3">
         <AuthorizeView>
             <Authorized>
-                <button class="btn btn-outline-light w-100" @onclick="Logout" @onclick:stopPropagation="true" title="Logg ut">
-                    <span class="oi oi-account-logout" aria-hidden="true"></span>
-                    @if (!isSidebarCollapsed)
-                    {
-                        <span>Logg ut (@context.User.Identity?.Name)</span>
-                    }
+                <button class="btn btn-outline-light w-100" @onclick="Logout">
+                    <span class="oi oi-account-logout" aria-hidden="true"></span> Logg ut (@context.User.Identity?.Name)
                 </button>
             </Authorized>
             <NotAuthorized>
-                <a href="Account/Login" class="btn btn-outline-light w-100" @onclick:stopPropagation="true" title="Logg inn">
-                    <span class="oi oi-account-login" aria-hidden="true"></span>
-                    @if (!isSidebarCollapsed)
-                    {
-                        <span>Logg inn</span>
-                    }
+                <a href="Account/Login" class="btn btn-outline-light w-100">
+                    <span class="oi oi-account-login" aria-hidden="true"></span> Logg inn
                 </a>
             </NotAuthorized>
         </AuthorizeView>
@@ -220,26 +122,42 @@
 </div>
 
 @code {
-    private bool collapseNavMenu = true;
-    private bool isSidebarCollapsed = false;
+    [Parameter] public EventCallback OnMenuToggle { get; set; }
 
-    [Parameter]
-    public EventCallback OnSidebarToggle { get; set; }
+    public bool IsMenuOpen { get; private set; } = false;
 
-    public bool IsSidebarCollapsed => isSidebarCollapsed;
-
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-    private void ToggleNavMenu()
+    protected override void OnInitialized()
     {
-        collapseNavMenu = !collapseNavMenu;
+        NavigationManager.LocationChanged += OnLocationChanged;
     }
 
-    private async Task ToggleSidebarCollapse()
+    private async void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
-        isSidebarCollapsed = !isSidebarCollapsed;
-        await OnSidebarToggle.InvokeAsync();
+        if (IsMenuOpen)
+        {
+            IsMenuOpen = false;
+            await OnMenuToggle.InvokeAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public async Task ToggleMenu()
+    {
+        IsMenuOpen = !IsMenuOpen;
+        await OnMenuToggle.InvokeAsync();
         StateHasChanged();
+    }
+
+    public async Task CloseMenu()
+    {
+        IsMenuOpen = false;
+        await OnMenuToggle.InvokeAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
     }
 
     private void Logout() => NavigationManager.NavigateTo("/Account/Logout", forceLoad: true);

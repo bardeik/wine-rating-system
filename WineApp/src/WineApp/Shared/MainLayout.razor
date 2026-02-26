@@ -2,12 +2,20 @@
 @inherits LayoutComponentBase
 
 <div class="page">
-    <div class="sidebar @(NavMenu?.IsSidebarCollapsed == true ? "collapsed" : "")">
-        <NavMenu @ref="NavMenu" OnSidebarToggle="HandleSidebarToggle" />
+    <div class="sidebar @(NavMenu?.IsMenuOpen == true ? "open" : "")">
+        <NavMenu @ref="NavMenu" OnMenuToggle="HandleMenuToggle" />
     </div>
 
-    <main class="@(NavMenu?.IsSidebarCollapsed == true ? "sidebar-collapsed" : "")">
-        <div class="top-row px-4 d-flex align-items-center justify-content-end">
+    @if (NavMenu?.IsMenuOpen == true)
+    {
+        <div class="nav-overlay-backdrop" @onclick="CloseMenu"></div>
+    }
+
+    <main>
+        <div class="top-row px-4">
+            <button class="hamburger-btn" @onclick="ToggleMenu" title="Meny">
+                <span class="oi oi-menu" aria-hidden="true"></span>
+            </button>
             <LoginDisplay />
         </div>
 
@@ -20,8 +28,15 @@
 @code {
     private NavMenu? NavMenu { get; set; }
 
-    private void HandleSidebarToggle()
+    private void HandleMenuToggle() => StateHasChanged();
+
+    private async Task ToggleMenu()
     {
-        StateHasChanged();
+        if (NavMenu != null) await NavMenu.ToggleMenu();
+    }
+
+    private async Task CloseMenu()
+    {
+        if (NavMenu != null) await NavMenu.CloseMenu();
     }
 }
