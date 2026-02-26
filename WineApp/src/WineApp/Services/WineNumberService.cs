@@ -12,14 +12,14 @@ public class WineNumberService : IWineNumberService
         _wineRepository = wineRepository;
     }
 
-    public async Task<Dictionary<string, int>> AssignWineNumbersAsync(string eventId)
+    public Task<Dictionary<string, int>> AssignWineNumbersAsync(string eventId)
     {
         var wines = _wineRepository.GetAllWines()
             .Where(w => w.EventId == eventId && w.IsPaid)
             .ToList();
 
         if (!wines.Any())
-            return new Dictionary<string, int>();
+            return Task.FromResult(new Dictionary<string, int>());
 
         // Get category order
         var categoryOrder = GetCategoryOrder();
@@ -41,7 +41,7 @@ public class WineNumberService : IWineNumberService
             currentNumber++;
         }
 
-        return assignments;
+        return Task.FromResult(assignments);
     }
 
     public int GetNextWineNumber(string eventId)

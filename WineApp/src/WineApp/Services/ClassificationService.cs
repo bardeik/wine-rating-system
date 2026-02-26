@@ -15,11 +15,11 @@ public class ClassificationService : IClassificationService
     {
         // Rule 1: If defective (any dimension = 0 or taste <= 1), not approved
         if (isDefective)
-            return "IkkeGodkjent";
+            return Classification.NotApproved;
 
         // Rule 2: Must meet gate values for Acceptable or higher
         if (!meetsGateValues)
-            return "IkkeGodkjent";
+            return Classification.NotApproved;
 
         // Rule 3: Apply medal thresholds
         var goldThreshold = eventConfig.UseAdjustedThresholds 
@@ -39,24 +39,24 @@ public class ClassificationService : IClassificationService
             : eventConfig.SpecialMeritThreshold;
 
         if (totalScore >= goldThreshold)
-            return "Gull";
+            return Classification.Gold;
         
         if (totalScore >= silverThreshold)
-            return "Sølv";
+            return Classification.Silver;
         
         if (totalScore >= bronzeThreshold)
-            return "Bronse";
+            return Classification.Bronze;
         
         if (totalScore >= specialMeritThreshold)
-            return "Særlig";
+            return Classification.SpecialMerit;
         
-        return "Akseptabel";
+        return Classification.Acceptable;
     }
 
     public bool ShouldUseAdjustedThresholds(List<WineResult> results)
     {
         // If no wines achieved Gold classification, suggest using adjusted thresholds
-        return !results.Any(r => r.Classification == "Gull");
+        return !results.Any(r => r.Classification == Classification.Gold);
     }
 
     public decimal GetThreshold(string classification, Event eventConfig)
@@ -65,10 +65,10 @@ public class ClassificationService : IClassificationService
 
         return classification switch
         {
-            "Gull" => useAdjusted ? eventConfig.AdjustedGoldThreshold : eventConfig.GoldThreshold,
-            "Sølv" => useAdjusted ? eventConfig.AdjustedSilverThreshold : eventConfig.SilverThreshold,
-            "Bronse" => useAdjusted ? eventConfig.AdjustedBronzeThreshold : eventConfig.BronzeThreshold,
-            "Særlig" => useAdjusted ? eventConfig.AdjustedSpecialMeritThreshold : eventConfig.SpecialMeritThreshold,
+            Classification.Gold => useAdjusted ? eventConfig.AdjustedGoldThreshold : eventConfig.GoldThreshold,
+            Classification.Silver => useAdjusted ? eventConfig.AdjustedSilverThreshold : eventConfig.SilverThreshold,
+            Classification.Bronze => useAdjusted ? eventConfig.AdjustedBronzeThreshold : eventConfig.BronzeThreshold,
+            Classification.SpecialMerit => useAdjusted ? eventConfig.AdjustedSpecialMeritThreshold : eventConfig.SpecialMeritThreshold,
             _ => 0
         };
     }

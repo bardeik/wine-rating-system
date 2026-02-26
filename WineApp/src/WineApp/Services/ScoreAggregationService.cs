@@ -32,7 +32,7 @@ public class ScoreAggregationService : IScoreAggregationService
             return new WineResult
             {
                 WineId = wineId,
-                Classification = "IkkeGodkjent",
+                Classification = Classification.NotApproved,
                 NumberOfRatings = 0
             };
         }
@@ -91,7 +91,7 @@ public class ScoreAggregationService : IScoreAggregationService
         };
     }
 
-    public async Task<List<WineResult>> RecalculateEventResultsAsync(string eventId)
+    public Task<List<WineResult>> RecalculateEventResultsAsync(string eventId)
     {
         var eventConfig = _eventRepository.GetEventById(eventId);
         if (eventConfig == null)
@@ -125,13 +125,13 @@ public class ScoreAggregationService : IScoreAggregationService
         }
 
         // Check if any Gold medals awarded - if not, recalculate with adjusted thresholds
-        if (!results.Any(r => r.Classification == "Gull") && !eventConfig.UseAdjustedThresholds)
+        if (!results.Any(r => r.Classification == Classification.Gold) && !eventConfig.UseAdjustedThresholds)
         {
             // Notify admin to consider adjusted thresholds
             // This could trigger a workflow or notification
         }
 
-        return results;
+        return Task.FromResult(results);
     }
 
     public (decimal highestScore, string judgeId) GetHighestSingleScore(List<WineRating> ratings)

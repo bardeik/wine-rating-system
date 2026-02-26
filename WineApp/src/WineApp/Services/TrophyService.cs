@@ -26,7 +26,6 @@ public class TrophyService : ITrophyService
             .ToList();
 
         var results = _wineResultRepository.GetAllWineResults();
-        var medalResults = new[] { "Gull", "Sølv", "Bronse" };
 
         var candidates = wines
             .Select(w => new
@@ -34,7 +33,7 @@ public class TrophyService : ITrophyService
                 Wine = w,
                 Result = results.FirstOrDefault(r => r.WineId == w.WineId)
             })
-            .Where(x => x.Result != null && medalResults.Contains(x.Result.Classification))
+            .Where(x => x.Result != null && Classification.MedalClassifications.Contains(x.Result.Classification))
             .OrderByDescending(x => x.Result!.TotalScore)
             .ThenByDescending(x => x.Result!.HighestSingleScore)
             .ToList();
@@ -85,7 +84,6 @@ public class TrophyService : ITrophyService
             .ToList();
 
         var results = _wineResultRepository.GetAllWineResults();
-        var medalResults = new[] { "Gull", "Sølv", "Bronse" };
 
         var candidates = wines
             .Select(w => new
@@ -93,7 +91,7 @@ public class TrophyService : ITrophyService
                 Wine = w,
                 Result = results.FirstOrDefault(r => r.WineId == w.WineId)
             })
-            .Where(x => x.Result != null && medalResults.Contains(x.Result.Classification))
+            .Where(x => x.Result != null && Classification.MedalClassifications.Contains(x.Result.Classification))
             .OrderByDescending(x => x.Result!.TotalScore)
             .ThenByDescending(x => x.Result!.HighestSingleScore)
             .ToList();
@@ -116,7 +114,6 @@ public class TrophyService : ITrophyService
             .ToList();
 
         var results = _wineResultRepository.GetAllWineResults();
-        var medalResults = new[] { "Gull", "Sølv", "Bronse" };
 
         var candidates = wines
             .Select(w => new
@@ -124,7 +121,7 @@ public class TrophyService : ITrophyService
                 Wine = w,
                 Result = results.FirstOrDefault(r => r.WineId == w.WineId)
             })
-            .Where(x => x.Result != null && medalResults.Contains(x.Result.Classification))
+            .Where(x => x.Result != null && Classification.MedalClassifications.Contains(x.Result.Classification))
             .OrderByDescending(x => x.Result!.TotalScore)
             .ThenByDescending(x => x.Result!.HighestSingleScore)
             .ToList();
