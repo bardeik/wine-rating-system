@@ -16,9 +16,113 @@
     right: 0;
 }
 
+.desktop-collapse-btn {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 0 !important;
+}
+
+.desktop-collapse-btn button {
+    color: #d7d7d7;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+}
+
+.desktop-collapse-btn button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* Floating expand button when sidebar is collapsed */
+.floating-expand-btn {
+    position: fixed;
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    z-index: 1001;
+    animation: pulse-slide 2s infinite;
+}
+
+.floating-expand-btn button {
+    width: auto;
+    min-width: 50px;
+    height: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    box-shadow: 0 4px 20px rgba(13, 110, 253, 0.6);
+    border: 3px solid rgba(255, 255, 255, 0.8) !important;
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
+    border-radius: 12px !important;
+    padding: 0.75rem 0.5rem;
+}
+
+.floating-expand-btn button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 30px rgba(13, 110, 253, 0.9);
+    border-color: white !important;
+}
+
+.floating-expand-btn .oi {
+    font-size: 2rem;
+    width: auto;
+    color: white;
+    animation: chevron-pulse 1.5s infinite;
+}
+
+.floating-expand-btn .expand-text {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: white;
+    writing-mode: horizontal-tb;
+    text-align: center;
+}
+
+/* Enhanced pulse animation with slide */
+@keyframes pulse-slide {
+    0%, 100% {
+        opacity: 1;
+        left: 10px;
+        box-shadow: 0 4px 20px rgba(13, 110, 253, 0.6);
+    }
+    50% {
+        opacity: 0.9;
+        left: 15px;
+        box-shadow: 0 8px 30px rgba(13, 110, 253, 0.9);
+    }
+}
+
+/* Chevron animation */
+@keyframes chevron-pulse {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    50% {
+        transform: translateX(3px);
+    }
+}
+
+/* Tooltip styling */
+.nav-item .nav-link[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    left: 85px;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    z-index: 1000;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
 .nav-item {
     font-size: 0.9rem;
     padding-bottom: 0.5rem;
+    position: relative;
 }
 
     .nav-item:first-of-type {
@@ -47,6 +151,16 @@
 .nav-item ::deep a:hover {
     background-color: rgba(255,255,255,0.1);
     color: white;
+}
+
+@media (max-width: 640.98px) {
+    .desktop-collapse-btn {
+        display: none;
+    }
+    
+    .floating-expand-btn {
+        display: none;
+    }
 }
 
 @media (min-width: 641px) {

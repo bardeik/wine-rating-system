@@ -2,11 +2,11 @@
 @inherits LayoutComponentBase
 
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
+    <div class="sidebar @(NavMenu?.IsSidebarCollapsed == true ? "collapsed" : "")">
+        <NavMenu @ref="NavMenu" OnSidebarToggle="HandleSidebarToggle" />
     </div>
 
-    <main>
+    <main class="@(NavMenu?.IsSidebarCollapsed == true ? "sidebar-collapsed" : "")">
         <div class="top-row px-4 d-flex align-items-center justify-content-end">
             <LoginDisplay />
         </div>
@@ -16,3 +16,12 @@
         </article>
     </main>
 </div>
+
+@code {
+    private NavMenu? NavMenu { get; set; }
+
+    private void HandleSidebarToggle()
+    {
+        StateHasChanged();
+    }
+}

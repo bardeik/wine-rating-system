@@ -9,7 +9,7 @@
 @using System.Security.Claims
 @using WineApp.Services
 
-<PageTitle>Dombedøming</PageTitle>
+<PageTitle>Dommerbedømming</PageTitle>
 
 <style>
     /* Tablet-optimized styles */
@@ -112,6 +112,119 @@
         z-index: 1000;
     }
     
+    /* Kompakt tidligere vurdering */
+    .previous-rating-compact {
+        margin-top: 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .previous-rating-compact .badge {
+        font-size: 0.85rem;
+        padding: 0.35rem 0.65rem;
+        font-weight: 500;
+    }
+    
+    /* iPad Air optimalisering (820 x 1180 portrait) */
+    @@media (min-width: 768px) and (max-width: 1024px) {
+        .judge-container {
+            padding: 0.75rem;
+        }
+        
+        .wine-card {
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        
+        .wine-number-badge {
+            font-size: 2rem;
+            padding: 0.6rem 1.2rem;
+        }
+        
+        .text-center.mb-4 {
+            margin-bottom: 0.75rem !important;
+        }
+        
+        .rating-input {
+            font-size: 1.6rem;
+            padding: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .score-label {
+            font-size: 1.1rem;
+            margin-bottom: 0.3rem;
+        }
+        
+        .score-range {
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .col-md-4.mb-3 {
+            margin-bottom: 0.75rem !important;
+        }
+        
+        .row.mb-4 {
+            margin-bottom: 0.75rem !important;
+        }
+        
+        .total-score-display {
+            font-size: 1.6rem;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+        }
+        
+        .comment-textarea {
+            font-size: 0.95rem;
+            min-height: 60px;
+            padding: 0.75rem;
+        }
+        
+        .mb-4 {
+            margin-bottom: 0.75rem !important;
+        }
+        
+        .nav-button {
+            font-size: 1.2rem;
+            padding: 0.9rem 1.5rem;
+            min-width: 120px;
+        }
+        
+        .text-center.mt-3 {
+            margin-top: 0.5rem !important;
+        }
+        
+        .text-center.mt-3 small {
+            font-size: 0.75rem;
+        }
+        
+        .progress-indicator {
+            height: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .flight-selector {
+            font-size: 1.1rem;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .form-label.score-label {
+            font-size: 1.2rem;
+        }
+        
+        .previous-rating-compact {
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .previous-rating-compact .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+    }
+    
     @@media (max-width: 768px) {
         .wine-card {
             padding: 1.5rem;
@@ -125,6 +238,15 @@
         .nav-button {
             font-size: 1.2rem;
             padding: 1rem 2rem;
+        }
+        
+        .previous-rating-compact {
+            font-size: 0.8rem;
+        }
+        
+        .previous-rating-compact .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
         }
     }
 </style>
@@ -257,6 +379,26 @@
                               placeholder="Valgfri kommentar om vinen..."></textarea>
                 </div>
 
+                <!-- Previous Ratings History - Kompakt versjon -->
+                @if (hasExistingRating && previousRating != null)
+                {
+                    <div class="alert alert-info previous-rating-compact py-2 px-3 mb-3">
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <strong class="me-2" style="font-size: 0.95rem;">Tidligere:</strong>
+                            <span class="badge bg-secondary">A: @previousRating.Appearance.ToString("F1")</span>
+                            <span class="badge bg-secondary">B: @previousRating.Nose.ToString("F1")</span>
+                            <span class="badge bg-secondary">C: @previousRating.Taste.ToString("F1")</span>
+                            <span class="badge bg-primary">Total: @((previousRating.Appearance + previousRating.Nose + previousRating.Taste).ToString("F1"))</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(previousRating.Comment))
+                        {
+                            <div class="mt-1" style="font-size: 0.85rem;">
+                                <em class="text-muted">@previousRating.Comment</em>
+                            </div>
+                        }
+                    </div>
+                }
+
                 <!-- Navigation Buttons -->
                 <div class="d-flex justify-content-between align-items-center">
                     <button class="btn btn-secondary nav-button" 
@@ -278,24 +420,6 @@
                     </small>
                 </div>
             </div>
-
-            <!-- Previous Ratings History -->
-            @if (hasExistingRating && previousRating != null)
-            {
-                <div class="alert alert-info">
-                    <h6>Tidligere vurdering:</h6>
-                    <p class="mb-0">
-                        <strong>A:</strong> @previousRating.Appearance.ToString("F1") | 
-                        <strong>B:</strong> @previousRating.Nose.ToString("F1") | 
-                        <strong>C:</strong> @previousRating.Taste.ToString("F1") | 
-                        <strong>Total:</strong> @((previousRating.Appearance + previousRating.Nose + previousRating.Taste).ToString("F1"))
-                    </p>
-                    @if (!string.IsNullOrEmpty(previousRating.Comment))
-                    {
-                        <p class="mb-0 mt-2"><em>@previousRating.Comment</em></p>
-                    }
-                </div>
-            }
         }
     }
 </div>
