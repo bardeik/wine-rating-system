@@ -1,8 +1,8 @@
 @page "/flight-management"
 @attribute [Authorize(Roles = "Admin")]
 @inject IFlightService FlightService
-@inject IWineRepository WineRepository
-@inject IEventRepository EventRepository
+@inject IWineCatalogService WineCatalog
+@inject IWineEventService EventSvc
 @inject NavigationManager Navigation
 @using WineApp.Services
 
@@ -186,8 +186,8 @@ else
 
     private async Task LoadData()
     {
-        activeEvent = await EventRepository.GetActiveEventAsync();
-        allWines = (await WineRepository.GetAllWinesAsync()).ToList();
+        activeEvent = await EventSvc.GetActiveEventAsync();
+        allWines = (await WineCatalog.GetAllWinesAsync()).ToList();
         
         if (activeEvent != null)
         {

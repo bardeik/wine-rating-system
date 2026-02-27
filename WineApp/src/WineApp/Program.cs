@@ -64,6 +64,9 @@ builder.Services.AddScoped<IWineValidationService, WineValidationService>();
 builder.Services.AddScoped<IFlightService, FlightService>();
 builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IWineEventService, WineEventService>();
+builder.Services.AddScoped<IWineCatalogService, WineCatalogService>();
+builder.Services.AddScoped<IWineJudgingService, WineJudgingService>();
 builder.Services.AddScoped<CurrentUserState>();
 builder.Services.AddScoped<IPdfService, PdfService>();
 

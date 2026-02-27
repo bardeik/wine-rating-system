@@ -1,10 +1,9 @@
 @page "/trophy-reports"
 @attribute [Authorize(Roles = "Admin,Viewer")]
-@inject IEventRepository EventRepository
+@inject IWineEventService EventSvc
 @inject ITrophyService TrophyService
-@inject IWineRepository WineRepository
-@inject IWineResultRepository WineResultRepository
-@inject IWineProducerRepository WineProducerRepository
+@inject IWineCatalogService WineCatalog
+@inject IWineJudgingService WineJudging
 @inject IScoreAggregationService ScoreAggregationService
 @inject NavigationManager Navigation
 @using WineApp.Services
@@ -341,11 +340,11 @@ else
 
     private async Task LoadData()
     {
-        activeEvent = await EventRepository.GetActiveEventAsync();
+        activeEvent = await EventSvc.GetActiveEventAsync();
         
         if (activeEvent != null)
         {
-            var allProducers = await WineProducerRepository.GetAllWineProducersAsync();
+            var allProducers = await WineCatalog.GetAllWineProducersAsync();
             producerNames = allProducers.ToDictionary(p => p.WineProducerId, p => p.WineyardName);
         }
     }

@@ -1,8 +1,7 @@
 @page "/payment-receipt"
 @attribute [Authorize(Roles = "WineProducer,Admin")]
-@inject IWineRepository WineRepository
-@inject IWineProducerRepository WineProducerRepository
-@inject IEventRepository EventRepository
+@inject IWineCatalogService WineCatalog
+@inject IWineEventService EventSvc
 @inject CurrentUserState CurrentUser
 
 <PageTitle>Betalingsoversikt</PageTitle>
@@ -326,7 +325,7 @@ else
         await CurrentUser.EnsureInitializedAsync();
         if (!string.IsNullOrEmpty(CurrentUser.UserId))
         {
-            currentProducer = await WineProducerRepository.GetWineProducerByUserIdAsync(CurrentUser.UserId);
+            currentProducer = await WineCatalog.GetWineProducerByUserIdAsync(CurrentUser.UserId);
         }
 
         await LoadData();
@@ -343,11 +342,11 @@ else
 
     private async Task LoadData()
     {
-        activeEvent = await EventRepository.GetActiveEventAsync();
+        activeEvent = await EventSvc.GetActiveEventAsync();
 
         if (activeEvent != null && currentProducer != null)
         {
-            wines = (await WineRepository.GetAllWinesAsync())
+            wines = (await WineCatalog.GetAllWinesAsync())
                 .Where(w => w.WineProducerId == currentProducer.WineProducerId && 
                            w.EventId == activeEvent.EventId)
                 .ToList();

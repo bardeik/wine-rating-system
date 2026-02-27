@@ -1,9 +1,8 @@
 @page "/event-details/{EventId}"
 @attribute [Authorize(Roles = "Admin")]
-@inject IEventRepository EventRepository
-@inject IWineRepository WineRepository
-@inject IWineResultRepository WineResultRepository
-@inject IWineRatingRepository WineRatingRepository
+@inject IWineEventService EventSvc
+@inject IWineCatalogService WineCatalog
+@inject IWineJudgingService WineJudging
 @inject ITrophyService TrophyService
 @inject IOutlierDetectionService OutlierDetectionService
 @inject NavigationManager Navigation
@@ -507,18 +506,18 @@ else
 
     private async Task LoadData()
     {
-        eventItem = await EventRepository.GetEventByIdAsync(EventId);
+        eventItem = await EventSvc.GetEventByIdAsync(EventId);
         if (eventItem == null) return;
 
-        wines = (await WineRepository.GetAllWinesAsync())
+        wines = (await WineCatalog.GetAllWinesAsync())
             .Where(w => w.EventId == EventId)
             .ToList();
 
-        results = (await WineResultRepository.GetAllWineResultsAsync())
+        results = (await WineJudging.GetAllWineResultsAsync())
             .Where(r => wines.Any(w => w.WineId == r.WineId))
             .ToList();
 
-        allRatings = (await WineRatingRepository.GetAllWineRatingsAsync())
+        allRatings = (await WineJudging.GetAllWineRatingsAsync())
             .Where(r => wines.Any(w => w.WineId == r.WineId))
             .ToList();
 

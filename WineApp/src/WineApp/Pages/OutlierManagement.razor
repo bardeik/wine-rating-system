@@ -1,9 +1,8 @@
 @page "/outlier-management"
 @attribute [Authorize(Roles = "Admin")]
-@inject IEventRepository EventRepository
-@inject IWineRepository WineRepository
-@inject IWineResultRepository WineResultRepository
-@inject IWineRatingRepository WineRatingRepository
+@inject IWineEventService EventSvc
+@inject IWineCatalogService WineCatalog
+@inject IWineJudgingService WineJudging
 @inject IOutlierDetectionService OutlierDetectionService
 @inject IScoreAggregationService ScoreAggregationService
 @using WineApp.Services
@@ -376,13 +375,13 @@ else
 
     private async Task LoadData()
     {
-        activeEvent = await EventRepository.GetActiveEventAsync();
-        wines = (await WineRepository.GetAllWinesAsync()).ToList();
-        allRatings = (await WineRatingRepository.GetAllWineRatingsAsync()).ToList();
+        activeEvent = await EventSvc.GetActiveEventAsync();
+        wines = (await WineCatalog.GetAllWinesAsync()).ToList();
+        allRatings = (await WineJudging.GetAllWineRatingsAsync()).ToList();
 
         if (activeEvent != null)
         {
-            allResults = (await WineResultRepository.GetAllWineResultsAsync())
+            allResults = (await WineJudging.GetAllWineResultsAsync())
                 .Where(r => wines.Any(w => w.WineId == r.WineId && w.EventId == activeEvent.EventId))
                 .ToList();
         }

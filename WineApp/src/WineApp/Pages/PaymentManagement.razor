@@ -1,8 +1,7 @@
 @page "/payment-management"
 @attribute [Authorize(Roles = "Admin")]
-@inject IWineRepository WineRepository
-@inject IWineProducerRepository WineProducerRepository
-@inject IEventRepository EventRepository
+@inject IWineCatalogService WineCatalog
+@inject IWineEventService EventSvc
 @inject IPaymentRepository PaymentRepository
 @inject IWineNumberService WineNumberService
 @using WineApp.Services
@@ -444,9 +443,9 @@ else
 
     private async Task LoadData()
     {
-        activeEvent = await EventRepository.GetActiveEventAsync();
-        allWines = (await WineRepository.GetAllWinesAsync()).ToList();
-        allProducers = (await WineProducerRepository.GetAllWineProducersAsync()).ToList();
+        activeEvent = await EventSvc.GetActiveEventAsync();
+        allWines = (await WineCatalog.GetAllWinesAsync()).ToList();
+        allProducers = (await WineCatalog.GetAllWineProducersAsync()).ToList();
 
         if (activeEvent != null)
         {
@@ -511,7 +510,7 @@ else
         foreach (var wine in wines)
         {
             wine.IsPaid = true;
-            await WineRepository.UpdateWineAsync(wine);
+            await WineCatalog.UpdateWineAsync(wine);
         }
 
         // Assign wine numbers after payment
@@ -525,7 +524,7 @@ else
     private async Task MarkWineAsPaid(Wine wine)
     {
         wine.IsPaid = true;
-        await WineRepository.UpdateWineAsync(wine);
+        await WineCatalog.UpdateWineAsync(wine);
 
         ShowStatus($"✓ Vin '{wine.Name}' markert som betalt", "alert-success");
         await LoadData();
@@ -547,7 +546,7 @@ else
         foreach (var wine in unpaidWines)
         {
             wine.IsPaid = true;
-            await WineRepository.UpdateWineAsync(wine);
+            await WineCatalog.UpdateWineAsync(wine);
         }
 
         // Assign wine numbers after payment

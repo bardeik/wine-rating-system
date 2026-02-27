@@ -1,10 +1,8 @@
 @page "/events"
 @attribute [Authorize(Roles = "Admin")]
-@inject IEventRepository EventRepository
-@inject IWineRepository WineRepository
-@inject IWineRatingRepository WineRatingRepository
-@inject IWineResultRepository WineResultRepository
-@inject IWineProducerRepository WineProducerRepository
+@inject IWineEventService EventSvc
+@inject IWineCatalogService WineCatalog
+@inject IWineJudgingService WineJudging
 @inject IWineNumberService WineNumberService
 @inject IScoreAggregationService ScoreAggregationService
 @inject NavigationManager Navigation
@@ -300,7 +298,7 @@ else
 
     private async Task LoadEvents()
     {
-        events = (await EventRepository.GetAllEventsAsync()).OrderByDescending(e => e.Year).ToList();
+        events = (await EventSvc.GetAllEventsAsync()).OrderByDescending(e => e.Year).ToList();
     }
 
     private async Task ShowAddForm()
@@ -364,7 +362,7 @@ else
         {
             if (isEditing)
             {
-                await EventRepository.UpdateEventAsync(currentEvent);
+                await EventSvc.UpdateEventAsync(currentEvent);
                 ShowStatus("Arrangement oppdatert", "alert-success");
             }
             else
@@ -374,10 +372,10 @@ else
                 foreach (var evt in activeEvents)
                 {
                     evt.IsActive = false;
-                    await EventRepository.UpdateEventAsync(evt);
+                    await EventSvc.UpdateEventAsync(evt);
                 }
 
-                await EventRepository.AddEventAsync(currentEvent);
+                await EventSvc.AddEventAsync(currentEvent);
                 ShowStatus("Arrangement opprettet", "alert-success");
             }
             await LoadEvents();
@@ -395,11 +393,11 @@ else
         foreach (var e in events.Where(e => e.IsActive))
         {
             e.IsActive = false;
-            await EventRepository.UpdateEventAsync(e);
+            await EventSvc.UpdateEventAsync(e);
         }
 
         evt.IsActive = true;
-        await EventRepository.UpdateEventAsync(evt);
+        await EventSvc.UpdateEventAsync(evt);
         await LoadEvents();
         ShowStatus($"Arrangement '{evt.Name}' aktivert", "alert-success");
     }
@@ -407,7 +405,7 @@ else
     private async Task DeactivateEvent(Event evt)
     {
         evt.IsActive = false;
-        await EventRepository.UpdateEventAsync(evt);
+        await EventSvc.UpdateEventAsync(evt);
         await LoadEvents();
         ShowStatus($"Arrangement '{evt.Name}' deaktivert", "alert-warning");
     }

@@ -1,9 +1,9 @@
 @page "/judge-rating"
 @attribute [Authorize(Roles = "Judge,Admin")]
-@inject IWineRepository WineRepository
-@inject IWineRatingRepository WineRatingRepository
+@inject IWineCatalogService WineCatalog
+@inject IWineJudgingService WineJudging
 @inject IFlightService FlightService
-@inject IEventRepository EventRepository
+@inject IWineEventService EventSvc
 @inject CurrentUserState CurrentUser
 @inject IJSRuntime JS
 @using WineApp.Services
@@ -496,7 +496,7 @@ else
 
     private async Task LoadData()
     {
-        activeEvent = await EventRepository.GetActiveEventAsync();
+        activeEvent = await EventSvc.GetActiveEventAsync();
         
         if (activeEvent != null)
         {
@@ -515,7 +515,7 @@ else
         if (string.IsNullOrEmpty(selectedFlightId)) return;
 
         currentFlightWines = await FlightService.GetWinesInFlightAsync(selectedFlightId);
-        loadedRatings = await WineRatingRepository.GetAllWineRatingsAsync();
+        loadedRatings = await WineJudging.GetAllWineRatingsAsync();
         currentWineIndex = 1;
         
         if (currentFlightWines.Any())
@@ -594,12 +594,12 @@ else
         {
             if (hasExistingRating && !string.IsNullOrEmpty(currentRating.WineRatingId))
             {
-                await WineRatingRepository.UpdateWineRatingAsync(currentRating);
+                await WineJudging.UpdateWineRatingAsync(currentRating);
             }
             else
             {
                 currentRating.WineRatingId = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
-                await WineRatingRepository.AddWineRatingAsync(currentRating);
+                await WineJudging.AddWineRatingAsync(currentRating);
                 hasExistingRating = true;
             }
 

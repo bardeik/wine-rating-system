@@ -1,7 +1,6 @@
 @page "/wines"
 @attribute [Authorize(Roles = "Admin,WineProducer")]
-@inject IWineRepository WineRepository
-@inject IWineProducerRepository WineProducerRepository
+@inject IWineCatalogService WineCatalog
 @inject CurrentUserState CurrentUser
 
 <PageTitle>Viner</PageTitle>
@@ -127,7 +126,7 @@ else
         try
         {
         await LoadWines();
-        wineProducers = (await WineProducerRepository.GetAllWineProducersAsync()).ToList();
+        wineProducers = (await WineCatalog.GetAllWineProducersAsync()).ToList();
 
         await CurrentUser.EnsureInitializedAsync();
         isAdmin = CurrentUser.IsAdmin;
@@ -135,7 +134,7 @@ else
 
         if (isWineProducer && !string.IsNullOrEmpty(CurrentUser.UserId))
         {
-            currentProducer = await WineProducerRepository.GetWineProducerByUserIdAsync(CurrentUser.UserId);
+            currentProducer = await WineCatalog.GetWineProducerByUserIdAsync(CurrentUser.UserId);
             if (currentProducer is not null)
                 newWine.WineProducerId = currentProducer.WineProducerId;
         }
@@ -152,12 +151,12 @@ else
 
     private async Task LoadWines()
     {
-        wines = (await WineRepository.GetAllWinesAsync()).ToList();
+        wines = (await WineCatalog.GetAllWinesAsync()).ToList();
     }
 
     private async Task AddNewWine()
     {
-        await WineRepository.AddWineAsync(newWine);
+        await WineCatalog.AddWineAsync(newWine);
         newWine = new Wine();
         if (currentProducer is not null)
             newWine.WineProducerId = currentProducer.WineProducerId;
@@ -179,7 +178,7 @@ else
     private async Task SaveEdit()
     {
         if (editingWine is not null)
-            await WineRepository.UpdateWineAsync(editingWine);
+            await WineCatalog.UpdateWineAsync(editingWine);
         editingWine = null;
         await LoadWines();
     }
@@ -188,7 +187,7 @@ else
 
     private async Task DeleteWine(string wineId)
     {
-        await WineRepository.DeleteWineAsync(wineId);
+        await WineCatalog.DeleteWineAsync(wineId);
         await LoadWines();
     }
 

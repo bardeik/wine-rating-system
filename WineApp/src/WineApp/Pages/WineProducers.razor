@@ -1,6 +1,6 @@
 @page "/wineproducers"
 @attribute [Authorize(Roles = "Admin,WineProducer")]
-@inject IWineProducerRepository WineProducerRepository
+@inject IWineCatalogService WineCatalog
 @inject UserManager<ApplicationUser> UserManager
 @inject CurrentUserState CurrentUser
 
@@ -212,12 +212,12 @@ else
 
         if (isAdmin)
         {
-            wineProducers = (await WineProducerRepository.GetAllWineProducersAsync()).ToList();
+            wineProducers = (await WineCatalog.GetAllWineProducersAsync()).ToList();
             await LoadProducerEmailsAsync();
         }
 
         if (isWineProducer && !string.IsNullOrEmpty(CurrentUser.UserId))
-            currentProducer = await WineProducerRepository.GetWineProducerByUserIdAsync(CurrentUser.UserId);
+            currentProducer = await WineCatalog.GetWineProducerByUserIdAsync(CurrentUser.UserId);
         }
         catch (Exception ex)
         {
@@ -258,7 +258,7 @@ else
         }
         await UserManager.AddToRoleAsync(user, "WineProducer");
 
-        await WineProducerRepository.AddWineProducerAsync(new WineProducer
+        await WineCatalog.AddWineProducerAsync(new WineProducer
         {
             WineProducerId = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),
             UserId = user.Id.ToString(),
@@ -273,21 +273,21 @@ else
         });
 
         formModel = new WineProducerFormModel();
-        wineProducers = (await WineProducerRepository.GetAllWineProducersAsync()).ToList();
+        wineProducers = (await WineCatalog.GetAllWineProducersAsync()).ToList();
         await LoadProducerEmailsAsync();
     }
 
     private async Task DeleteWineProducer(string producerId)
     {
-        var producer = await WineProducerRepository.GetWineProducerByIdAsync(producerId);
+        var producer = await WineCatalog.GetWineProducerByIdAsync(producerId);
         if (producer?.UserId is not null)
         {
             var u = await UserManager.FindByIdAsync(producer.UserId);
             if (u is not null)
                 await UserManager.DeleteAsync(u);
         }
-        await WineProducerRepository.DeleteWineProducerAsync(producerId);
-        wineProducers = (await WineProducerRepository.GetAllWineProducersAsync()).ToList();
+        await WineCatalog.DeleteWineProducerAsync(producerId);
+        wineProducers = (await WineCatalog.GetAllWineProducersAsync()).ToList();
         await LoadProducerEmailsAsync();
     }
 
@@ -295,7 +295,7 @@ else
     {
         if (currentProducer is not null)
         {
-            await WineProducerRepository.UpdateWineProducerAsync(currentProducer);
+            await WineCatalog.UpdateWineProducerAsync(currentProducer);
             profileSaved = true;
         }
     }

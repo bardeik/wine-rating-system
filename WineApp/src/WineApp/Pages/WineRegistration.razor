@@ -1,8 +1,7 @@
 @page "/wine-registration"
 @attribute [Authorize(Roles = "Admin,WineProducer")]
-@inject IWineRepository WineRepository
-@inject IWineProducerRepository WineProducerRepository
-@inject IEventRepository EventRepository
+@inject IWineCatalogService WineCatalog
+@inject IWineEventService EventSvc
 @inject IWineValidationService WineValidationService
 @inject CurrentUserState CurrentUser
 @inject NavigationManager Navigation
@@ -299,7 +298,7 @@ else
 
         if (isWineProducer && !string.IsNullOrEmpty(CurrentUser.UserId))
         {
-            currentProducer = await WineProducerRepository.GetWineProducerByUserIdAsync(CurrentUser.UserId);
+            currentProducer = await WineCatalog.GetWineProducerByUserIdAsync(CurrentUser.UserId);
         }
 
         await LoadData();
@@ -316,9 +315,9 @@ else
 
     private async Task LoadData()
     {
-        activeEvent = await EventRepository.GetActiveEventAsync();
-        allWines = (await WineRepository.GetAllWinesAsync()).ToList();
-        wineProducers = (await WineProducerRepository.GetAllWineProducersAsync()).ToList();
+        activeEvent = await EventSvc.GetActiveEventAsync();
+        allWines = (await WineCatalog.GetAllWinesAsync()).ToList();
+        wineProducers = (await WineCatalog.GetAllWineProducersAsync()).ToList();
 
         if (activeEvent != null)
         {
@@ -598,7 +597,7 @@ else
 
         try
         {
-            await WineRepository.AddWineAsync(newWine);
+            await WineCatalog.AddWineAsync(newWine);
             ShowStatus($"Vin '{newWine.Name}' er registrert!", "alert-success");
             
             // Reload data and reset form
@@ -654,7 +653,7 @@ else
 
         try
         {
-            await WineRepository.UpdateWineAsync(editingWine);
+            await WineCatalog.UpdateWineAsync(editingWine);
             ShowStatus($"Vin '{editingWine.Name}' er oppdatert!", "alert-success");
             editingWine = null;
             LoadData();
@@ -687,7 +686,7 @@ else
     {
         try
         {
-            await WineRepository.DeleteWineAsync(wineId);
+            await WineCatalog.DeleteWineAsync(wineId);
             ShowStatus("Vin er slettet", "alert-success");
             LoadData();
             StateHasChanged();

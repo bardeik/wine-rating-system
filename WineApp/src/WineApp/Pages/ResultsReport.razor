@@ -1,9 +1,8 @@
 @page "/results-report"
 @attribute [Authorize(Roles = "Admin,Viewer")]
-@inject IEventRepository EventRepository
-@inject IWineRepository WineRepository
-@inject IWineResultRepository WineResultRepository
-@inject IWineProducerRepository WineProducerRepository
+@inject IWineEventService EventSvc
+@inject IWineCatalogService WineCatalog
+@inject IWineJudgingService WineJudging
 @inject IScoreAggregationService ScoreAggregationService
 @inject NavigationManager Navigation
 @using WineApp.Services
@@ -361,13 +360,13 @@ else
 
     private async Task LoadData()
     {
-        activeEvent = await EventRepository.GetActiveEventAsync();
-        wines = (await WineRepository.GetAllWinesAsync()).ToList();
-        producers = (await WineProducerRepository.GetAllWineProducersAsync()).ToList();
+        activeEvent = await EventSvc.GetActiveEventAsync();
+        wines = (await WineCatalog.GetAllWinesAsync()).ToList();
+        producers = (await WineCatalog.GetAllWineProducersAsync()).ToList();
 
         if (activeEvent != null)
         {
-            allResults = (await WineResultRepository.GetAllWineResultsAsync())
+            allResults = (await WineJudging.GetAllWineResultsAsync())
                 .Where(r => wines.Any(w => w.WineId == r.WineId && w.EventId == activeEvent.EventId))
                 .ToList();
         }
