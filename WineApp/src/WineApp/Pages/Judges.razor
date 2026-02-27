@@ -4,6 +4,21 @@
 
 <PageTitle>Dommere</PageTitle>
 
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Laster...</span>
+        </div>
+    </div>
+}
+else if (loadError != null)
+{
+    <div class="alert alert-danger"><strong>Feil:</strong> @loadError</div>
+}
+else
+{
+
 <h3>Dommere</h3>
 
 <div class="card mb-3">
@@ -66,16 +81,32 @@
         </EditForm>
     </div>
 </div>
+}
 
 @code {
+    private bool isLoading = true;
+    private string? loadError;
     private List<ApplicationUser> judgeUsers = new();
     private JudgeFormModel formModel = new();
     private string errorMessage = string.Empty;
 
-    protected override async Task OnInitializedAsync() =>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
         judgeUsers = (await UserManager.GetUsersInRoleAsync("Judge"))
             .OrderBy(u => u.DisplayName)
             .ToList();
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Feil ved lasting av data: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
 
     private async Task AddJudge()
     {

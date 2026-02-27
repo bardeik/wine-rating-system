@@ -11,6 +11,21 @@
 
 <PageTitle>Pokalrapporter</PageTitle>
 
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Laster...</span>
+        </div>
+    </div>
+}
+else if (loadError != null)
+{
+    <div class="alert alert-danger"><strong>Feil:</strong> @loadError</div>
+}
+else
+{
+
 <h3>🏆 Pokalrapporter</h3>
 
 @if (activeEvent == null)
@@ -292,8 +307,11 @@ else
         <button type="button" class="btn-close" @onclick="() => statusMessage = string.Empty"></button>
     </div>
 }
+}
 
 @code {
+    private bool isLoading = true;
+    private string? loadError;
     private Event? activeEvent;
     private (Wine? wine, WineResult? result) aaretsVinbonde;
     private (Wine? wine, WineResult? result) bestNorwegian;
@@ -307,7 +325,18 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
         await LoadData();
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Feil ved lasting av data: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task LoadData()

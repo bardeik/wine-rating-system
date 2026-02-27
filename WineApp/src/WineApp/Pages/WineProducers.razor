@@ -7,6 +7,21 @@
 
 <PageTitle>Vinprodusenter</PageTitle>
 
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Laster...</span>
+        </div>
+    </div>
+}
+else if (loadError != null)
+{
+    <div class="alert alert-danger"><strong>Feil:</strong> @loadError</div>
+}
+else
+{
+
 @* ── Admin: full list + create with linked user account ── *@
 @if (isAdmin)
 {
@@ -172,8 +187,11 @@
         </div>
     </div>
 }
+}
 
 @code {
+    private bool isLoading = true;
+    private string? loadError;
     private List<WineProducer> wineProducers = new();
     private Dictionary<string, string> producerEmails = new();
     private WineProducerFormModel formModel = new();
@@ -187,6 +205,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
@@ -203,6 +223,15 @@
 
         if (isWineProducer && userId is not null)
             currentProducer = await WineProducerRepository.GetWineProducerByUserIdAsync(userId);
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Feil ved lasting av data: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task LoadProducerEmailsAsync()

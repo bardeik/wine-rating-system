@@ -6,6 +6,21 @@
 
 <PageTitle>Rapporter</PageTitle>
 
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Laster...</span>
+        </div>
+    </div>
+}
+else if (loadError != null)
+{
+    <div class="alert alert-danger"><strong>Feil:</strong> @loadError</div>
+}
+else
+{
+
 <h3>Vurderingsrapport</h3>
 
 @if (!reportRows.Any())
@@ -73,13 +88,18 @@ else
         </div>
     </div>
 }
+}
 
 @code {
     private List<WineReportRow> reportRows = new();
+    private bool isLoading = true;
+    private string? loadError;
 
     protected override async Task OnInitializedAsync()
     {
-        var wines     = await WineRepository.GetAllWinesAsync();
+        try
+        {
+            var wines     = await WineRepository.GetAllWinesAsync();
         var ratings   = await WineRatingRepository.GetAllWineRatingsAsync();
         var producers = await WineProducerRepository.GetAllWineProducersAsync();
 
@@ -110,6 +130,15 @@ else
             })
             .OrderByDescending(r => r.Total)
             .ToList();
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Feil ved lasting av rapport: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private RenderFragment ScoreBadge(double score) => __builder =>

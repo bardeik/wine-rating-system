@@ -12,6 +12,21 @@
 
 <PageTitle>Arrangementshåndtering</PageTitle>
 
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Laster...</span>
+        </div>
+    </div>
+}
+else if (loadError != null)
+{
+    <div class="alert alert-danger"><strong>Feil:</strong> @loadError</div>
+}
+else
+{
+
 <h3>Arrangementshåndtering</h3>
 
 <div class="mb-3">
@@ -255,8 +270,11 @@ else
         <button type="button" class="btn-close" @onclick="() => statusMessage = string.Empty"></button>
     </div>
 }
+}
 
 @code {
+    private bool isLoading = true;
+    private string? loadError;
     private List<Event> events = new();
     private Event currentEvent = new();
     private bool showForm = false;
@@ -266,7 +284,18 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
         await LoadEvents();
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Feil ved lasting av data: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task LoadEvents()

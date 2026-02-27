@@ -11,6 +11,21 @@
 
 <PageTitle>Arrangementsdetaljer</PageTitle>
 
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Laster...</span>
+        </div>
+    </div>
+}
+else if (loadError != null)
+{
+    <div class="alert alert-danger"><strong>Feil:</strong> @loadError</div>
+}
+else
+{
+
 @if (eventItem == null)
 {
     <div class="alert alert-warning">Arrangement ikke funnet</div>
@@ -445,11 +460,14 @@ else
         </div>
     }
 }
+}
 
 @code {
     [Parameter]
     public string EventId { get; set; } = string.Empty;
 
+    private bool isLoading = true;
+    private string? loadError;
     private Event? eventItem;
     private List<Wine> wines = new();
     private List<WineResult> results = new();
@@ -473,7 +491,18 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
         await LoadData();
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Feil ved lasting av data: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task LoadData()

@@ -8,6 +8,21 @@
 
 <PageTitle>Vurderinger</PageTitle>
 
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Laster...</span>
+        </div>
+    </div>
+}
+else if (loadError != null)
+{
+    <div class="alert alert-danger"><strong>Feil:</strong> @loadError</div>
+}
+else
+{
+
 @* ── Ratings table (Admin sees all + extra columns, Judge sees own only) ── *@
 <h3>@(isAdmin ? "Vurderinger" : isJudge ? "Mine vurderinger" : "Vurderinger")</h3>
 <div class="card mb-3">
@@ -120,8 +135,11 @@
     </div>
 </div>
 }
+}
 
 @code {
+    private bool isLoading = true;
+    private string? loadError;
     // ── State ──────────────────────────────────────────────
     private List<WineRating> wineRatings = new();
     private WineRating newRating = new();
@@ -138,6 +156,8 @@
     // ── Lifecycle ──────────────────────────────────────────
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
         await LoadWineRatings();
         wines = (await WineRepository.GetAllWinesAsync()).ToList();
         judgeUsers = (await UserManager.GetUsersInRoleAsync("Judge"))
@@ -156,6 +176,15 @@
 
         if (currentUser is not null)
             newRating.JudgeId = currentUser.DisplayName ?? currentUser.UserName ?? string.Empty;
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Feil ved lasting av data: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     // ── Helpers ────────────────────────────────────────────

@@ -10,6 +10,21 @@
 
 <PageTitle>Outlier Management</PageTitle>
 
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Laster...</span>
+        </div>
+    </div>
+}
+else if (loadError != null)
+{
+    <div class="alert alert-danger"><strong>Feil:</strong> @loadError</div>
+}
+else
+{
+
 <h3>🔄 Outlier Management</h3>
 
 @if (activeEvent == null)
@@ -321,8 +336,11 @@ else
         <button type="button" class="btn-close" @onclick="() => statusMessage = string.Empty"></button>
     </div>
 }
+}
 
 @code {
+    private bool isLoading = true;
+    private string? loadError;
     private Event? activeEvent;
     private List<(WineResult result, bool resolved)> outliers = new();
     private List<Wine> wines = new();
@@ -342,7 +360,18 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
         await LoadData();
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Feil ved lasting av data: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task LoadData()

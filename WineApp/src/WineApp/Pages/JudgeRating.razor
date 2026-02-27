@@ -11,6 +11,21 @@
 
 <PageTitle>Dommerbedømming</PageTitle>
 
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Laster...</span>
+        </div>
+    </div>
+}
+else if (loadError != null)
+{
+    <div class="alert alert-danger"><strong>Feil:</strong> @loadError</div>
+}
+else
+{
+
 <style>
     /* Tablet-optimized styles */
     .judge-container {
@@ -431,8 +446,11 @@
         @autoSaveStatus
     </div>
 }
+}
 
 @code {
+    private bool isLoading = true;
+    private string? loadError;
     private Event? activeEvent;
     private List<Flight> flights = new();
     private string selectedFlightId = string.Empty;
@@ -460,11 +478,22 @@
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
         judgeId = user.FindFirst(ClaimTypes.Name)?.Value ?? user.Identity?.Name ?? "Unknown";
 
         await LoadData();
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Feil ved lasting av data: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task LoadData()
