@@ -4,20 +4,7 @@
 
 <PageTitle>Rapporter</PageTitle>
 
-@if (isLoading)
-{
-    <div class="d-flex justify-content-center py-5">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Laster...</span>
-        </div>
-    </div>
-}
-else if (loadError != null)
-{
-    <div class="alert alert-danger"><strong>Feil:</strong> @loadError</div>
-}
-else
-{
+<LoadingContainer IsLoading="@isLoading" Error="@loadError">
 
 <h3>Vurderingsrapport</h3>
 
@@ -86,7 +73,7 @@ else
         </div>
     </div>
 }
-}
+</LoadingContainer>
 
 @code {
     private List<WineReportRow> reportRows = new();

@@ -1,0 +1,19 @@
+@* Displays a dismissable status alert. *@
+@* Usage: <StatusAlert Message="@statusMessage" CssClass="@statusClass" OnDismiss="() => statusMessage = string.Empty" /> *@
+
+@if (!string.IsNullOrEmpty(Message))
+{
+    <div class="alert @CssClass alert-dismissible d-flex align-items-center" role="alert">
+        <span class="flex-grow-1">@Message</span>
+        @if (OnDismiss.HasDelegate)
+        {
+            <button type="button" class="btn-close" @onclick="OnDismiss" aria-label="Lukk"></button>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public string CssClass { get; set; } = "alert-info";
+    [Parameter] public EventCallback OnDismiss { get; set; }
+}

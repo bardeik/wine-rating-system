@@ -6,20 +6,7 @@
 
 <PageTitle>Vinprodusenter</PageTitle>
 
-@if (isLoading)
-{
-    <div class="d-flex justify-content-center py-5">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Laster...</span>
-        </div>
-    </div>
-}
-else if (loadError != null)
-{
-    <div class="alert alert-danger"><strong>Feil:</strong> @loadError</div>
-}
-else
-{
+<LoadingContainer IsLoading="@isLoading" Error="@loadError">
 
 @* ── Admin: full list + create with linked user account ── *@
 @if (isAdmin)
@@ -186,7 +173,7 @@ else
         </div>
     </div>
 }
-}
+</LoadingContainer>
 
 @code {
     private bool isLoading = true;
