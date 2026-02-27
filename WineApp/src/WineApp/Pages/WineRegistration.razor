@@ -508,10 +508,10 @@ else
                             <h6>Legg til druesort</h6>
                             <div class="row">
                                 <div class="col-md-6">
-                                    <input type="text" class="form-control" placeholder="Druesort (f.eks. Rondo)" @bind="newGrapeVariety" />
+                                    <InputText @bind-Value="newGrapeVariety" class="form-control" placeholder="Druesort (f.eks. Rondo)" />
                                 </div>
                                 <div class="col-md-4">
-                                    <input type="number" class="form-control" placeholder="Prosent" step="0.1" min="0" max="100" @bind="newGrapePercentage" />
+                                    <InputNumber @bind-Value="newGrapePercentage" class="form-control" placeholder="Prosent" step="0.1" min="0" max="100" />
                                 </div>
                                 <div class="col-md-2">
                                     <button type="button" class="btn btn-primary w-100" @onclick="() => AddGrape(wine)">➕ Legg til</button>

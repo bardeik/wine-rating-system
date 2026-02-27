@@ -61,7 +61,7 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Passord</label>
-                <input type="password" @bind="formModel.Password" class="form-control" placeholder="Passord (minst 8 tegn)" />
+                <InputText type="password" @bind-Value="formModel.Password" class="form-control" placeholder="Passord (minst 8 tegn)" />
                 <ValidationMessage For="@(() => formModel.Password)" class="text-danger" />
             </div>
             <button type="submit" class="btn btn-primary">Legg til</button>
