@@ -1,37 +1,77 @@
 # Wine Rating System - AI Coding Instructions
 
 ## Project Overview
-A Norwegian wine judging system built on .NET 10 with Blazor Server UI. Judges can rate wines on Visuality, Nose, and Taste metrics. The system uses MongoDB for persistence and ASP.NET Core Identity for authentication and role-based access.
+A Norwegian wine judging system built on .NET 10 with Blazor Server UI. Judges can rate wines on Appearance, Nose, and Taste metrics. The system uses MongoDB for persistence and ASP.NET Core Identity for authentication and role-based access.
 
 ## Architecture
 
 ### Backend: ASP.NET Core on .NET 10
 - **Primary project**: `WineApp/src/WineApp/`
 - **Entry point**: `Program.cs` using modern minimal hosting model with `WebApplication.CreateBuilder`
-- **API**: RESTful controllers under `Controllers/` with `[Route("api/[controller]")]` attribute
-- **Models**: POCOs with nullable reference types in `Models/` - includes `Wine`, `WineRating`, `WineProducer`, `ApplicationUser`
+- **No REST API**: The `Controllers/` folder is empty — Blazor Server uses direct service injection; no HTTP API layer exists
+- **Models**: POCOs with nullable reference types in `Models/` — includes domain models, enums, and view models
 - **Data layer**: Repository pattern using MongoDB via `WineMongoDbContext`
-  - Interfaces: `IWineRatingRepository`, `IWineRepository`, `IWineProducerRepository` in `Data/`
-  - Implementations: each repository holds an `IMongoCollection<T>` sourced from `WineMongoDbContext`
+  - Interfaces in `Data/`: `IWineRepository`, `IWineRatingRepository`, `IWineProducerRepository`, `IEventRepository`, `IWineResultRepository`, `IPaymentRepository`, `IFlightRepository`
+  - Each repository holds an `IMongoCollection<T>` sourced from `WineMongoDbContext`
   - **Database**: MongoDB (default: `mongodb://localhost:27017`, database name: `wineapp`)
+  - All repository methods are `async Task<T>`
   - Uses modern C# patterns: file-scoped namespaces, target-typed new(), expression-bodied members
+
+### Service Layer
+Business logic and cross-cutting concerns live in `Services/`. **Blazor pages inject services — never repositories directly.**
+
+**Facade services** (aggregate multiple repositories for pages):
+- `IWineCatalogService` / `WineCatalogService` — wraps `IWineRepository` + `IWineProducerRepository`; used by most pages for wine and producer operations
+- `IWineEventService` / `WineEventService` — wraps `IEventRepository`; event CRUD and active-event lookup
+- `IWineJudgingService` / `WineJudgingService` — wraps `IWineRatingRepository` + `IWineResultRepository`; rating and result operations
+
+**Domain services**:
+- `IReportService` / `ReportService` — aggregates wine ratings into `WineReportRow` view models for the Reports page
+- `IClassificationService` / `ClassificationService` — medal/classification logic
+- `IScoreAggregationService` / `ScoreAggregationService` — recalculates event results
+- `IWineNumberService` / `WineNumberService` — assigns sequential wine numbers after payment
+- `ITrophyService` / `TrophyService` — determines trophy winners (best Norwegian, best Nordic)
+- `IOutlierDetectionService` / `OutlierDetectionService` — detects statistical outliers in judge scores
+- `IWineValidationService` / `WineValidationService` — validates wine registration business rules
+- `IFlightService` / `FlightService` — manages judge flights (groupings of wines per session)
+- `IExportService` / `ExportService` — data export functionality
+- `IPdfService` / `PdfService` — PDF generation
+- `CurrentUserState` — scoped service holding resolved identity for the current Blazor Server circuit; call `await EnsureInitializedAsync()` in `OnInitializedAsync`
 
 ### Frontend: Blazor Server
 - **Location**: `WineApp/src/WineApp/Pages/` and `Shared/`
 - **Entry**: `Pages/_Host.cshtml` → `App.razor` → Blazor components
-- **Routing**: `App.razor` wraps everything in `<CascadingAuthenticationState>` and uses `<AuthorizeRouteView>` with a `<RedirectToLogin />` fallback for unauthenticated users
-- **Components**:
-  - `Wines.razor` - wine listing/management (Admin sees all; WineProducer sees own)
-  - `WineRatings.razor` - rating entry/display (Admin sees all; Judge sees own)
-  - `WineProducers.razor` - producer management (Admin: full CRUD + linked user accounts; WineProducer: own profile edit)
-  - `Judges.razor` - judge management (Admin only: list, add, remove Judge role via `UserManager`)
-  - `Reports.razor` - aggregated wine score report
-  - `MainLayout.razor` - main layout with `<LoginDisplay />` in the top bar
-  - `NavMenu.razor` - navigation sidebar with `<AuthorizeView>` guards per role
-  - `LoginDisplay.razor` - shows current user name and logout button
-  - `RedirectToLogin.razor` - redirects unauthenticated users to `/Account/Login`
-- **Data access**: direct repository injection via DI (no HTTP calls from Blazor)
-- **Forms**: uses Blazor's `EditForm`, `InputText`, `InputNumber`, `InputSelect` components
+- **Routing**: `App.razor` wraps everything in `<CascadingAuthenticationState>` and uses `<AuthorizeRouteView>` with a `<RedirectToLogin />` fallback
+
+**Pages**:
+- `Wines.razor` — wine listing/management (Admin: all; WineProducer: own)
+- `WineRatings.razor` — rating entry/display (Admin: all; Judge: own)
+- `WineProducers.razor` — producer management (Admin: full CRUD + linked accounts; WineProducer: own profile)
+- `Judges.razor` — Admin-only judge management (add/remove Judge role via `UserManager`)
+- `Reports.razor` — aggregated wine score report using `IReportService`
+- `Events.razor` — event management (Admin only)
+- `EventDetails.razor` — event overview, flight and result detail
+- `FlightManagement.razor` — manage judge flights via `IFlightService`
+- `JudgeRating.razor` — tablet-optimised blind rating UI for judges; auto-saves
+- `ResultsReport.razor` — per-event results with recalculation
+- `TrophyReports.razor` — trophy winners; Admin can recalculate
+- `OutlierManagement.razor` — detect and manage outlier judge scores
+- `PublicResults.razor` — public-facing results page (no auth required)
+- `PaymentManagement.razor` — Admin confirms producer payments and assigns wine numbers
+- `PaymentReceipt.razor` — receipt view for producers
+- `WineRegistration.razor` — producer wine registration with grape blend editor
+
+**Shared components**:
+- `LoadingContainer.razor` — wraps page content; renders spinner when `IsLoading=true`, error alert when `Error` is non-empty, otherwise renders `ChildContent`
+- `StatusAlert.razor` — dismissable status alert; parameters: `Message`, `CssClass` (default `"alert-info"`), `OnDismiss`
+- `MainLayout.razor`, `NavMenu.razor`, `LoginDisplay.razor`, `RedirectToLogin.razor`, `RedirectToHome.razor`
+
+**Page conventions**:
+- Every data-loading page has `private bool isLoading = true` and `private string? loadError` fields
+- Page markup is wrapped in `<LoadingContainer IsLoading="@isLoading" Error="@loadError">...</LoadingContainer>`
+- `OnInitializedAsync` always uses try/catch/finally to set `isLoading = false`
+- Status messages use `private string statusMessage = string.Empty` and `private string statusClass = "alert-info"` with `<StatusAlert Message="@statusMessage" CssClass="@statusClass" OnDismiss="() => statusMessage = string.Empty" />`
+- `StateHasChanged()` is always called as `await InvokeAsync(StateHasChanged)` for thread safety
 
 ### Authentication & Authorisation
 - **Provider**: ASP.NET Core Identity backed by MongoDB via `AspNetCore.Identity.MongoDbCore`
@@ -63,22 +103,40 @@ A Norwegian wine judging system built on .NET 10 with Blazor Server UI. Judges c
 ## Key Conventions
 
 ### Dependency Injection
-Services registered in `Program.cs`:
+All repositories and services are registered as **Scoped** so each Blazor Server circuit gets its own instance, preventing shared mutable state across concurrent users. `WineMongoDbContext` stays `AddSingleton`.
+
 ```csharp
+// MongoDB context — Singleton (thread-safe, holds collection references only)
 builder.Services.AddSingleton<WineMongoDbContext>();
-builder.Services.AddSingleton<IWineProducerRepository, WineProducerRepository>();
-builder.Services.AddSingleton<IWineRatingRepository, WineRatingRepository>();
-builder.Services.AddSingleton<IWineRepository, WineRepository>();
+
+// Repositories — Scoped
+builder.Services.AddScoped<IWineRepository, WineRepository>();
+builder.Services.AddScoped<IWineRatingRepository, WineRatingRepository>();
+builder.Services.AddScoped<IWineProducerRepository, WineProducerRepository>();
+// ... all other repositories
+
+// Services — Scoped
+builder.Services.AddScoped<IWineCatalogService, WineCatalogService>();
+builder.Services.AddScoped<IWineEventService, WineEventService>();
+builder.Services.AddScoped<IWineJudgingService, WineJudgingService>();
+builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<CurrentUserState>();
+// ... all other services
 ```
+
 Identity registered with:
 ```csharp
 builder.Services.AddIdentity<ApplicationUser, MongoIdentityRole<Guid>>(...)
     .AddMongoDbStores<ApplicationUser, MongoIdentityRole<Guid>, Guid>(connectionString, dbName)
     .AddDefaultTokenProviders();
 ```
-- Blazor components inject repositories via `@inject IWineRepository WineRepository`
-- Auth-aware Blazor pages also inject `UserManager<ApplicationUser>` and `AuthenticationStateProvider`
-- Controllers inject via constructor parameters
+
+Blazor pages inject services (not repositories):
+```razor
+@inject IWineCatalogService WineCatalog
+@inject IWineEventService EventSvc
+@inject CurrentUserState CurrentUser
+```
 
 ### MongoDB Models
 Models use BSON attributes for MongoDB serialisation:
@@ -88,26 +146,39 @@ Models use BSON attributes for MongoDB serialisation:
 public string WineId { get; set; } = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
 ```
 
-### JSON Serialization
-Uses `System.Text.Json` with camelCase naming policy:
-```csharp
-builder.Services.AddControllers()
-    .AddJsonOptions(options => {
-        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-    });
-```
-
-### API Patterns
-- GET all: `GET /api/wineratings` → `IEnumerable<T>`
-- GET by ID: `GET /api/wineratings/{id}` → `T` (nullable)
-- POST: `POST /api/wineratings` with JSON body → `201 Created` with Location header
-- DELETE: `DELETE /api/wineratings/{id}` → removes document from MongoDB collection
-
 ### Wine Domain Model
-- **Wine**: has `WineGroup` (A/B/C/D enum), `WineClass` (Unge/Eldre), `WineCategory` (Hvitvin/Rosevin/etc.) enums, linked to `WineProducer` by `WineProducerId` (ObjectId string)
-- **WineRating**: judges rate wines on `Visuality`, `Nose`, `Taste` (integers 0-10); stores `JudgeId` (the judge's `DisplayName`) and `WineId`
-- **WineProducer**: has a `UserId` (string) linking to the corresponding `ApplicationUser` identity account
-- All models use file-scoped namespaces and nullable reference types with `string.Empty` defaults
+- **Wine**: has `WineGroup` (A1/A2/B/C/D enum), `WineClass` (Unge/Eldre), `WineCategory` (Hvitvin/Rosevin/etc.) enums; linked to `WineProducer` by `WineProducerId`; has `GrapeBlend Dictionary<string, decimal>`, `IsPaid`, `WineNumber`
+- **WineRating**: judges rate wines on `Appearance` (0-3.0), `Nose` (0-4.0), `Taste` (0-13.0) as `decimal`; stores `JudgeId` (judge's `DisplayName`) and `WineId`
+- **WineProducer**: has a `UserId` (string) linking to the corresponding `ApplicationUser`
+- **WineResult**: computed result per wine per event (aggregated from ratings)
+- **Event**: has `EventId`, `Name`, `IsActive`; only one active event at a time
+- **Flight**: groups wines for a judge session; managed by `IFlightService`
+
+### View Models (in `Models/`)
+- `WineReportRow` — flattened row for the Reports page (avg scores, totals)
+- `JudgeFormModel` — form model for adding judges (validated with DataAnnotations)
+- `WineProducerFormModel` — form model for adding wine producers with login account
+- `JudgePattern` — outlier detection result per judge
+
+### Async Pattern
+All repository and service methods are `async Task<T>`. Pages always `await` them:
+```csharp
+protected override async Task OnInitializedAsync()
+{
+    try
+    {
+        wines = await WineCatalog.GetAllWinesAsync();
+    }
+    catch (Exception ex)
+    {
+        loadError = ex.Message;
+    }
+    finally
+    {
+        isLoading = false;
+    }
+}
+```
 
 ## Development Workflow
 
@@ -116,50 +187,53 @@ builder.Services.AddControllers()
 
 ### Building & Running
 ```bash
-# Navigate to project
 cd WineApp/src/WineApp
-
-# Restore .NET dependencies
 dotnet restore
-
-# Build application
 dotnet build WineApp.csproj
-
-# Run application
 dotnet run
 # Default URL: https://localhost:5001 or http://localhost:5000
 ```
-On first run `Program.cs` seeds all roles, user accounts, sample wine producers, wines, and ratings into MongoDB if the collections are empty.
+On first run, `Program.cs` seeds all roles, user accounts, sample wine producers, wines, and ratings into MongoDB if the collections are empty.
 
 ### Blazor Development
 - Components are hot-reloadable in development mode
 - Use `@code` blocks for C# logic within `.razor` files
 - CSS isolation supported via `.razor.css` files
 - Bootstrap CSS framework included for styling
+- `_Imports.razor` includes `@using WineApp.Models`, `@using WineApp.Data`, `@using WineApp.Services`, `@using WineApp.Shared`
 
 ## Project Structure Notes
-- **Multiple legacy projects**: `WineRatingApp`, `WebAppCore`, `skeleton-typescript-aspnetcore` appear to be earlier iterations - ignore these
+- **Multiple legacy projects**: `WineRatingApp`, `WebAppCore`, `skeleton-typescript-aspnetcore` appear to be earlier iterations — ignore these
 - **Focus on WineApp**: primary working implementation is in `WineApp/src/WineApp/`
+- **No REST API**: `Controllers/` is intentionally empty; all UI interactions go through Blazor service injection
 
 ## Common Tasks
 
 ### Adding a New Entity
 1. Create model in `Models/` (POCO with BsonId/BsonRepresentation attributes, file-scoped namespace)
 2. Add `IMongoCollection<T>` property to `WineMongoDbContext`
-3. Create repository interface in `Data/IEntityRepository.cs` with CRUD methods
-4. Implement repository in `Data/EntityRepository.cs` using the MongoDB collection
-5. Register in `Program.cs`: `builder.Services.AddSingleton<IEntityRepository, EntityRepository>()`
-6. Create controller in `Controllers/` (optional, for API access)
-7. Create Blazor page in `Pages/EntityName.razor` with `@inject` and the appropriate `[Authorize]` attribute
+3. Create repository interface in `Data/IEntityRepository.cs` with async CRUD methods
+4. Implement repository in `Data/EntityRepository.cs`
+5. Register in `Program.cs`: `builder.Services.AddScoped<IEntityRepository, EntityRepository>()`
+6. Add methods to an appropriate facade service (`IWineCatalogService`, `IWineEventService`, or `IWineJudgingService`), or create a new service
+7. Create Blazor page in `Pages/EntityName.razor` — inject the service, not the repository
 8. Add route in `NavMenu.razor` inside the correct `<AuthorizeView>` block
 
-### Adding a New Blazor Component
-1. Create `.razor` file in `Pages/` or `Shared/`
-2. Add `@page "/route"` directive for routable pages
-3. Add `@attribute [Authorize]` (or a role-specific variant) to protect the page
-4. Inject services with `@inject ServiceType VariableName`
-5. Use `@code` block for C# logic
-6. Reference in `NavMenu.razor` inside the appropriate `<AuthorizeView>` block
+### Adding a New Blazor Page
+1. Create `.razor` file in `Pages/`
+2. Add `@page "/route"` directive
+3. Add `@attribute [Authorize]` (or role-specific variant)
+4. Inject required services with `@inject`
+5. Add `isLoading`/`loadError` fields and wrap markup in `<LoadingContainer>`
+6. Add `statusMessage`/`statusClass` fields and `<StatusAlert>` for user feedback
+7. Use `@code` block with `async Task OnInitializedAsync()` wrapped in try/catch/finally
+8. Reference in `NavMenu.razor` inside the appropriate `<AuthorizeView>` block
+
+### Adding a New Service
+1. Create interface `Services/IMyService.cs` with async method signatures
+2. Implement in `Services/MyService.cs`; inject required repositories or other services via constructor
+3. Register in `Program.cs`: `builder.Services.AddScoped<IMyService, MyService>()`
+4. Inject into pages via `@inject IMyService MyService`
 
 ## Technology Stack
 - **.NET SDK**: 10.0
@@ -169,4 +243,5 @@ On first run `Program.cs` seeds all roles, user accounts, sample wine producers,
 - **ASP.NET Core Identity + MongoDB**: authentication/authorisation via `AspNetCore.Identity.MongoDbCore` 7.0.0
 - **Bootstrap**: for styling (referenced in `wwwroot/css/`)
 - **No JavaScript framework**: pure Blazor/C#
+- **No REST API**: Blazor Server uses direct DI — no controllers, no HttpClient
 
