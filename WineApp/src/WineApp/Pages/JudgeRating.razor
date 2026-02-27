@@ -318,14 +318,11 @@
                     <div class="col-md-4 mb-3">
                         <label class="score-label">A - Utseende</label>
                         <span class="score-range">0.0 - 3.0</span>
-                        <input type="number" 
-                               class="rating-input @(currentRating.Appearance < 1.8m ? "border-warning" : "")"
-                               @bind="currentRating.Appearance"
-                               @bind:after="CalculateTotal"
-                               step="0.1" 
-                               min="0" 
-                               max="3"
-                               @onfocus="@(() => SelectInputContent())" />
+                        <DecimalInput
+                               Value="@currentRating.Appearance"
+                               ValueChanged="@(v => { currentRating.Appearance = v; CalculateTotal(); })"
+                               Class="@($"rating-input {(currentRating.Appearance < 1.8m ? "border-warning" : "")}")"
+                               />
                         @if (currentRating.Appearance < 1.8m && currentRating.Appearance > 0)
                         {
                             <small class="text-warning">⚠️ Under gate-verdi (1.8)</small>
@@ -335,14 +332,11 @@
                     <div class="col-md-4 mb-3">
                         <label class="score-label">B - Nese</label>
                         <span class="score-range">0.0 - 4.0</span>
-                        <input type="number" 
-                               class="rating-input @(currentRating.Nose < 1.8m ? "border-warning" : "")"
-                               @bind="currentRating.Nose"
-                               @bind:after="CalculateTotal"
-                               step="0.1" 
-                               min="0" 
-                               max="4"
-                               @onfocus="@(() => SelectInputContent())" />
+                        <DecimalInput
+                               Value="@currentRating.Nose"
+                               ValueChanged="@(v => { currentRating.Nose = v; CalculateTotal(); })"
+                               Class="@($"rating-input {(currentRating.Nose < 1.8m ? "border-warning" : "")}")"
+                               />
                         @if (currentRating.Nose < 1.8m && currentRating.Nose > 0)
                         {
                             <small class="text-warning">⚠️ Under gate-verdi (1.8)</small>
@@ -352,14 +346,11 @@
                     <div class="col-md-4 mb-3">
                         <label class="score-label">C - Smak</label>
                         <span class="score-range">0.0 - 13.0</span>
-                        <input type="number" 
-                               class="rating-input @(currentRating.Taste < 5.8m ? "border-warning" : "")"
-                               @bind="currentRating.Taste"
-                               @bind:after="CalculateTotal"
-                               step="0.1" 
-                               min="0" 
-                               max="13"
-                               @onfocus="@(() => SelectInputContent())" />
+                        <DecimalInput
+                               Value="@currentRating.Taste"
+                               ValueChanged="@(v => { currentRating.Taste = v; CalculateTotal(); })"
+                               Class="@($"rating-input {(currentRating.Taste < 5.8m ? "border-warning" : "")}")"
+                               />
                         @if (currentRating.Taste < 5.8m && currentRating.Taste > 0)
                         {
                             <small class="text-warning">⚠️ Under gate-verdi (5.8)</small>
@@ -551,7 +542,8 @@
             hasExistingRating = false;
         }
 
-        CalculateTotal();
+        // Only recalculate display total — do NOT trigger auto-save during wine load
+        totalScore = currentRating.Appearance + currentRating.Nose + currentRating.Taste;
     }
 
     private void CalculateTotal()
@@ -577,17 +569,28 @@
     {
         if (currentWine == null) return;
 
+        // Don't persist an empty rating (all fields still at zero)
+        if (currentRating.Appearance == 0 && currentRating.Nose == 0 && currentRating.Taste == 0)
+            return;
+
         try
         {
             if (hasExistingRating && !string.IsNullOrEmpty(currentRating.WineRatingId))
             {
                 await WineJudging.UpdateWineRatingAsync(currentRating);
+
+                // Keep local cache in sync so the flight dropdown counter updates
+                var idx = loadedRatings.IndexOf(loadedRatings.FirstOrDefault(r => r.WineRatingId == currentRating.WineRatingId)!);
+                if (idx >= 0) loadedRatings[idx] = currentRating;
             }
             else
             {
                 currentRating.WineRatingId = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
                 await WineJudging.AddWineRatingAsync(currentRating);
                 hasExistingRating = true;
+
+                // Add to local cache so the flight dropdown counter updates immediately
+                loadedRatings.Add(currentRating);
             }
 
             if (!silent)
@@ -644,7 +647,7 @@
         var flight = flights.FirstOrDefault(f => f.FlightId == flightId);
         if (flight == null) return 0;
 
-        var allRatings = loadedRatings.Where(r => r.JudgeId == judgeId);
+        var allRatings = loadedRatings.Where(r => r.JudgeId == judgeId && (r.Appearance + r.Nose + r.Taste) > 0);
 
         return flight.WineIds.Count(wineId => allRatings.Any(r => r.WineId == wineId));
     }

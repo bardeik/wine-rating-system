@@ -194,19 +194,19 @@ else
                         <div class="row">
                             <div class="col-md-3 mb-3">
                                 <label class="form-label">Gull</label>
-                                <InputNumber @bind-Value="currentEvent.GoldThreshold" class="form-control" step="0.1" />
+                                <DecimalInput @bind-Value="currentEvent.GoldThreshold" Class="form-control" />
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label class="form-label">Sølv</label>
-                                <InputNumber @bind-Value="currentEvent.SilverThreshold" class="form-control" step="0.1" />
+                                <DecimalInput @bind-Value="currentEvent.SilverThreshold" Class="form-control" />
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label class="form-label">Bronse</label>
-                                <InputNumber @bind-Value="currentEvent.BronzeThreshold" class="form-control" step="0.1" />
+                                <DecimalInput @bind-Value="currentEvent.BronzeThreshold" Class="form-control" />
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label class="form-label">Særlig</label>
-                                <InputNumber @bind-Value="currentEvent.SpecialMeritThreshold" class="form-control" step="0.1" />
+                                <DecimalInput @bind-Value="currentEvent.SpecialMeritThreshold" Class="form-control" />
                             </div>
                         </div>
 
@@ -214,21 +214,21 @@ else
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Utseende (A)</label>
-                                <InputNumber @bind-Value="currentEvent.AppearanceGateValue" class="form-control" step="0.1" />
+                                <DecimalInput @bind-Value="currentEvent.AppearanceGateValue" Class="form-control" />
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Nese (B)</label>
-                                <InputNumber @bind-Value="currentEvent.NoseGateValue" class="form-control" step="0.1" />
+                                <DecimalInput @bind-Value="currentEvent.NoseGateValue" Class="form-control" />
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Smak (C)</label>
-                                <InputNumber @bind-Value="currentEvent.TasteGateValue" class="form-control" step="0.1" />
+                                <DecimalInput @bind-Value="currentEvent.TasteGateValue" Class="form-control" />
                             </div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Avviksterskel</label>
-                            <InputNumber @bind-Value="currentEvent.OutlierThreshold" class="form-control" step="0.1" />
+                            <DecimalInput @bind-Value="currentEvent.OutlierThreshold" Class="form-control" />
                             <small class="form-text text-muted">Viner med spredning over denne verdien flagges for ombedømming</small>
                         </div>
 

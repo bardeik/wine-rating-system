@@ -365,7 +365,7 @@ else
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Alkohol % *</label>
-                            <InputNumber @bind-Value="wine.AlcoholPercentage" class="form-control" step="0.1" />
+                            <DecimalInput @bind-Value="wine.AlcoholPercentage" Class="form-control" />
                             <ValidationMessage For="@(() => wine.AlcoholPercentage)" class="text-danger" />
                         </div>
                     </div>
@@ -505,7 +505,7 @@ else
                                     <InputText @bind-Value="newGrapeVariety" class="form-control" placeholder="Druesort (f.eks. Rondo)" />
                                 </div>
                                 <div class="col-md-4">
-                                    <InputNumber @bind-Value="newGrapePercentage" class="form-control" placeholder="Prosent" step="0.1" min="0" max="100" />
+                                    <DecimalInput @bind-Value="newGrapePercentage" Class="form-control" Placeholder="Prosent" />
                                 </div>
                                 <div class="col-md-2">
                                     <button type="button" class="btn btn-primary w-100" @onclick="() => AddGrape(wine)">➕ Legg til</button>

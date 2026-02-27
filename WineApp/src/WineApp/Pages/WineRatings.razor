@@ -66,17 +66,17 @@
 
             <div class="mb-3">
                 <label class="form-label">Utseende (A) 0.0-3.0: <strong>@newRating.Appearance.ToString("F1")</strong></label>
-                <InputNumber @bind-Value="newRating.Appearance" @bind-Value:event="oninput" class="form-control" min="0" max="3" step="0.1" />
+                <DecimalInput @bind-Value="newRating.Appearance" Class="form-control" />
                 <ValidationMessage For="@(() => newRating.Appearance)" class="text-danger" />
             </div>
             <div class="mb-3">
                 <label class="form-label">Nese (B) 0.0-4.0: <strong>@newRating.Nose.ToString("F1")</strong></label>
-                <InputNumber @bind-Value="newRating.Nose" @bind-Value:event="oninput" class="form-control" min="0" max="4" step="0.1" />
+                <DecimalInput @bind-Value="newRating.Nose" Class="form-control" />
                 <ValidationMessage For="@(() => newRating.Nose)" class="text-danger" />
             </div>
             <div class="mb-3">
                 <label class="form-label">Smak (C) 0.0-13.0: <strong>@newRating.Taste.ToString("F1")</strong></label>
-                <InputNumber @bind-Value="newRating.Taste" @bind-Value:event="oninput" class="form-control" min="0" max="13" step="0.1" />
+                <DecimalInput @bind-Value="newRating.Taste" Class="form-control" />
                 <ValidationMessage For="@(() => newRating.Taste)" class="text-danger" />
             </div>
             <div class="mb-3">

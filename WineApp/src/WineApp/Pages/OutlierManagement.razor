@@ -270,12 +270,13 @@ else
                         <thead>
                             <tr>
                                 <th>Dommer</th>
-                                <th>A</th>
-                                <th>B</th>
-                                <th>C</th>
+                                <th>Utseende (A)</th>
+                                <th>Nese (B)</th>
+                                <th>Smak (C)</th>
                                 <th>Total</th>
                                 <th>Avvik fra snitt</th>
                                 <th>Kommentar</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -283,30 +284,74 @@ else
                             {
                                 var total = rating.Appearance + rating.Nose + rating.Taste;
                                 var deviation = result != null ? total - result.TotalScore : 0;
+                                var isEditing = editingRatings.ContainsKey(rating.WineRatingId);
 
-                                <tr class="@GetRatingRowClass(deviation)">
-                                    <td><strong>@rating.JudgeId</strong></td>
-                                    <td>@rating.Appearance.ToString("F1")</td>
-                                    <td>@rating.Nose.ToString("F1")</td>
-                                    <td>@rating.Taste.ToString("F1")</td>
-                                    <td><strong>@total.ToString("F1")</strong></td>
-                                    <td>
-                                        @if (Math.Abs(deviation) > 2)
-                                        {
-                                            <span class="badge bg-warning text-dark">@deviation.ToString("+0.0;-0.0")</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">@deviation.ToString("+0.0;-0.0")</span>
-                                        }
-                                    </td>
-                                    <td><small>@rating.Comment</small></td>
-                                </tr>
+                                @if (isEditing)
+                                {
+                                    var draft = editingRatings[rating.WineRatingId];
+                                    <tr class="table-primary">
+                                        <td><strong>@rating.JudgeId</strong></td>
+                                        <td style="width:90px">
+                                            <DecimalInput Value="@draft.Appearance" ValueChanged="@(v => draft.Appearance = v)" Class="form-control form-control-sm" />
+                                        </td>
+                                        <td style="width:90px">
+                                            <DecimalInput Value="@draft.Nose" ValueChanged="@(v => draft.Nose = v)" Class="form-control form-control-sm" />
+                                        </td>
+                                        <td style="width:100px">
+                                            <DecimalInput Value="@draft.Taste" ValueChanged="@(v => draft.Taste = v)" Class="form-control form-control-sm" />
+                                        </td>
+                                        <td><strong>@((draft.Appearance + draft.Nose + draft.Taste).ToString("F1"))</strong></td>
+                                        <td>—</td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm"
+                                                   value="@draft.Comment"
+                                                   @onchange="e => draft.Comment = e.Value!.ToString()!" />
+                                        </td>
+                                        <td class="text-nowrap">
+                                            <button class="btn btn-sm btn-success me-1" @onclick="() => SaveRating(rating.WineRatingId)" disabled="@isSavingRating">
+                                                @if (isSavingRating)
+                                                {
+                                                    <span class="spinner-border spinner-border-sm"></span>
+                                                }
+                                                else
+                                                {
+                                                    <span>💾 Lagre</span>
+                                                }
+                                            </button>
+                                            <button class="btn btn-sm btn-secondary" @onclick="() => CancelEdit(rating.WineRatingId)">✕ Avbryt</button>
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    <tr class="@GetRatingRowClass(deviation)">
+                                        <td><strong>@rating.JudgeId</strong></td>
+                                        <td>@rating.Appearance.ToString("F1")</td>
+                                        <td>@rating.Nose.ToString("F1")</td>
+                                        <td>@rating.Taste.ToString("F1")</td>
+                                        <td><strong>@total.ToString("F1")</strong></td>
+                                        <td>
+                                            @if (Math.Abs(deviation) > 2)
+                                            {
+                                                <span class="badge bg-warning text-dark">@deviation.ToString("+0.0;-0.0")</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">@deviation.ToString("+0.0;-0.0")</span>
+                                            }
+                                        </td>
+                                        <td><small>@rating.Comment</small></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => StartEdit(rating)">✏️ Rediger</button>
+                                        </td>
+                                    </tr>
+                                }
                             }
                         </tbody>
                     </table>
                 </div>
                 <div class="modal-footer">
+                    <small class="text-muted me-auto">Trykk ✏️ Rediger på en rad for å korrigere vurderingen direkte.</small>
                     <button type="button" class="btn btn-secondary" @onclick="CloseModal">Lukk</button>
                 </div>
             </div>
@@ -330,6 +375,8 @@ else
 
     private Wine? selectedWine;
     private bool showRatingModal;
+    private bool isSavingRating;
+    private Dictionary<string, WineRating> editingRatings = new();
 
     private string statusMessage = string.Empty;
     private string statusClass = "alert-info";
@@ -398,6 +445,7 @@ else
     private async Task ViewRatings(Wine wine)
     {
         selectedWine = wine;
+        editingRatings.Clear();
         showRatingModal = true;
     }
 
@@ -405,6 +453,62 @@ else
     {
         selectedWine = null;
         showRatingModal = false;
+        editingRatings.Clear();
+    }
+
+    private void StartEdit(WineRating rating)
+    {
+        editingRatings[rating.WineRatingId] = new WineRating
+        {
+            WineRatingId = rating.WineRatingId,
+            WineId = rating.WineId,
+            JudgeId = rating.JudgeId,
+            Appearance = rating.Appearance,
+            Nose = rating.Nose,
+            Taste = rating.Taste,
+            Comment = rating.Comment
+        };
+    }
+
+    private void CancelEdit(string ratingId)
+    {
+        editingRatings.Remove(ratingId);
+    }
+
+    private async Task SaveRating(string ratingId)
+    {
+        if (!editingRatings.TryGetValue(ratingId, out var draft)) return;
+
+        try
+        {
+            isSavingRating = true;
+            await WineJudging.UpdateWineRatingAsync(draft);
+
+            // Update local cache
+            var idx = allRatings.FindIndex(r => r.WineRatingId == ratingId);
+            if (idx >= 0) allRatings[idx] = draft;
+
+            editingRatings.Remove(ratingId);
+
+            // Recalculate results so spread refreshes
+            if (activeEvent != null)
+            {
+                var updated = await ScoreAggregationService.RecalculateEventResultsAsync(activeEvent.EventId);
+                allResults = updated
+                    .Where(r => wines.Any(w => w.WineId == r.WineId && w.EventId == activeEvent.EventId))
+                    .ToList();
+            }
+
+            ShowStatus($"✓ Vurdering lagret", "alert-success");
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Feil ved lagring: {ex.Message}", "alert-danger");
+        }
+        finally
+        {
+            isSavingRating = false;
+        }
     }
 
     private async Task MarkResolved(string wineId)
