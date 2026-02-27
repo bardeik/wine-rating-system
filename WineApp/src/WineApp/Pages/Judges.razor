@@ -131,18 +131,4 @@
             .ToList();
     }
 
-    private class JudgeFormModel
-    {
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Navn er påkrevd")]
-        [System.ComponentModel.DataAnnotations.StringLength(100)]
-        public string Name { get; set; } = string.Empty;
-
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "E-post er påkrevd")]
-        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Ugyldig e-postadresse")]
-        public string Email { get; set; } = string.Empty;
-
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Passord er påkrevd")]
-        [System.ComponentModel.DataAnnotations.MinLength(8, ErrorMessage = "Passord må være minst 8 tegn")]
-        public string Password { get; set; } = string.Empty;
-    }
 }

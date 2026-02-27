@@ -287,17 +287,4 @@
         }
     }
 
-    private class WineProducerFormModel
-    {
-        [System.ComponentModel.DataAnnotations.Required] public string WineyardName { get; set; } = string.Empty;
-        [System.ComponentModel.DataAnnotations.Required] public string OrganisationNumber { get; set; } = string.Empty;
-        [System.ComponentModel.DataAnnotations.Required] public string ResponsibleProducerName { get; set; } = string.Empty;
-        [System.ComponentModel.DataAnnotations.Required] public string Address { get; set; } = string.Empty;
-        [System.ComponentModel.DataAnnotations.Required] public string Zip { get; set; } = string.Empty;
-        [System.ComponentModel.DataAnnotations.Required] public string City { get; set; } = string.Empty;
-        [System.ComponentModel.DataAnnotations.Required] public string Country { get; set; } = string.Empty;
-        [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.EmailAddress] public string ProducerEmail { get; set; } = string.Empty;
-        [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.EmailAddress] public string LoginEmail { get; set; } = string.Empty;
-        [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.MinLength(8)] public string Password { get; set; } = string.Empty;
-    }
 }
