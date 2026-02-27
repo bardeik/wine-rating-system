@@ -1,8 +1,6 @@
 @page "/reports"
 @attribute [Authorize]
-@inject IWineRepository WineRepository
-@inject IWineRatingRepository WineRatingRepository
-@inject IWineProducerRepository WineProducerRepository
+@inject IReportService ReportService
 
 <PageTitle>Rapporter</PageTitle>
 
@@ -99,37 +97,7 @@ else
     {
         try
         {
-            var wines     = await WineRepository.GetAllWinesAsync();
-        var ratings   = await WineRatingRepository.GetAllWineRatingsAsync();
-        var producers = await WineProducerRepository.GetAllWineProducersAsync();
-
-        reportRows = wines
-            .Select(wine =>
-            {
-                var wineRatings  = ratings.Where(r => r.WineId == wine.WineId).ToList();
-                var producerName = producers.FirstOrDefault(p => p.WineProducerId == wine.WineProducerId)?.WineyardName ?? "–";
-
-                decimal avgApp  = wineRatings.Any() ? wineRatings.Average(r => r.Appearance) : 0;
-                decimal avgNose = wineRatings.Any() ? wineRatings.Average(r => r.Nose)       : 0;
-                decimal avgTaste= wineRatings.Any() ? wineRatings.Average(r => r.Taste)      : 0;
-
-                return new WineReportRow
-                {
-                    RatingName   = wine.RatingName,
-                    Name         = wine.Name,
-                    Group        = wine.Group.ToString(),
-                    Class        = wine.Class.ToString(),
-                    Category     = wine.Category.ToString(),
-                    ProducerName = producerName,
-                    AvgAppearance = (double)avgApp,
-                    AvgNose      = (double)avgNose,
-                    AvgTaste     = (double)avgTaste,
-                    Total        = (double)(avgApp + avgNose + avgTaste),
-                    RatingCount  = wineRatings.Count
-                };
-            })
-            .OrderByDescending(r => r.Total)
-            .ToList();
+            reportRows = await ReportService.GetWineReportRowsAsync();
         }
         catch (Exception ex)
         {
@@ -146,19 +114,4 @@ else
         var css = score >= 14 ? "bg-success" : score >= 10 ? "bg-warning text-dark" : "bg-danger";
         <span class="badge @css">@score.ToString("F1")</span>
     };
-
-    private class WineReportRow
-    {
-        public string RatingName   { get; set; } = string.Empty;
-        public string Name         { get; set; } = string.Empty;
-        public string Group        { get; set; } = string.Empty;
-        public string Class        { get; set; } = string.Empty;
-        public string Category     { get; set; } = string.Empty;
-        public string ProducerName { get; set; } = string.Empty;
-        public double AvgAppearance { get; set; }
-        public double AvgNose      { get; set; }
-        public double AvgTaste     { get; set; }
-        public double Total        { get; set; }
-        public int    RatingCount  { get; set; }
-    }
 }

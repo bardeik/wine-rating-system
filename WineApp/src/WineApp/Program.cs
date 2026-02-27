@@ -63,6 +63,7 @@ builder.Services.AddScoped<IOutlierDetectionService, OutlierDetectionService>();
 builder.Services.AddScoped<IWineValidationService, WineValidationService>();
 builder.Services.AddScoped<IFlightService, FlightService>();
 builder.Services.AddScoped<IExportService, ExportService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IPdfService, PdfService>();
 
 var app = builder.Build();
