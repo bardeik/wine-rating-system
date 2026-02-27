@@ -2,8 +2,7 @@
 @attribute [Authorize(Roles = "Admin,WineProducer")]
 @inject IWineRepository WineRepository
 @inject IWineProducerRepository WineProducerRepository
-@inject AuthenticationStateProvider AuthenticationStateProvider
-@using System.Security.Claims
+@inject CurrentUserState CurrentUser
 
 <PageTitle>Viner</PageTitle>
 
@@ -130,16 +129,13 @@ else
         await LoadWines();
         wineProducers = (await WineProducerRepository.GetAllWineProducersAsync()).ToList();
 
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
+        await CurrentUser.EnsureInitializedAsync();
+        isAdmin = CurrentUser.IsAdmin;
+        isWineProducer = CurrentUser.IsWineProducer;
 
-        isAdmin = user.IsInRole("Admin");
-        isWineProducer = user.IsInRole("WineProducer");
-
-        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (isWineProducer && userId is not null)
+        if (isWineProducer && !string.IsNullOrEmpty(CurrentUser.UserId))
         {
-            currentProducer = await WineProducerRepository.GetWineProducerByUserIdAsync(userId);
+            currentProducer = await WineProducerRepository.GetWineProducerByUserIdAsync(CurrentUser.UserId);
             if (currentProducer is not null)
                 newWine.WineProducerId = currentProducer.WineProducerId;
         }

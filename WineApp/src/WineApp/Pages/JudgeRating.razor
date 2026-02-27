@@ -4,9 +4,8 @@
 @inject IWineRatingRepository WineRatingRepository
 @inject IFlightService FlightService
 @inject IEventRepository EventRepository
-@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject CurrentUserState CurrentUser
 @inject IJSRuntime JS
-@using System.Security.Claims
 @using WineApp.Services
 
 <PageTitle>Dommerbedømming</PageTitle>
@@ -480,9 +479,8 @@ else
     {
         try
         {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        judgeId = user.FindFirst(ClaimTypes.Name)?.Value ?? user.Identity?.Name ?? "Unknown";
+        await CurrentUser.EnsureInitializedAsync();
+        judgeId = CurrentUser.UserName;
 
         await LoadData();
         }

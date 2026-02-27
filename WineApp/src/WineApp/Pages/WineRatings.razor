@@ -3,8 +3,7 @@
 @inject IWineRatingRepository WineRatingRepository
 @inject IWineRepository WineRepository
 @inject UserManager<ApplicationUser> UserManager
-@inject AuthenticationStateProvider AuthenticationStateProvider
-@using System.Security.Claims
+@inject CurrentUserState CurrentUser
 
 <PageTitle>Vurderinger</PageTitle>
 
@@ -164,15 +163,12 @@ else
             .OrderBy(u => u.DisplayName)
             .ToList();
 
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
+        await CurrentUser.EnsureInitializedAsync();
+        isAdmin = CurrentUser.IsAdmin;
+        isJudge = CurrentUser.IsJudge;
 
-        isAdmin = user.IsInRole("Admin");
-        isJudge = user.IsInRole("Judge");
-
-        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId is not null)
-            currentUser = await UserManager.FindByIdAsync(userId);
+        if (!string.IsNullOrEmpty(CurrentUser.UserId))
+            currentUser = await UserManager.FindByIdAsync(CurrentUser.UserId);
 
         if (currentUser is not null)
             newRating.JudgeId = currentUser.DisplayName ?? currentUser.UserName ?? string.Empty;

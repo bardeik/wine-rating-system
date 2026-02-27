@@ -2,8 +2,7 @@
 @attribute [Authorize(Roles = "Admin,WineProducer")]
 @inject IWineProducerRepository WineProducerRepository
 @inject UserManager<ApplicationUser> UserManager
-@inject AuthenticationStateProvider AuthenticationStateProvider
-@using System.Security.Claims
+@inject CurrentUserState CurrentUser
 
 <PageTitle>Vinprodusenter</PageTitle>
 
@@ -207,13 +206,9 @@ else
     {
         try
         {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-
-        isAdmin = user.IsInRole("Admin");
-        isWineProducer = user.IsInRole("WineProducer");
-
-        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        await CurrentUser.EnsureInitializedAsync();
+        isAdmin = CurrentUser.IsAdmin;
+        isWineProducer = CurrentUser.IsWineProducer;
 
         if (isAdmin)
         {
@@ -221,8 +216,8 @@ else
             await LoadProducerEmailsAsync();
         }
 
-        if (isWineProducer && userId is not null)
-            currentProducer = await WineProducerRepository.GetWineProducerByUserIdAsync(userId);
+        if (isWineProducer && !string.IsNullOrEmpty(CurrentUser.UserId))
+            currentProducer = await WineProducerRepository.GetWineProducerByUserIdAsync(CurrentUser.UserId);
         }
         catch (Exception ex)
         {
