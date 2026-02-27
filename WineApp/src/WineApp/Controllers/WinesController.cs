@@ -13,27 +13,27 @@ public class WinesController : ControllerBase
     public WinesController(IWineRepository repo) => _repo = repo;
 
     [HttpGet]
-    public IEnumerable<Wine> Get() => _repo.GetAllWines();
+    public async Task<IEnumerable<Wine>> Get() => await _repo.GetAllWinesAsync();
 
     [HttpGet("{id}", Name = "GetWineByIdRoute")]
-    public ActionResult<Wine> Get(string id)
+    public async Task<ActionResult<Wine>> Get(string id)
     {
-        var wine = _repo.GetWineById(id);
+        var wine = await _repo.GetWineByIdAsync(id);
         return wine is null ? NotFound() : Ok(wine);
     }
 
     [HttpPost]
-    public IActionResult Post(Wine wine)
+    public async Task<IActionResult> Post(Wine wine)
     {
-        var wineId = _repo.AddWine(wine);
+        var wineId = await _repo.AddWineAsync(wine);
         return CreatedAtRoute("GetWineByIdRoute", new { id = wineId }, wine);
     }
 
     [HttpDelete("{id}")]
-    public IActionResult Delete(string id)
+    public async Task<IActionResult> Delete(string id)
     {
-        if (_repo.GetWineById(id) is null) return NotFound();
-        _repo.DeleteWine(id);
+        if (await _repo.GetWineByIdAsync(id) is null) return NotFound();
+        await _repo.DeleteWineAsync(id);
         return NoContent();
     }
 }

@@ -471,34 +471,34 @@ else
     private int medalCount => goldCount + silverCount + bronzeCount;
     private int outlierCount => outliers.Count;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        LoadData();
+        await LoadData();
     }
 
-    private void LoadData()
+    private async Task LoadData()
     {
-        eventItem = EventRepository.GetEventById(EventId);
+        eventItem = await EventRepository.GetEventByIdAsync(EventId);
         if (eventItem == null) return;
 
-        wines = WineRepository.GetAllWines()
+        wines = (await WineRepository.GetAllWinesAsync())
             .Where(w => w.EventId == EventId)
             .ToList();
 
-        results = WineResultRepository.GetAllWineResults()
+        results = (await WineResultRepository.GetAllWineResultsAsync())
             .Where(r => wines.Any(w => w.WineId == r.WineId))
             .ToList();
 
-        allRatings = WineRatingRepository.GetAllWineRatings()
+        allRatings = (await WineRatingRepository.GetAllWineRatingsAsync())
             .Where(r => wines.Any(w => w.WineId == r.WineId))
             .ToList();
 
-        outliers = OutlierDetectionService.GetOutlierWines(EventId);
+        outliers = await OutlierDetectionService.GetOutlierWinesAsync(EventId);
 
         // Load trophy winners
-        aaretsVinbonde = TrophyService.GetAaretsVinbonde(EventId);
-        bestNorwegian = TrophyService.GetBestNorwegianWine(EventId);
-        bestNordic = TrophyService.GetBestNordicWine(EventId);
+        aaretsVinbonde = await TrophyService.GetAaretsVinbondeAsync(EventId);
+        bestNorwegian = await TrophyService.GetBestNorwegianWineAsync(EventId);
+        bestNordic = await TrophyService.GetBestNordicWineAsync(EventId);
     }
 
     private string GetClassificationBadgeClass(string classification)
@@ -515,7 +515,7 @@ else
         };
     }
 
-    private void GoBack()
+    private async Task GoBack()
     {
         Navigation.NavigateTo("/events");
     }

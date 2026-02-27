@@ -4,13 +4,13 @@ namespace WineApp.Data;
 
 public interface IWineResultRepository
 {
-    List<WineResult> GetAllWineResults();
-    WineResult? GetWineResultById(string id);
-    WineResult? GetWineResultByWineId(string wineId);
-    List<WineResult> GetWineResultsByClassification(string classification);
-    List<WineResult> GetOutlierWineResults();
-    void AddWineResult(WineResult wineResult);
-    void UpdateWineResult(WineResult wineResult);
-    void DeleteWineResult(string id);
-    void DeleteWineResultByWineId(string wineId);
+    Task<List<WineResult>> GetAllWineResultsAsync();
+    Task<WineResult?> GetWineResultByIdAsync(string id);
+    Task<WineResult?> GetWineResultByWineIdAsync(string wineId);
+    Task<List<WineResult>> GetWineResultsByClassificationAsync(string classification);
+    Task<List<WineResult>> GetOutlierWineResultsAsync();
+    Task AddWineResultAsync(WineResult wineResult);
+    Task UpdateWineResultAsync(WineResult wineResult);
+    Task DeleteWineResultAsync(string id);
+    Task DeleteWineResultByWineIdAsync(string wineId);
 }

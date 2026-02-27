@@ -107,8 +107,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        LoadWines();
-        wineProducers = WineProducerRepository.GetAllWineProducers().ToList();
+        await LoadWines();
+        wineProducers = (await WineProducerRepository.GetAllWineProducersAsync()).ToList();
 
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
@@ -119,22 +119,24 @@
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (isWineProducer && userId is not null)
         {
-            currentProducer = WineProducerRepository.GetWineProducerByUserId(userId);
+            currentProducer = await WineProducerRepository.GetWineProducerByUserIdAsync(userId);
             if (currentProducer is not null)
                 newWine.WineProducerId = currentProducer.WineProducerId;
         }
     }
 
-    private void LoadWines() =>
-        wines = WineRepository.GetAllWines().ToList();
-
-    private void AddNewWine()
+    private async Task LoadWines()
     {
-        WineRepository.AddWine(newWine);
+        wines = (await WineRepository.GetAllWinesAsync()).ToList();
+    }
+
+    private async Task AddNewWine()
+    {
+        await WineRepository.AddWineAsync(newWine);
         newWine = new Wine();
         if (currentProducer is not null)
             newWine.WineProducerId = currentProducer.WineProducerId;
-        LoadWines();
+        await LoadWines();
     }
 
     private void StartEdit(Wine wine) =>
@@ -149,20 +151,20 @@
             WineProducerId = wine.WineProducerId
         };
 
-    private void SaveEdit()
+    private async Task SaveEdit()
     {
         if (editingWine is not null)
-            WineRepository.UpdateWine(editingWine);
+            await WineRepository.UpdateWineAsync(editingWine);
         editingWine = null;
-        LoadWines();
+        await LoadWines();
     }
 
     private void CancelEdit() => editingWine = null;
 
-    private void DeleteWine(string wineId)
+    private async Task DeleteWine(string wineId)
     {
-        WineRepository.DeleteWine(wineId);
-        LoadWines();
+        await WineRepository.DeleteWineAsync(wineId);
+        await LoadWines();
     }
 
     // ── Shared form fields rendered as a RenderFragment ───

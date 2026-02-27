@@ -14,15 +14,16 @@ public class FlightService : IFlightService
         _flightRepository = flightRepository;
     }
 
-    public List<Flight> OrganizeFlights(string eventId, int winesPerFlight = 6)
+    public async Task<List<Flight>> OrganizeFlightsAsync(string eventId, int winesPerFlight = 6)
     {
-        var wines = _wineRepository.GetAllWines()
+        var allWines = await _wineRepository.GetAllWinesAsync();
+        var wines = allWines
             .Where(w => w.EventId == eventId && w.IsPaid && w.WineNumber.HasValue)
             .OrderBy(w => w.WineNumber)
             .ToList();
 
-        foreach (var existing in _flightRepository.GetFlightsForEvent(eventId))
-            _flightRepository.DeleteFlight(existing.FlightId);
+        foreach (var existing in await _flightRepository.GetFlightsForEventAsync(eventId))
+            await _flightRepository.DeleteFlightAsync(existing.FlightId);
 
         var flightNumber = 1;
         var created = new List<Flight>();
@@ -35,7 +36,7 @@ public class FlightService : IFlightService
                 FlightName = $"Flight {flightNumber}",
                 WineIds = wines.Skip(i).Take(winesPerFlight).Select(w => w.WineId).ToList()
             };
-            _flightRepository.AddFlight(flight);
+            await _flightRepository.AddFlightAsync(flight);
             created.Add(flight);
             flightNumber++;
         }
@@ -43,17 +44,18 @@ public class FlightService : IFlightService
         return created;
     }
 
-    public List<Flight> AutoOrganizeFlights(string eventId)
+    public async Task<List<Flight>> AutoOrganizeFlightsAsync(string eventId)
     {
-        var wines = _wineRepository.GetAllWines()
+        var allWines = await _wineRepository.GetAllWinesAsync();
+        var wines = allWines
             .Where(w => w.EventId == eventId && w.IsPaid && w.WineNumber.HasValue)
             .OrderBy(w => w.Category)
             .ThenBy(w => w.Group)
             .ThenBy(w => w.WineNumber)
             .ToList();
 
-        foreach (var existing in _flightRepository.GetFlightsForEvent(eventId))
-            _flightRepository.DeleteFlight(existing.FlightId);
+        foreach (var existing in await _flightRepository.GetFlightsForEventAsync(eventId))
+            await _flightRepository.DeleteFlightAsync(existing.FlightId);
 
         var flightNumber = 1;
         var created = new List<Flight>();
@@ -71,7 +73,7 @@ public class FlightService : IFlightService
                     Category = group.Key.Category,
                     Group = group.Key.Group
                 };
-                _flightRepository.AddFlight(flight);
+                await _flightRepository.AddFlightAsync(flight);
                 created.Add(flight);
                 flightNumber++;
             }
@@ -80,12 +82,13 @@ public class FlightService : IFlightService
         return created;
     }
 
-    public List<Flight> GetFlightsForEvent(string eventId) =>
-        _flightRepository.GetFlightsForEvent(eventId);
+    public Task<List<Flight>> GetFlightsForEventAsync(string eventId) =>
+        _flightRepository.GetFlightsForEventAsync(eventId);
 
-    public Flight CreateFlight(string eventId, string flightName, List<string> wineIds)
+    public async Task<Flight> CreateFlightAsync(string eventId, string flightName, List<string> wineIds)
     {
-        var maxFlightNumber = _flightRepository.GetFlightsForEvent(eventId)
+        var existingFlights = await _flightRepository.GetFlightsForEventAsync(eventId);
+        var maxFlightNumber = existingFlights
             .Select(f => f.FlightNumber)
             .DefaultIfEmpty(0)
             .Max();
@@ -97,20 +100,20 @@ public class FlightService : IFlightService
             FlightNumber = maxFlightNumber + 1,
             WineIds = wineIds
         };
-        _flightRepository.AddFlight(flight);
+        await _flightRepository.AddFlightAsync(flight);
         return flight;
     }
 
-    public void UpdateFlight(Flight flight) => _flightRepository.UpdateFlight(flight);
+    public Task UpdateFlightAsync(Flight flight) => _flightRepository.UpdateFlightAsync(flight);
 
-    public void DeleteFlight(string flightId) => _flightRepository.DeleteFlight(flightId);
+    public Task DeleteFlightAsync(string flightId) => _flightRepository.DeleteFlightAsync(flightId);
 
-    public List<Wine> GetWinesInFlight(string flightId)
+    public async Task<List<Wine>> GetWinesInFlightAsync(string flightId)
     {
-        var flight = _flightRepository.GetFlightById(flightId);
+        var flight = await _flightRepository.GetFlightByIdAsync(flightId);
         if (flight == null) return new List<Wine>();
 
-        var allWines = _wineRepository.GetAllWines();
+        var allWines = await _wineRepository.GetAllWinesAsync();
         return flight.WineIds
             .Select(wineId => allWines.FirstOrDefault(w => w.WineId == wineId))
             .Where(w => w != null)

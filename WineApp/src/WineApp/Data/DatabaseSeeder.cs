@@ -99,7 +99,7 @@ public class DatabaseSeeder
         var wineNumberService = services.GetRequiredService<IWineNumberService>();
 
         // Seed default event if none exist
-        if (eventRepo.GetAllEvents().Count == 0)
+        if ((await eventRepo.GetAllEventsAsync()).Count == 0)
         {
             var currentYear = DateTime.Now.Year;
             var defaultEvent = new Event
@@ -135,7 +135,7 @@ public class DatabaseSeeder
                 IsActive = true,
                 CreatedDate = DateTime.UtcNow
             };
-            eventRepo.AddEvent(defaultEvent);
+            await eventRepo.AddEventAsync(defaultEvent);
 
             // Seed producers and wines for this event
             await SeedProducersAndWinesAsync(
@@ -156,7 +156,7 @@ public class DatabaseSeeder
         IWineNumberService wineNumberService,
         Event defaultEvent)
     {
-        if (wineProducerRepo.GetAllWineProducers().Count > 0)
+        if ((await wineProducerRepo.GetAllWineProducersAsync()).Count > 0)
             return;
 
         // Helper: create ApplicationUser with WineProducer role, return UserId
@@ -186,16 +186,16 @@ public class DatabaseSeeder
         var producers = CreateProducers(p1UserId, p2UserId, p3UserId, p4UserId);
         foreach (var producer in producers)
         {
-            wineProducerRepo.AddWineProducer(producer);
+            await wineProducerRepo.AddWineProducerAsync(producer);
         }
 
         // Create wines
-        if (wineRepo.GetAllWines().Count == 0)
+        if ((await wineRepo.GetAllWinesAsync()).Count == 0)
         {
             var wines = CreateWines(producers, defaultEvent.EventId);
             foreach (var wine in wines)
             {
-                wineRepo.AddWine(wine);
+                await wineRepo.AddWineAsync(wine);
             }
 
             // Assign wine numbers to paid wines
@@ -482,49 +482,49 @@ public class DatabaseSeeder
 
     private static async Task SeedRatingsAsync(IWineRatingRepository wineRatingRepo, List<Wine> wines)
     {
-        if (wineRatingRepo.GetAllWineRatings().Count > 0)
+        if ((await wineRatingRepo.GetAllWineRatingsAsync()).Count > 0)
             return;
 
         // Wine 1 - Excellent ratings (should get Gold)
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Hans", Appearance = 2.8m, Nose = 3.5m, Taste = 11.0m, Comment = "Utmerket balanse", WineId = wines[0].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Petter", Appearance = 2.5m, Nose = 3.2m, Taste = 11.5m, Comment = "Flott vin", WineId = wines[0].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Frans", Appearance = 2.7m, Nose = 3.8m, Taste = 11.2m, Comment = "Veldig god", WineId = wines[0].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Ola", Appearance = 2.6m, Nose = 3.6m, Taste = 11.3m, Comment = "Imponerende", WineId = wines[0].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Hans", Appearance = 2.8m, Nose = 3.5m, Taste = 11.0m, Comment = "Utmerket balanse", WineId = wines[0].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Petter", Appearance = 2.5m, Nose = 3.2m, Taste = 11.5m, Comment = "Flott vin", WineId = wines[0].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Frans", Appearance = 2.7m, Nose = 3.8m, Taste = 11.2m, Comment = "Veldig god", WineId = wines[0].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Ola", Appearance = 2.6m, Nose = 3.6m, Taste = 11.3m, Comment = "Imponerende", WineId = wines[0].WineId, RatingDate = DateTime.UtcNow });
 
         // Wine 2 - Good ratings (should get Silver)
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Hans", Appearance = 2.3m, Nose = 2.8m, Taste = 10.0m, Comment = "God friskhet", WineId = wines[1].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Petter", Appearance = 2.2m, Nose = 2.9m, Taste = 10.5m, Comment = "Fin vin", WineId = wines[1].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Frans", Appearance = 2.4m, Nose = 3.0m, Taste = 10.2m, Comment = "Behagelig", WineId = wines[1].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Ola", Appearance = 2.3m, Nose = 2.7m, Taste = 10.3m, Comment = "Harmonisk", WineId = wines[1].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Hans", Appearance = 2.3m, Nose = 2.8m, Taste = 10.0m, Comment = "God friskhet", WineId = wines[1].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Petter", Appearance = 2.2m, Nose = 2.9m, Taste = 10.5m, Comment = "Fin vin", WineId = wines[1].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Frans", Appearance = 2.4m, Nose = 3.0m, Taste = 10.2m, Comment = "Behagelig", WineId = wines[1].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Ola", Appearance = 2.3m, Nose = 2.7m, Taste = 10.3m, Comment = "Harmonisk", WineId = wines[1].WineId, RatingDate = DateTime.UtcNow });
 
         // Wine 3 - Decent ratings (should get Bronze)
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Hans", Appearance = 2.0m, Nose = 2.5m, Taste = 9.5m, Comment = "Pent rosé", WineId = wines[2].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Petter", Appearance = 2.1m, Nose = 2.4m, Taste = 9.8m, Comment = "Frisk og lett", WineId = wines[2].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Frans", Appearance = 1.9m, Nose = 2.6m, Taste = 9.6m, Comment = "Grei vin", WineId = wines[2].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Ola", Appearance = 2.0m, Nose = 2.5m, Taste = 9.7m, Comment = "Akseptabel", WineId = wines[2].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Hans", Appearance = 2.0m, Nose = 2.5m, Taste = 9.5m, Comment = "Pent rosé", WineId = wines[2].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Petter", Appearance = 2.1m, Nose = 2.4m, Taste = 9.8m, Comment = "Frisk og lett", WineId = wines[2].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Frans", Appearance = 1.9m, Nose = 2.6m, Taste = 9.6m, Comment = "Grei vin", WineId = wines[2].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Ola", Appearance = 2.0m, Nose = 2.5m, Taste = 9.7m, Comment = "Akseptabel", WineId = wines[2].WineId, RatingDate = DateTime.UtcNow });
 
         // Wine 4 - Special merit ratings
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Hans", Appearance = 1.8m, Nose = 2.2m, Taste = 8.5m, Comment = "Interessant", WineId = wines[3].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Petter", Appearance = 1.9m, Nose = 2.3m, Taste = 8.8m, Comment = "Lovende", WineId = wines[3].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Frans", Appearance = 1.8m, Nose = 2.1m, Taste = 8.6m, Comment = "God potensial", WineId = wines[3].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Ola", Appearance = 1.9m, Nose = 2.2m, Taste = 8.7m, Comment = "Kan bli bedre", WineId = wines[3].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Hans", Appearance = 1.8m, Nose = 2.2m, Taste = 8.5m, Comment = "Interessant", WineId = wines[3].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Petter", Appearance = 1.9m, Nose = 2.3m, Taste = 8.8m, Comment = "Lovende", WineId = wines[3].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Frans", Appearance = 1.8m, Nose = 2.1m, Taste = 8.6m, Comment = "God potensial", WineId = wines[3].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Ola", Appearance = 1.9m, Nose = 2.2m, Taste = 8.7m, Comment = "Kan bli bedre", WineId = wines[3].WineId, RatingDate = DateTime.UtcNow });
 
         // Wine 5 - High spread ratings (should trigger outlier)
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Hans", Appearance = 2.5m, Nose = 3.0m, Taste = 10.0m, Comment = "Meget bra", WineId = wines[4].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Petter", Appearance = 1.5m, Nose = 1.8m, Taste = 6.5m, Comment = "Ikke imponert", WineId = wines[4].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Frans", Appearance = 2.2m, Nose = 2.8m, Taste = 9.5m, Comment = "God vin", WineId = wines[4].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Ola", Appearance = 2.0m, Nose = 2.5m, Taste = 9.0m, Comment = "Ganske bra", WineId = wines[4].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Hans", Appearance = 2.5m, Nose = 3.0m, Taste = 10.0m, Comment = "Meget bra", WineId = wines[4].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Petter", Appearance = 1.5m, Nose = 1.8m, Taste = 6.5m, Comment = "Ikke imponert", WineId = wines[4].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Frans", Appearance = 2.2m, Nose = 2.8m, Taste = 9.5m, Comment = "God vin", WineId = wines[4].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Ola", Appearance = 2.0m, Nose = 2.5m, Taste = 9.0m, Comment = "Ganske bra", WineId = wines[4].WineId, RatingDate = DateTime.UtcNow });
 
         // Wine 6 - Below gate values (should fail)
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Hans", Appearance = 1.5m, Nose = 1.5m, Taste = 5.0m, Comment = "Under forventet", WineId = wines[5].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Petter", Appearance = 1.6m, Nose = 1.6m, Taste = 5.5m, Comment = "Svak", WineId = wines[5].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Frans", Appearance = 1.4m, Nose = 1.7m, Taste = 5.2m, Comment = "Ikke godkjent", WineId = wines[5].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Ola", Appearance = 1.5m, Nose = 1.5m, Taste = 5.3m, Comment = "Mangler kvalitet", WineId = wines[5].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Hans", Appearance = 1.5m, Nose = 1.5m, Taste = 5.0m, Comment = "Under forventet", WineId = wines[5].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Petter", Appearance = 1.6m, Nose = 1.6m, Taste = 5.5m, Comment = "Svak", WineId = wines[5].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Frans", Appearance = 1.4m, Nose = 1.7m, Taste = 5.2m, Comment = "Ikke godkjent", WineId = wines[5].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Ola", Appearance = 1.5m, Nose = 1.5m, Taste = 5.3m, Comment = "Mangler kvalitet", WineId = wines[5].WineId, RatingDate = DateTime.UtcNow });
 
         // Wine 7 - Nordic guest wine (good ratings)
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Hans", Appearance = 2.4m, Nose = 3.2m, Taste = 10.5m, Comment = "Nordisk kvalitet", WineId = wines[6].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Petter", Appearance = 2.3m, Nose = 3.0m, Taste = 10.3m, Comment = "Fin svensk vin", WineId = wines[6].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Frans", Appearance = 2.5m, Nose = 3.3m, Taste = 10.7m, Comment = "Meget god", WineId = wines[6].WineId, RatingDate = DateTime.UtcNow });
-        wineRatingRepo.AddWineRating(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Ola", Appearance = 2.4m, Nose = 3.1m, Taste = 10.4m, Comment = "Imponerende", WineId = wines[6].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Hans", Appearance = 2.4m, Nose = 3.2m, Taste = 10.5m, Comment = "Nordisk kvalitet", WineId = wines[6].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Petter", Appearance = 2.3m, Nose = 3.0m, Taste = 10.3m, Comment = "Fin svensk vin", WineId = wines[6].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Frans", Appearance = 2.5m, Nose = 3.3m, Taste = 10.7m, Comment = "Meget god", WineId = wines[6].WineId, RatingDate = DateTime.UtcNow });
+        await wineRatingRepo.AddWineRatingAsync(new WineRating { WineRatingId = ObjectId.GenerateNewId().ToString(), JudgeId = "Ola", Appearance = 2.4m, Nose = 3.1m, Taste = 10.4m, Comment = "Imponerende", WineId = wines[6].WineId, RatingDate = DateTime.UtcNow });
     }
 }

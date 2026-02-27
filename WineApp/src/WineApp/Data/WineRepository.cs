@@ -10,24 +10,24 @@ public class WineRepository : IWineRepository
     public WineRepository(WineMongoDbContext context) =>
         _collection = context.Wines;
 
-    public IList<Wine> GetAllWines() =>
-        _collection.Find(_ => true).ToList();
+    public async Task<IList<Wine>> GetAllWinesAsync() =>
+        await _collection.Find(_ => true).ToListAsync();
 
-    public Wine? GetWineById(string id) =>
-        _collection.Find(w => w.WineId == id).FirstOrDefault();
+    public async Task<Wine?> GetWineByIdAsync(string id) =>
+        await _collection.Find(w => w.WineId == id).FirstOrDefaultAsync();
 
-    public IList<Wine> GetAllWinesFromProducer(string producerId) =>
-        _collection.Find(w => w.WineProducerId == producerId).ToList();
+    public async Task<IList<Wine>> GetAllWinesFromProducerAsync(string producerId) =>
+        await _collection.Find(w => w.WineProducerId == producerId).ToListAsync();
 
-    public string AddWine(Wine wine)
+    public async Task<string> AddWineAsync(Wine wine)
     {
-        _collection.InsertOne(wine);
+        await _collection.InsertOneAsync(wine);
         return wine.WineId;
     }
 
-    public void UpdateWine(Wine wine) =>
-        _collection.ReplaceOne(w => w.WineId == wine.WineId, wine);
+    public async Task UpdateWineAsync(Wine wine) =>
+        await _collection.ReplaceOneAsync(w => w.WineId == wine.WineId, wine);
 
-    public void DeleteWine(string id) =>
-        _collection.DeleteOne(w => w.WineId == id);
+    public async Task DeleteWineAsync(string id) =>
+        await _collection.DeleteOneAsync(w => w.WineId == id);
 }

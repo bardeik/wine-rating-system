@@ -4,9 +4,9 @@ namespace WineApp.Data;
 
 public interface IWineRatingRepository
 {
-    IList<WineRating> GetAllWineRatings();
-    WineRating? GetWineRatingById(string id);
-    string AddWineRating(WineRating wineRating);
-    void UpdateWineRating(WineRating wineRating);
-    void DeleteWineRating(string id);
+    Task<IList<WineRating>> GetAllWineRatingsAsync();
+    Task<WineRating?> GetWineRatingByIdAsync(string id);
+    Task<string> AddWineRatingAsync(WineRating wineRating);
+    Task UpdateWineRatingAsync(WineRating wineRating);
+    Task DeleteWineRatingAsync(string id);
 }

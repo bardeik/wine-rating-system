@@ -408,16 +408,16 @@ else
         }
     }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        LoadData();
+        await LoadData();
     }
 
-    private void LoadData()
+    private async Task LoadData()
     {
-        activeEvent = EventRepository.GetActiveEvent();
-        allWines = WineRepository.GetAllWines().ToList();
-        allProducers = WineProducerRepository.GetAllWineProducers().ToList();
+        activeEvent = await EventRepository.GetActiveEventAsync();
+        allWines = (await WineRepository.GetAllWinesAsync()).ToList();
+        allProducers = (await WineProducerRepository.GetAllWineProducersAsync()).ToList();
 
         if (activeEvent != null)
         {
@@ -482,24 +482,24 @@ else
         foreach (var wine in wines)
         {
             wine.IsPaid = true;
-            WineRepository.UpdateWine(wine);
+            await WineRepository.UpdateWineAsync(wine);
         }
 
         // Assign wine numbers after payment
         await WineNumberService.AssignWineNumbersAsync(activeEvent.EventId);
 
         ShowStatus($"✓ Betaling bekreftet for {producer.WineyardName} ({wines.Count} viner)", "alert-success");
-        LoadData();
+        await LoadData();
         StateHasChanged();
     }
 
-    private void MarkWineAsPaid(Wine wine)
+    private async Task MarkWineAsPaid(Wine wine)
     {
         wine.IsPaid = true;
-        WineRepository.UpdateWine(wine);
+        await WineRepository.UpdateWineAsync(wine);
 
         ShowStatus($"✓ Vin '{wine.Name}' markert som betalt", "alert-success");
-        LoadData();
+        await LoadData();
         StateHasChanged();
     }
 
@@ -518,7 +518,7 @@ else
         foreach (var wine in unpaidWines)
         {
             wine.IsPaid = true;
-            WineRepository.UpdateWine(wine);
+            await WineRepository.UpdateWineAsync(wine);
         }
 
         // Assign wine numbers after payment
@@ -526,7 +526,7 @@ else
 
         ShowStatus($"✓ Alle betalinger bekreftet ({unpaidWines.Count} viner)", "alert-success");
         CloseBulkConfirmModal();
-        LoadData();
+        await LoadData();
         StateHasChanged();
     }
 
@@ -538,7 +538,7 @@ else
         {
             var assignments = await WineNumberService.AssignWineNumbersAsync(activeEvent.EventId);
             ShowStatus($"✓ Tildelt vinnummer til {assignments.Count} viner", "alert-success");
-            LoadData();
+            await LoadData();
             StateHasChanged();
         }
         catch (Exception ex)
@@ -553,7 +553,7 @@ else
 
         await WineNumberService.AssignWineNumbersAsync(activeEvent.EventId);
         ShowStatus($"✓ Vinnummer tildelt", "alert-success");
-        LoadData();
+        await LoadData();
         StateHasChanged();
     }
 

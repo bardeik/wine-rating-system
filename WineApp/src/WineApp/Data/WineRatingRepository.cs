@@ -10,21 +10,21 @@ public class WineRatingRepository : IWineRatingRepository
     public WineRatingRepository(WineMongoDbContext context) =>
         _collection = context.WineRatings;
 
-    public IList<WineRating> GetAllWineRatings() =>
-        _collection.Find(_ => true).ToList();
+    public async Task<IList<WineRating>> GetAllWineRatingsAsync() =>
+        await _collection.Find(_ => true).ToListAsync();
 
-    public WineRating? GetWineRatingById(string id) =>
-        _collection.Find(r => r.WineRatingId == id).FirstOrDefault();
+    public async Task<WineRating?> GetWineRatingByIdAsync(string id) =>
+        await _collection.Find(r => r.WineRatingId == id).FirstOrDefaultAsync();
 
-    public string AddWineRating(WineRating wineRating)
+    public async Task<string> AddWineRatingAsync(WineRating wineRating)
     {
-        _collection.InsertOne(wineRating);
+        await _collection.InsertOneAsync(wineRating);
         return wineRating.WineRatingId;
     }
 
-    public void UpdateWineRating(WineRating wineRating) =>
-        _collection.ReplaceOne(r => r.WineRatingId == wineRating.WineRatingId, wineRating);
+    public async Task UpdateWineRatingAsync(WineRating wineRating) =>
+        await _collection.ReplaceOneAsync(r => r.WineRatingId == wineRating.WineRatingId, wineRating);
 
-    public void DeleteWineRating(string id) =>
-        _collection.DeleteOne(r => r.WineRatingId == id);
+    public async Task DeleteWineRatingAsync(string id) =>
+        await _collection.DeleteOneAsync(r => r.WineRatingId == id);
 }

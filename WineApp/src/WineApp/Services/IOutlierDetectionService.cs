@@ -7,15 +7,15 @@ public interface IOutlierDetectionService
     /// <summary>
     /// Identifies wines that require re-judging due to high score spread (>4.0)
     /// </summary>
-    List<(Wine wine, WineResult result, decimal spread)> GetOutlierWines(string eventId);
+    Task<List<(Wine wine, WineResult result, decimal spread)>> GetOutlierWinesAsync(string eventId);
     
     /// <summary>
     /// Checks if a specific wine requires re-judging
     /// </summary>
-    bool RequiresReJudging(string wineId, decimal outlierThreshold);
+    Task<bool> RequiresReJudgingAsync(string wineId, decimal outlierThreshold);
     
     /// <summary>
     /// Analyzes judge score patterns to identify potential issues
     /// </summary>
-    Dictionary<string, List<string>> AnalyzeJudgePatterns(string eventId);
+    Task<Dictionary<string, List<string>>> AnalyzeJudgePatternsAsync(string eventId);
 }

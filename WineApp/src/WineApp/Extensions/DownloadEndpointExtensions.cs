@@ -8,7 +8,7 @@ public static class DownloadEndpointExtensions
     public static WebApplication MapDownloadEndpoints(this WebApplication app)
     {
         // Download complete results for an event
-        app.MapGet("/api/download/results/{eventId}", (
+        app.MapGet("/api/download/results/{eventId}", async (
             string eventId,
             IExportService exportService,
             IWineResultRepository resultRepo,
@@ -16,14 +16,16 @@ public static class DownloadEndpointExtensions
             IWineProducerRepository producerRepo,
             IEventRepository eventRepo) =>
         {
-            var evt = eventRepo.GetEventById(eventId);
+            var evt = await eventRepo.GetEventByIdAsync(eventId);
             if (evt == null) return Results.NotFound("Event not found");
 
-            var wines = wineRepo.GetAllWines().Where(w => w.EventId == eventId).ToList();
-            var results = resultRepo.GetAllWineResults()
+            var allWines = await wineRepo.GetAllWinesAsync();
+            var wines = allWines.Where(w => w.EventId == eventId).ToList();
+            var allResults = await resultRepo.GetAllWineResultsAsync();
+            var results = allResults
                 .Where(r => wines.Any(w => w.WineId == r.WineId))
                 .ToList();
-            var producers = producerRepo.GetAllWineProducers().ToList();
+            var producers = (await producerRepo.GetAllWineProducersAsync()).ToList();
 
             var csv = exportService.ExportResultsToCSV(results, wines, producers);
             var bytes = exportService.GetCSVBytes(csv);
@@ -33,20 +35,20 @@ public static class DownloadEndpointExtensions
         }).RequireAuthorization();
 
         // Download trophy winners for an event
-        app.MapGet("/api/download/trophies/{eventId}", (
+        app.MapGet("/api/download/trophies/{eventId}", async (
             string eventId,
             IExportService exportService,
             ITrophyService trophyService,
             IWineProducerRepository producerRepo,
             IEventRepository eventRepo) =>
         {
-            var evt = eventRepo.GetEventById(eventId);
+            var evt = await eventRepo.GetEventByIdAsync(eventId);
             if (evt == null) return Results.NotFound("Event not found");
 
-            var aaretsVinbonde = trophyService.GetAaretsVinbonde(eventId);
-            var bestNorwegian = trophyService.GetBestNorwegianWine(eventId);
-            var bestNordic = trophyService.GetBestNordicWine(eventId);
-            var producers = producerRepo.GetAllWineProducers().ToList();
+            var aaretsVinbonde = await trophyService.GetAaretsVinbondeAsync(eventId);
+            var bestNorwegian = await trophyService.GetBestNorwegianWineAsync(eventId);
+            var bestNordic = await trophyService.GetBestNordicWineAsync(eventId);
+            var producers = (await producerRepo.GetAllWineProducersAsync()).ToList();
 
             var csv = exportService.ExportTrophiesToCSV(aaretsVinbonde, bestNorwegian, bestNordic, producers);
             var bytes = exportService.GetCSVBytes(csv);
@@ -56,7 +58,7 @@ public static class DownloadEndpointExtensions
         }).RequireAuthorization();
 
         // Download complete event archive (wines, ratings, results)
-        app.MapGet("/api/download/event/{eventId}", (
+        app.MapGet("/api/download/event/{eventId}", async (
             string eventId,
             IExportService exportService,
             IEventRepository eventRepo,
@@ -65,17 +67,20 @@ public static class DownloadEndpointExtensions
             IWineResultRepository resultRepo,
             IWineProducerRepository producerRepo) =>
         {
-            var evt = eventRepo.GetEventById(eventId);
+            var evt = await eventRepo.GetEventByIdAsync(eventId);
             if (evt == null) return Results.NotFound("Event not found");
 
-            var wines = wineRepo.GetAllWines().Where(w => w.EventId == eventId).ToList();
-            var ratings = ratingRepo.GetAllWineRatings()
+            var allWines = await wineRepo.GetAllWinesAsync();
+            var wines = allWines.Where(w => w.EventId == eventId).ToList();
+            var allRatings = await ratingRepo.GetAllWineRatingsAsync();
+            var ratings = allRatings
                 .Where(r => wines.Any(w => w.WineId == r.WineId))
                 .ToList();
-            var results = resultRepo.GetAllWineResults()
+            var allResults = await resultRepo.GetAllWineResultsAsync();
+            var results = allResults
                 .Where(r => wines.Any(w => w.WineId == r.WineId))
                 .ToList();
-            var producers = producerRepo.GetAllWineProducers().ToList();
+            var producers = (await producerRepo.GetAllWineProducersAsync()).ToList();
 
             var csv = exportService.ExportEventData(evt, wines, ratings, results, producers);
             var bytes = exportService.GetCSVBytes(csv);
@@ -85,18 +90,18 @@ public static class DownloadEndpointExtensions
         }).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
         // Download flight list for an event
-        app.MapGet("/api/download/flights/{eventId}", (
+        app.MapGet("/api/download/flights/{eventId}", async (
             string eventId,
             IExportService exportService,
             IFlightService flightService,
             IWineRepository wineRepo,
             IEventRepository eventRepo) =>
         {
-            var evt = eventRepo.GetEventById(eventId);
+            var evt = await eventRepo.GetEventByIdAsync(eventId);
             if (evt == null) return Results.NotFound("Event not found");
 
-            var flights = flightService.GetFlightsForEvent(eventId);
-            var wines = wineRepo.GetAllWines().ToList();
+            var flights = await flightService.GetFlightsForEventAsync(eventId);
+            var wines = (await wineRepo.GetAllWinesAsync()).ToList();
 
             var csv = exportService.ExportFlightList(flights, wines);
             var bytes = exportService.GetCSVBytes(csv);
@@ -106,20 +111,20 @@ public static class DownloadEndpointExtensions
         }).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
         // Download trophy report as PDF
-        app.MapGet("/api/download/trophy-pdf/{eventId}", (
+        app.MapGet("/api/download/trophy-pdf/{eventId}", async (
             string eventId,
             IPdfService pdfService,
             ITrophyService trophyService,
             IEventRepository eventRepo,
             IWineProducerRepository producerRepo) =>
         {
-            var evt = eventRepo.GetEventById(eventId);
+            var evt = await eventRepo.GetEventByIdAsync(eventId);
             if (evt == null) return Results.NotFound("Event not found");
 
-            var aaretsVinbonde = trophyService.GetAaretsVinbonde(eventId);
-            var bestNorwegian = trophyService.GetBestNorwegianWine(eventId);
-            var bestNordic = trophyService.GetBestNordicWine(eventId);
-            var producers = producerRepo.GetAllWineProducers().ToList();
+            var aaretsVinbonde = await trophyService.GetAaretsVinbondeAsync(eventId);
+            var bestNorwegian = await trophyService.GetBestNorwegianWineAsync(eventId);
+            var bestNordic = await trophyService.GetBestNordicWineAsync(eventId);
+            var producers = (await producerRepo.GetAllWineProducersAsync()).ToList();
 
             var pdf = pdfService.GenerateTrophyReport(evt, aaretsVinbonde, bestNorwegian, bestNordic, producers);
             var fileName = $"Pokaler_{evt.Name}_{DateTime.Now:yyyyMMdd}.pdf";

@@ -10,24 +10,24 @@ public class EventRepository : IEventRepository
     public EventRepository(WineMongoDbContext context) =>
         _events = context.Events;
 
-    public List<Event> GetAllEvents() => 
-        _events.Find(_ => true).ToList();
+    public async Task<List<Event>> GetAllEventsAsync() =>
+        await _events.Find(_ => true).ToListAsync();
 
-    public Event? GetEventById(string id) => 
-        _events.Find(e => e.EventId == id).FirstOrDefault();
+    public async Task<Event?> GetEventByIdAsync(string id) =>
+        await _events.Find(e => e.EventId == id).FirstOrDefaultAsync();
 
-    public Event? GetActiveEvent() => 
-        _events.Find(e => e.IsActive).FirstOrDefault();
+    public async Task<Event?> GetActiveEventAsync() =>
+        await _events.Find(e => e.IsActive).FirstOrDefaultAsync();
 
-    public Event? GetEventByYear(int year) => 
-        _events.Find(e => e.Year == year).FirstOrDefault();
+    public async Task<Event?> GetEventByYearAsync(int year) =>
+        await _events.Find(e => e.Year == year).FirstOrDefaultAsync();
 
-    public void AddEvent(Event eventItem) => 
-        _events.InsertOne(eventItem);
+    public async Task AddEventAsync(Event eventItem) =>
+        await _events.InsertOneAsync(eventItem);
 
-    public void UpdateEvent(Event eventItem) => 
-        _events.ReplaceOne(e => e.EventId == eventItem.EventId, eventItem);
+    public async Task UpdateEventAsync(Event eventItem) =>
+        await _events.ReplaceOneAsync(e => e.EventId == eventItem.EventId, eventItem);
 
-    public void DeleteEvent(string id) => 
-        _events.DeleteOne(e => e.EventId == id);
+    public async Task DeleteEventAsync(string id) =>
+        await _events.DeleteOneAsync(e => e.EventId == id);
 }

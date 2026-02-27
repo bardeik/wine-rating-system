@@ -69,7 +69,7 @@ else
                 <div class="row">
                     @foreach (var flight in flights)
                     {
-                        var wines = FlightService.GetWinesInFlight(flight.FlightId);
+                        var wines = flightWines.TryGetValue(flight.FlightId, out var fw) ? fw : new List<Wine>();
                         
                         <div class="col-md-6 mb-3">
                             <div class="card">
@@ -140,6 +140,7 @@ else
     private Event? activeEvent;
     private List<Flight> flights = new();
     private List<Wine> allWines = new();
+    private Dictionary<string, List<Wine>> flightWines = new();
     
     private int winesPerFlight = 6;
     private string statusMessage = string.Empty;
@@ -149,29 +150,37 @@ else
     private int paidWines => allWines.Count(w => w.EventId == activeEvent?.EventId && w.IsPaid);
     private int numberedWines => allWines.Count(w => w.EventId == activeEvent?.EventId && w.WineNumber.HasValue);
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        LoadData();
+        await LoadData();
     }
 
-    private void LoadData()
+    private async Task LoadData()
     {
-        activeEvent = EventRepository.GetActiveEvent();
-        allWines = WineRepository.GetAllWines().ToList();
+        activeEvent = await EventRepository.GetActiveEventAsync();
+        allWines = (await WineRepository.GetAllWinesAsync()).ToList();
         
         if (activeEvent != null)
         {
-            flights = FlightService.GetFlightsForEvent(activeEvent.EventId);
+            flights = await FlightService.GetFlightsForEventAsync(activeEvent.EventId);
+            flightWines = new Dictionary<string, List<Wine>>();
+            foreach (var flight in flights)
+            {
+                flightWines[flight.FlightId] = await FlightService.GetWinesInFlightAsync(flight.FlightId);
+            }
         }
     }
 
-    private void OrganizeSimple()
+    private async Task OrganizeSimple()
     {
         if (activeEvent == null) return;
 
         try
         {
-            flights = FlightService.OrganizeFlights(activeEvent.EventId, winesPerFlight);
+            flights = await FlightService.OrganizeFlightsAsync(activeEvent.EventId, winesPerFlight);
+            flightWines = new Dictionary<string, List<Wine>>();
+            foreach (var flight in flights)
+                flightWines[flight.FlightId] = await FlightService.GetWinesInFlightAsync(flight.FlightId);
             ShowStatus($"✓ Opprettet {flights.Count} flights med {winesPerFlight} viner hver", "alert-success");
             StateHasChanged();
         }
@@ -181,13 +190,16 @@ else
         }
     }
 
-    private void OrganizeByCategory()
+    private async Task OrganizeByCategory()
     {
         if (activeEvent == null) return;
 
         try
         {
-            flights = FlightService.AutoOrganizeFlights(activeEvent.EventId);
+            flights = await FlightService.AutoOrganizeFlightsAsync(activeEvent.EventId);
+            flightWines = new Dictionary<string, List<Wine>>();
+            foreach (var flight in flights)
+                flightWines[flight.FlightId] = await FlightService.GetWinesInFlightAsync(flight.FlightId);
             ShowStatus($"✓ Auto-organisert {flights.Count} flights etter kategori og gruppe", "alert-success");
             StateHasChanged();
         }
@@ -197,14 +209,14 @@ else
         }
     }
 
-    private void ClearFlights()
+    private async Task ClearFlights()
     {
         if (activeEvent == null) return;
 
         var flightIds = flights.Select(f => f.FlightId).ToList();
         foreach (var flightId in flightIds)
         {
-            FlightService.DeleteFlight(flightId);
+            await FlightService.DeleteFlightAsync(flightId);
         }
 
         flights.Clear();
@@ -212,15 +224,15 @@ else
         StateHasChanged();
     }
 
-    private void DeleteFlight(string flightId)
+    private async Task DeleteFlight(string flightId)
     {
-        FlightService.DeleteFlight(flightId);
-        LoadData();
+        await FlightService.DeleteFlightAsync(flightId);
+        await LoadData();
         ShowStatus("✓ Flight slettet", "alert-success");
         StateHasChanged();
     }
 
-    private void ExportFlightList()
+    private async Task ExportFlightList()
     {
         if (activeEvent == null) return;
         Navigation.NavigateTo($"/api/download/flights/{activeEvent.EventId}", forceLoad: true);

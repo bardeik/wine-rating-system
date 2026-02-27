@@ -16,13 +16,13 @@ public class TrophyService : ITrophyService
         _wineResultRepository = wineResultRepository;
     }
 
-    public (Wine? wine, WineResult? result) GetAaretsVinbonde(string eventId)
+    public async Task<(Wine? wine, WineResult? result)> GetAaretsVinbondeAsync(string eventId)
     {
         // Group A1, Vinbonde status, medal classification, highest score
-        var wines = _wineRepository.GetAllWines()
-            .Where(w => w.EventId == eventId && w.Group == WineGroup.A1 && w.IsVinbonde);
+        var allWines = await _wineRepository.GetAllWinesAsync();
+        var wines = allWines.Where(w => w.EventId == eventId && w.Group == WineGroup.A1 && w.IsVinbonde);
 
-        var candidates = FindMedalCandidates(wines);
+        var candidates = await FindMedalCandidatesAsync(wines);
         if (!candidates.Any())
             return (null, null);
 
@@ -43,7 +43,7 @@ public class TrophyService : ITrophyService
                 foreach (var candidate in finalCandidates)
                 {
                     candidate.result.RequiresLottery = true;
-                    _wineResultRepository.UpdateWineResult(candidate.result);
+                    await _wineResultRepository.UpdateWineResultAsync(candidate.result);
                 }
             }
 
@@ -53,24 +53,24 @@ public class TrophyService : ITrophyService
         return (winner.wine, winner.result);
     }
 
-    public (Wine? wine, WineResult? result) GetBestNorwegianWine(string eventId)
+    public async Task<(Wine? wine, WineResult? result)> GetBestNorwegianWineAsync(string eventId)
     {
         // Groups A1, B, C, D (Norwegian wines), medal classification, highest score
         WineGroup[] norwegianGroups = [WineGroup.A1, WineGroup.B, WineGroup.C, WineGroup.D];
-        var wines = _wineRepository.GetAllWines()
-            .Where(w => w.EventId == eventId && norwegianGroups.Contains(w.Group));
+        var allWines = await _wineRepository.GetAllWinesAsync();
+        var wines = allWines.Where(w => w.EventId == eventId && norwegianGroups.Contains(w.Group));
 
-        return GetTopMedalWine(wines);
+        return await GetTopMedalWineAsync(wines);
     }
 
-    public (Wine? wine, WineResult? result) GetBestNordicWine(string eventId)
+    public async Task<(Wine? wine, WineResult? result)> GetBestNordicWineAsync(string eventId)
     {
         // Groups A1 and A2 (Norwegian + Nordic guests), medal classification, highest score
         WineGroup[] nordicGroups = [WineGroup.A1, WineGroup.A2];
-        var wines = _wineRepository.GetAllWines()
-            .Where(w => w.EventId == eventId && nordicGroups.Contains(w.Group));
+        var allWines = await _wineRepository.GetAllWinesAsync();
+        var wines = allWines.Where(w => w.EventId == eventId && nordicGroups.Contains(w.Group));
 
-        return GetTopMedalWine(wines);
+        return await GetTopMedalWineAsync(wines);
     }
 
     public List<(Wine wine, WineResult result, bool requiresLottery)> ResolveTieBreaks(
@@ -100,16 +100,17 @@ public class TrophyService : ITrophyService
             .ToList();
     }
 
-    private (Wine? wine, WineResult? result) GetTopMedalWine(IEnumerable<Wine> wines)
+    private async Task<(Wine? wine, WineResult? result)> GetTopMedalWineAsync(IEnumerable<Wine> wines)
     {
-        var candidates = FindMedalCandidates(wines);
+        var candidates = await FindMedalCandidatesAsync(wines);
         return candidates.Count > 0 ? (candidates[0].wine, candidates[0].result) : (null, null);
     }
 
-    private List<(Wine wine, WineResult result)> FindMedalCandidates(IEnumerable<Wine> wines)
+    private async Task<List<(Wine wine, WineResult result)>> FindMedalCandidatesAsync(IEnumerable<Wine> wines)
     {
         var wineList = wines.ToList();
-        var resultLookup = _wineResultRepository.GetAllWineResults()
+        var allResults = await _wineResultRepository.GetAllWineResultsAsync();
+        var resultLookup = allResults
             .Where(r => wineList.Any(w => w.WineId == r.WineId))
             .ToDictionary(r => r.WineId);
 

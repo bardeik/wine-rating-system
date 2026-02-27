@@ -4,10 +4,10 @@ namespace WineApp.Data;
 
 public interface IWineRepository
 {
-    IList<Wine> GetAllWines();
-    IList<Wine> GetAllWinesFromProducer(string producerId);
-    Wine? GetWineById(string id);
-    string AddWine(Wine wine);
-    void UpdateWine(Wine wine);
-    void DeleteWine(string id);
+    Task<IList<Wine>> GetAllWinesAsync();
+    Task<IList<Wine>> GetAllWinesFromProducerAsync(string producerId);
+    Task<Wine?> GetWineByIdAsync(string id);
+    Task<string> AddWineAsync(Wine wine);
+    Task UpdateWineAsync(Wine wine);
+    Task DeleteWineAsync(string id);
 }

@@ -267,27 +267,27 @@ else
             .Where(r => !string.IsNullOrEmpty(r.Classification) && r.Classification != "IkkeGodkjent")
             .OrderByDescending(r => r.TotalScore);
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        LoadData();
+        await LoadData();
     }
 
-    private void LoadData()
+    private async Task LoadData()
     {
-        activeEvent = EventRepository.GetActiveEvent();
-        wines = WineRepository.GetAllWines().ToList();
-        producers = WineProducerRepository.GetAllWineProducers().ToList();
+        activeEvent = await EventRepository.GetActiveEventAsync();
+        wines = (await WineRepository.GetAllWinesAsync()).ToList();
+        producers = (await WineProducerRepository.GetAllWineProducersAsync()).ToList();
 
         if (activeEvent != null)
         {
-            allResults = WineResultRepository.GetAllWineResults()
+            allResults = (await WineResultRepository.GetAllWineResultsAsync())
                 .Where(r => wines.Any(w => w.WineId == r.WineId && w.EventId == activeEvent.EventId))
                 .ToList();
 
             // Load trophies
-            aaretsVinbonde = TrophyService.GetAaretsVinbonde(activeEvent.EventId);
-            bestNorwegian = TrophyService.GetBestNorwegianWine(activeEvent.EventId);
-            bestNordic = TrophyService.GetBestNordicWine(activeEvent.EventId);
+            aaretsVinbonde = await TrophyService.GetAaretsVinbondeAsync(activeEvent.EventId);
+            bestNorwegian = await TrophyService.GetBestNorwegianWineAsync(activeEvent.EventId);
+            bestNordic = await TrophyService.GetBestNordicWineAsync(activeEvent.EventId);
         }
     }
 

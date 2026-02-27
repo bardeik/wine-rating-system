@@ -340,26 +340,26 @@ else
     private int outliersPending => outliers.Count(o => !o.resolved);
     private decimal maxSpread => outliers.Any() ? outliers.Max(o => o.result.Spread) : 0;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        LoadData();
+        await LoadData();
     }
 
-    private void LoadData()
+    private async Task LoadData()
     {
-        activeEvent = EventRepository.GetActiveEvent();
-        wines = WineRepository.GetAllWines().ToList();
-        allRatings = WineRatingRepository.GetAllWineRatings().ToList();
+        activeEvent = await EventRepository.GetActiveEventAsync();
+        wines = (await WineRepository.GetAllWinesAsync()).ToList();
+        allRatings = (await WineRatingRepository.GetAllWineRatingsAsync()).ToList();
 
         if (activeEvent != null)
         {
-            allResults = WineResultRepository.GetAllWineResults()
+            allResults = (await WineResultRepository.GetAllWineResultsAsync())
                 .Where(r => wines.Any(w => w.WineId == r.WineId && w.EventId == activeEvent.EventId))
                 .ToList();
         }
     }
 
-    private void DetectOutliers()
+    private async Task DetectOutliers()
     {
         if (activeEvent == null) return;
 
@@ -386,19 +386,19 @@ else
         }
     }
 
-    private void ViewRatings(Wine wine)
+    private async Task ViewRatings(Wine wine)
     {
         selectedWine = wine;
         showRatingModal = true;
     }
 
-    private void CloseModal()
+    private async Task CloseModal()
     {
         selectedWine = null;
         showRatingModal = false;
     }
 
-    private void MarkResolved(string wineId)
+    private async Task MarkResolved(string wineId)
     {
         var outlier = outliers.FirstOrDefault(o => o.result.WineId == wineId);
         if (outlier.result != null)

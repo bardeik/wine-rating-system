@@ -4,11 +4,11 @@ namespace WineApp.Data;
 
 public interface IEventRepository
 {
-    List<Event> GetAllEvents();
-    Event? GetEventById(string id);
-    Event? GetActiveEvent();
-    Event? GetEventByYear(int year);
-    void AddEvent(Event eventItem);
-    void UpdateEvent(Event eventItem);
-    void DeleteEvent(string id);
+    Task<List<Event>> GetAllEventsAsync();
+    Task<Event?> GetEventByIdAsync(string id);
+    Task<Event?> GetActiveEventAsync();
+    Task<Event?> GetEventByYearAsync(int year);
+    Task AddEventAsync(Event eventItem);
+    Task UpdateEventAsync(Event eventItem);
+    Task DeleteEventAsync(string id);
 }

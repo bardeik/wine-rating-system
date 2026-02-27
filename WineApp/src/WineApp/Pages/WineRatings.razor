@@ -138,8 +138,8 @@
     // ── Lifecycle ──────────────────────────────────────────
     protected override async Task OnInitializedAsync()
     {
-        LoadWineRatings();
-        wines = WineRepository.GetAllWines().ToList();
+        await LoadWineRatings();
+        wines = (await WineRepository.GetAllWinesAsync()).ToList();
         judgeUsers = (await UserManager.GetUsersInRoleAsync("Judge"))
             .OrderBy(u => u.DisplayName)
             .ToList();
@@ -171,21 +171,23 @@
     }
 
     // ── Commands ───────────────────────────────────────────
-    private void LoadWineRatings() =>
-        wineRatings = WineRatingRepository.GetAllWineRatings().ToList();
-
-    private void AddNewWineRating()
+    private async Task LoadWineRatings()
     {
-        WineRatingRepository.AddWineRating(newRating);
+        wineRatings = (await WineRatingRepository.GetAllWineRatingsAsync()).ToList();
+    }
+
+    private async Task AddNewWineRating()
+    {
+        await WineRatingRepository.AddWineRatingAsync(newRating);
         newRating = new WineRating();
         if (currentUser is not null)
             newRating.JudgeId = currentUser.DisplayName ?? currentUser.UserName ?? string.Empty;
-        LoadWineRatings();
+        await LoadWineRatings();
     }
 
-    private void DeleteWineRating(string wineRatingId)
+    private async Task DeleteWineRating(string wineRatingId)
     {
-        WineRatingRepository.DeleteWineRating(wineRatingId);
-        LoadWineRatings();
+        await WineRatingRepository.DeleteWineRatingAsync(wineRatingId);
+        await LoadWineRatings();
     }
 }

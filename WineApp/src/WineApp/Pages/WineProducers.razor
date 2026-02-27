@@ -197,12 +197,12 @@
 
         if (isAdmin)
         {
-            wineProducers = WineProducerRepository.GetAllWineProducers().ToList();
+            wineProducers = (await WineProducerRepository.GetAllWineProducersAsync()).ToList();
             await LoadProducerEmailsAsync();
         }
 
         if (isWineProducer && userId is not null)
-            currentProducer = WineProducerRepository.GetWineProducerByUserId(userId);
+            currentProducer = await WineProducerRepository.GetWineProducerByUserIdAsync(userId);
     }
 
     private async Task LoadProducerEmailsAsync()
@@ -234,7 +234,7 @@
         }
         await UserManager.AddToRoleAsync(user, "WineProducer");
 
-        WineProducerRepository.AddWineProducer(new WineProducer
+        await WineProducerRepository.AddWineProducerAsync(new WineProducer
         {
             WineProducerId = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),
             UserId = user.Id.ToString(),
@@ -249,29 +249,29 @@
         });
 
         formModel = new WineProducerFormModel();
-        wineProducers = WineProducerRepository.GetAllWineProducers().ToList();
+        wineProducers = (await WineProducerRepository.GetAllWineProducersAsync()).ToList();
         await LoadProducerEmailsAsync();
     }
 
     private async Task DeleteWineProducer(string producerId)
     {
-        var producer = WineProducerRepository.GetWineProducerById(producerId);
+        var producer = await WineProducerRepository.GetWineProducerByIdAsync(producerId);
         if (producer?.UserId is not null)
         {
             var u = await UserManager.FindByIdAsync(producer.UserId);
             if (u is not null)
                 await UserManager.DeleteAsync(u);
         }
-        WineProducerRepository.DeleteWineProducer(producerId);
-        wineProducers = WineProducerRepository.GetAllWineProducers().ToList();
+        await WineProducerRepository.DeleteWineProducerAsync(producerId);
+        wineProducers = (await WineProducerRepository.GetAllWineProducersAsync()).ToList();
         await LoadProducerEmailsAsync();
     }
 
-    private void SaveProfile()
+    private async Task SaveProfile()
     {
         if (currentProducer is not null)
         {
-            WineProducerRepository.UpdateWineProducer(currentProducer);
+            await WineProducerRepository.UpdateWineProducerAsync(currentProducer);
             profileSaved = true;
         }
     }

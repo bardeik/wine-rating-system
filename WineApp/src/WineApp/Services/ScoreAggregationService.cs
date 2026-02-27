@@ -91,17 +91,17 @@ public class ScoreAggregationService : IScoreAggregationService
         };
     }
 
-    public List<WineResult> RecalculateEventResults(string eventId)
+    public async Task<List<WineResult>> RecalculateEventResultsAsync(string eventId)
     {
-        var eventConfig = _eventRepository.GetEventById(eventId);
+        var eventConfig = await _eventRepository.GetEventByIdAsync(eventId);
         if (eventConfig == null)
             throw new InvalidOperationException($"Event {eventId} not found");
 
-        var wines = _wineRepository.GetAllWines()
+        var wines = (await _wineRepository.GetAllWinesAsync())
             .Where(w => w.EventId == eventId)
             .ToList();
 
-        var allRatings = _wineRatingRepository.GetAllWineRatings();
+        var allRatings = await _wineRatingRepository.GetAllWineRatingsAsync();
         var results = new List<WineResult>();
 
         foreach (var wine in wines)
@@ -110,15 +110,15 @@ public class ScoreAggregationService : IScoreAggregationService
             var result = CalculateWineResult(wine.WineId, eventConfig, wineRatings);
 
             // Save or update result
-            var existingResult = _wineResultRepository.GetWineResultByWineId(wine.WineId);
+            var existingResult = await _wineResultRepository.GetWineResultByWineIdAsync(wine.WineId);
             if (existingResult != null)
             {
                 result.WineResultId = existingResult.WineResultId;
-                _wineResultRepository.UpdateWineResult(result);
+                await _wineResultRepository.UpdateWineResultAsync(result);
             }
             else
             {
-                _wineResultRepository.AddWineResult(result);
+                await _wineResultRepository.AddWineResultAsync(result);
             }
 
             results.Add(result);

@@ -4,9 +4,9 @@ namespace WineApp.Data;
 
 public interface IFlightRepository
 {
-    List<Flight> GetFlightsForEvent(string eventId);
-    Flight? GetFlightById(string flightId);
-    void AddFlight(Flight flight);
-    void UpdateFlight(Flight flight);
-    void DeleteFlight(string flightId);
+    Task<List<Flight>> GetFlightsForEventAsync(string eventId);
+    Task<Flight?> GetFlightByIdAsync(string flightId);
+    Task AddFlightAsync(Flight flight);
+    Task UpdateFlightAsync(Flight flight);
+    Task DeleteFlightAsync(string flightId);
 }

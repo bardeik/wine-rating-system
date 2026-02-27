@@ -19,35 +19,38 @@ public class OutlierDetectionService : IOutlierDetectionService
         _wineRatingRepository = wineRatingRepository;
     }
 
-    public List<(Wine wine, WineResult result, decimal spread)> GetOutlierWines(string eventId)
+    public async Task<List<(Wine wine, WineResult result, decimal spread)>> GetOutlierWinesAsync(string eventId)
     {
-        var wines = _wineRepository.GetAllWines()
+        var allWines = await _wineRepository.GetAllWinesAsync();
+        var wines = allWines
             .Where(w => w.EventId == eventId)
             .ToDictionary(w => w.WineId);
 
-        return _wineResultRepository.GetOutlierWineResults()
+        var outlierResults = await _wineResultRepository.GetOutlierWineResultsAsync();
+        return outlierResults
             .Where(r => wines.ContainsKey(r.WineId))
             .Select(r => (wines[r.WineId], r, r.Spread))
             .OrderByDescending(o => o.Spread)
             .ToList();
     }
 
-    public bool RequiresReJudging(string wineId, decimal outlierThreshold)
+    public async Task<bool> RequiresReJudgingAsync(string wineId, decimal outlierThreshold)
     {
-        var result = _wineResultRepository.GetWineResultByWineId(wineId);
+        var result = await _wineResultRepository.GetWineResultByWineIdAsync(wineId);
         if (result == null)
             return false;
 
         return result.Spread > outlierThreshold;
     }
 
-    public Dictionary<string, List<string>> AnalyzeJudgePatterns(string eventId)
+    public async Task<Dictionary<string, List<string>>> AnalyzeJudgePatternsAsync(string eventId)
     {
-        var wines = _wineRepository.GetAllWines()
+        var allWines = await _wineRepository.GetAllWinesAsync();
+        var wines = allWines
             .Where(w => w.EventId == eventId)
             .ToList();
 
-        var allRatings = _wineRatingRepository.GetAllWineRatings();
+        var allRatings = await _wineRatingRepository.GetAllWineRatingsAsync();
         var eventRatings = allRatings
             .Where(r => wines.Any(w => w.WineId == r.WineId))
             .ToList();

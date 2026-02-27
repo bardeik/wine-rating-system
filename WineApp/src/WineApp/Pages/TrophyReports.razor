@@ -305,41 +305,35 @@ else
 
     private Dictionary<string, string> producerNames = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        LoadData();
+        await LoadData();
     }
 
-    private void LoadData()
+    private async Task LoadData()
     {
-        activeEvent = EventRepository.GetActiveEvent();
+        activeEvent = await EventRepository.GetActiveEventAsync();
         
         if (activeEvent != null)
         {
-            // Cache producer names
-            var producers = WineRepository.GetAllWines()
-                .Where(w => w.EventId == activeEvent.EventId)
-                .Select(w => w.WineProducerId)
-                .Distinct();
-
-            // This would need WineProducerRepository injected
-            // For now, just show producer IDs
+            var allProducers = await WineProducerRepository.GetAllWineProducersAsync();
+            producerNames = allProducers.ToDictionary(p => p.WineProducerId, p => p.WineyardName);
         }
     }
 
-    private void CalculateTrophies()
+    private async Task CalculateTrophies()
     {
         if (activeEvent == null) return;
 
         try
         {
             // First ensure all results are calculated
-            var results = ScoreAggregationService.RecalculateEventResults(activeEvent.EventId);
+            var results = await ScoreAggregationService.RecalculateEventResultsAsync(activeEvent.EventId);
             
             // Calculate trophies
-            aaretsVinbonde = TrophyService.GetAaretsVinbonde(activeEvent.EventId);
-            bestNorwegian = TrophyService.GetBestNorwegianWine(activeEvent.EventId);
-            bestNordic = TrophyService.GetBestNordicWine(activeEvent.EventId);
+            aaretsVinbonde = await TrophyService.GetAaretsVinbondeAsync(activeEvent.EventId);
+            bestNorwegian = await TrophyService.GetBestNorwegianWineAsync(activeEvent.EventId);
+            bestNordic = await TrophyService.GetBestNordicWineAsync(activeEvent.EventId);
             
             lastCalculated = DateTime.Now;
             
@@ -354,9 +348,7 @@ else
 
     private string GetProducerName(string producerId)
     {
-        var producer = WineProducerRepository.GetAllWineProducers()
-            .FirstOrDefault(p => p.WineProducerId == producerId);
-        return producer?.WineyardName ?? producerId;
+        return producerNames.TryGetValue(producerId, out var name) ? name : producerId;
     }
 
     private string GetClassificationColor(string classification)
@@ -370,19 +362,19 @@ else
         };
     }
 
-    private void ExportTrophyPdf()
+    private async Task ExportTrophyPdf()
     {
         if (activeEvent == null) return;
         Navigation.NavigateTo($"/api/download/trophy-pdf/{activeEvent.EventId}", forceLoad: true);
     }
 
-    private void ExportTrophyCsv()
+    private async Task ExportTrophyCsv()
     {
         if (activeEvent == null) return;
         Navigation.NavigateTo($"/api/download/trophies/{activeEvent.EventId}", forceLoad: true);
     }
 
-    private void ShareResults()
+    private async Task ShareResults()
     {
         // TODO: Implement email sharing
         ShowStatus("ℹ️ E-postdeling kommer snart", "alert-info");

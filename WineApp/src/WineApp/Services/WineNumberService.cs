@@ -12,14 +12,15 @@ public class WineNumberService : IWineNumberService
         _wineRepository = wineRepository;
     }
 
-    public Task<Dictionary<string, int>> AssignWineNumbersAsync(string eventId)
+    public async Task<Dictionary<string, int>> AssignWineNumbersAsync(string eventId)
     {
-        var wines = _wineRepository.GetAllWines()
+        var allWines = await _wineRepository.GetAllWinesAsync();
+        var wines = allWines
             .Where(w => w.EventId == eventId && w.IsPaid)
             .ToList();
 
         if (!wines.Any())
-            return Task.FromResult(new Dictionary<string, int>());
+            return new Dictionary<string, int>();
 
         // Get category order
         var categoryOrder = GetCategoryOrder();
@@ -36,17 +37,18 @@ public class WineNumberService : IWineNumberService
         foreach (var wine in sortedWines)
         {
             wine.WineNumber = currentNumber;
-            _wineRepository.UpdateWine(wine);
+            await _wineRepository.UpdateWineAsync(wine);
             assignments[wine.WineId] = currentNumber;
             currentNumber++;
         }
 
-        return Task.FromResult(assignments);
+        return assignments;
     }
 
-    public int GetNextWineNumber(string eventId)
+    public async Task<int> GetNextWineNumberAsync(string eventId)
     {
-        var wines = _wineRepository.GetAllWines()
+        var allWines = await _wineRepository.GetAllWinesAsync();
+        var wines = allWines
             .Where(w => w.EventId == eventId && w.WineNumber.HasValue)
             .ToList();
 
@@ -56,9 +58,10 @@ public class WineNumberService : IWineNumberService
         return wines.Max(w => w.WineNumber!.Value) + 1;
     }
 
-    public bool ValidateWineNumbers(string eventId)
+    public async Task<bool> ValidateWineNumbersAsync(string eventId)
     {
-        var wines = _wineRepository.GetAllWines()
+        var allWines = await _wineRepository.GetAllWinesAsync();
+        var wines = allWines
             .Where(w => w.EventId == eventId && w.WineNumber.HasValue)
             .ToList();
 

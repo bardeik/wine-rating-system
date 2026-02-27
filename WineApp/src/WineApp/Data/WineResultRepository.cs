@@ -10,30 +10,30 @@ public class WineResultRepository : IWineResultRepository
     public WineResultRepository(WineMongoDbContext context) =>
         _wineResults = context.WineResults;
 
-    public List<WineResult> GetAllWineResults() => 
-        _wineResults.Find(_ => true).ToList();
+    public async Task<List<WineResult>> GetAllWineResultsAsync() =>
+        await _wineResults.Find(_ => true).ToListAsync();
 
-    public WineResult? GetWineResultById(string id) => 
-        _wineResults.Find(wr => wr.WineResultId == id).FirstOrDefault();
+    public async Task<WineResult?> GetWineResultByIdAsync(string id) =>
+        await _wineResults.Find(wr => wr.WineResultId == id).FirstOrDefaultAsync();
 
-    public WineResult? GetWineResultByWineId(string wineId) => 
-        _wineResults.Find(wr => wr.WineId == wineId).FirstOrDefault();
+    public async Task<WineResult?> GetWineResultByWineIdAsync(string wineId) =>
+        await _wineResults.Find(wr => wr.WineId == wineId).FirstOrDefaultAsync();
 
-    public List<WineResult> GetWineResultsByClassification(string classification) => 
-        _wineResults.Find(wr => wr.Classification == classification).ToList();
+    public async Task<List<WineResult>> GetWineResultsByClassificationAsync(string classification) =>
+        await _wineResults.Find(wr => wr.Classification == classification).ToListAsync();
 
-    public List<WineResult> GetOutlierWineResults() => 
-        _wineResults.Find(wr => wr.IsOutlier).ToList();
+    public async Task<List<WineResult>> GetOutlierWineResultsAsync() =>
+        await _wineResults.Find(wr => wr.IsOutlier).ToListAsync();
 
-    public void AddWineResult(WineResult wineResult) => 
-        _wineResults.InsertOne(wineResult);
+    public async Task AddWineResultAsync(WineResult wineResult) =>
+        await _wineResults.InsertOneAsync(wineResult);
 
-    public void UpdateWineResult(WineResult wineResult) => 
-        _wineResults.ReplaceOne(wr => wr.WineResultId == wineResult.WineResultId, wineResult);
+    public async Task UpdateWineResultAsync(WineResult wineResult) =>
+        await _wineResults.ReplaceOneAsync(wr => wr.WineResultId == wineResult.WineResultId, wineResult);
 
-    public void DeleteWineResult(string id) => 
-        _wineResults.DeleteOne(wr => wr.WineResultId == id);
+    public async Task DeleteWineResultAsync(string id) =>
+        await _wineResults.DeleteOneAsync(wr => wr.WineResultId == id);
 
-    public void DeleteWineResultByWineId(string wineId) => 
-        _wineResults.DeleteOne(wr => wr.WineId == wineId);
+    public async Task DeleteWineResultByWineIdAsync(string wineId) =>
+        await _wineResults.DeleteOneAsync(wr => wr.WineId == wineId);
 }

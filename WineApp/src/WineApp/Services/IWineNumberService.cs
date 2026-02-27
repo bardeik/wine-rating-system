@@ -13,12 +13,12 @@ public interface IWineNumberService
     /// <summary>
     /// Gets the next available wine number for an event
     /// </summary>
-    int GetNextWineNumber(string eventId);
+    Task<int> GetNextWineNumberAsync(string eventId);
     
     /// <summary>
     /// Validates that wine numbers are unique within an event
     /// </summary>
-    bool ValidateWineNumbers(string eventId);
+    Task<bool> ValidateWineNumbersAsync(string eventId);
     
     /// <summary>
     /// Gets the category order for wine numbering

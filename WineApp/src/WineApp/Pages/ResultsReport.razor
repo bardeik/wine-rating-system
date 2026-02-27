@@ -325,32 +325,32 @@ else
         }
     }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        LoadData();
+        await LoadData();
     }
 
-    private void LoadData()
+    private async Task LoadData()
     {
-        activeEvent = EventRepository.GetActiveEvent();
-        wines = WineRepository.GetAllWines().ToList();
-        producers = WineProducerRepository.GetAllWineProducers().ToList();
+        activeEvent = await EventRepository.GetActiveEventAsync();
+        wines = (await WineRepository.GetAllWinesAsync()).ToList();
+        producers = (await WineProducerRepository.GetAllWineProducersAsync()).ToList();
 
         if (activeEvent != null)
         {
-            allResults = WineResultRepository.GetAllWineResults()
+            allResults = (await WineResultRepository.GetAllWineResultsAsync())
                 .Where(r => wines.Any(w => w.WineId == r.WineId && w.EventId == activeEvent.EventId))
                 .ToList();
         }
     }
 
-    private void RecalculateAll()
+    private async Task RecalculateAll()
     {
         if (activeEvent == null) return;
 
         try
         {
-            var results = ScoreAggregationService.RecalculateEventResults(activeEvent.EventId);
+            var results = await ScoreAggregationService.RecalculateEventResultsAsync(activeEvent.EventId);
             allResults = results;
             ShowStatus($"✓ Beregnet resultater for {results.Count} viner", "alert-success");
             StateHasChanged();
@@ -361,7 +361,7 @@ else
         }
     }
 
-    private void SetSort(string column)
+    private async Task SetSort(string column)
     {
         if (sortBy == column)
         {
@@ -423,7 +423,7 @@ else
         };
     }
 
-    private void ExportToCSV()
+    private async Task ExportToCSV()
     {
         if (activeEvent == null) return;
         Navigation.NavigateTo($"/api/download/results/{activeEvent.EventId}", forceLoad: true);

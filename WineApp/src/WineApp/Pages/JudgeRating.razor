@@ -449,6 +449,7 @@
     private string autoSaveStatus = string.Empty;
     private string autoSaveClass = string.Empty;
     private System.Threading.Timer? autoSaveTimer;
+    private IList<WineRating> loadedRatings = new List<WineRating>();
     
     private ElementReference wineCardRef;
 
@@ -463,39 +464,40 @@
         var user = authState.User;
         judgeId = user.FindFirst(ClaimTypes.Name)?.Value ?? user.Identity?.Name ?? "Unknown";
 
-        LoadData();
+        await LoadData();
     }
 
-    private void LoadData()
+    private async Task LoadData()
     {
-        activeEvent = EventRepository.GetActiveEvent();
+        activeEvent = await EventRepository.GetActiveEventAsync();
         
         if (activeEvent != null)
         {
-            flights = FlightService.GetFlightsForEvent(activeEvent.EventId);
+            flights = await FlightService.GetFlightsForEventAsync(activeEvent.EventId);
             
             if (flights.Any())
             {
                 selectedFlightId = flights.First().FlightId;
-                LoadCurrentFlight();
+                await LoadCurrentFlight();
             }
         }
     }
 
-    private void LoadCurrentFlight()
+    private async Task LoadCurrentFlight()
     {
         if (string.IsNullOrEmpty(selectedFlightId)) return;
 
-        currentFlightWines = FlightService.GetWinesInFlight(selectedFlightId);
+        currentFlightWines = await FlightService.GetWinesInFlightAsync(selectedFlightId);
+        loadedRatings = await WineRatingRepository.GetAllWineRatingsAsync();
         currentWineIndex = 1;
         
         if (currentFlightWines.Any())
         {
-            LoadWine(0);
+            await LoadWine(0);
         }
     }
 
-    private void LoadWine(int index)
+    private async Task LoadWine(int index)
     {
         if (index < 0 || index >= currentFlightWines.Count) return;
 
@@ -503,8 +505,7 @@
         currentWineIndex = index + 1;
 
         // Load existing rating if any
-        var existingRating = WineRatingRepository.GetAllWineRatings()
-            .FirstOrDefault(r => r.WineId == currentWine.WineId && r.JudgeId == judgeId);
+        var existingRating = loadedRatings.FirstOrDefault(r => r.WineId == currentWine.WineId && r.JudgeId == judgeId);
 
         if (existingRating != null)
         {
@@ -550,15 +551,15 @@
         autoSaveTimer?.Dispose();
         autoSaveTimer = new System.Threading.Timer(_ =>
         {
-            InvokeAsync(() =>
+            InvokeAsync(async () =>
             {
-                SaveCurrentRating(silent: true);
+                await SaveCurrentRating(silent: true);
                 StateHasChanged();
             });
         }, null, TimeSpan.FromSeconds(2), Timeout.InfiniteTimeSpan);
     }
 
-    private void SaveCurrentRating(bool silent = false)
+    private async Task SaveCurrentRating(bool silent = false)
     {
         if (currentWine == null) return;
 
@@ -566,12 +567,12 @@
         {
             if (hasExistingRating && !string.IsNullOrEmpty(currentRating.WineRatingId))
             {
-                WineRatingRepository.UpdateWineRating(currentRating);
+                await WineRatingRepository.UpdateWineRatingAsync(currentRating);
             }
             else
             {
                 currentRating.WineRatingId = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
-                WineRatingRepository.AddWineRating(currentRating);
+                await WineRatingRepository.AddWineRatingAsync(currentRating);
                 hasExistingRating = true;
             }
 
@@ -586,13 +587,13 @@
         }
     }
 
-    private void SaveAndNext()
+    private async Task SaveAndNext()
     {
-        SaveCurrentRating();
+        await SaveCurrentRating();
         
         if (currentWineIndex < currentFlightWines.Count)
         {
-            LoadWine(currentWineIndex);
+            await LoadWine(currentWineIndex);
         }
         else
         {
@@ -600,12 +601,12 @@
         }
     }
 
-    private void PreviousWine()
+    private async Task PreviousWine()
     {
         if (currentWineIndex > 1)
         {
-            SaveCurrentRating();
-            LoadWine(currentWineIndex - 2);
+            await SaveCurrentRating();
+            await LoadWine(currentWineIndex - 2);
         }
     }
 
@@ -629,13 +630,12 @@
         var flight = flights.FirstOrDefault(f => f.FlightId == flightId);
         if (flight == null) return 0;
 
-        var allRatings = WineRatingRepository.GetAllWineRatings()
-            .Where(r => r.JudgeId == judgeId);
+        var allRatings = loadedRatings.Where(r => r.JudgeId == judgeId);
 
         return flight.WineIds.Count(wineId => allRatings.Any(r => r.WineId == wineId));
     }
 
-    private void SelectInputContent()
+    private async Task SelectInputContent()
     {
         // Could use JS interop to select input content for easier editing
     }

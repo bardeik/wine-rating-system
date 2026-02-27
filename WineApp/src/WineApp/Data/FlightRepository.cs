@@ -10,20 +10,20 @@ public class FlightRepository : IFlightRepository
     public FlightRepository(WineMongoDbContext context) =>
         _collection = context.Flights;
 
-    public List<Flight> GetFlightsForEvent(string eventId) =>
-        _collection.Find(f => f.EventId == eventId)
-                   .SortBy(f => f.FlightNumber)
-                   .ToList();
+    public async Task<List<Flight>> GetFlightsForEventAsync(string eventId) =>
+        await _collection.Find(f => f.EventId == eventId)
+                         .SortBy(f => f.FlightNumber)
+                         .ToListAsync();
 
-    public Flight? GetFlightById(string flightId) =>
-        _collection.Find(f => f.FlightId == flightId).FirstOrDefault();
+    public async Task<Flight?> GetFlightByIdAsync(string flightId) =>
+        await _collection.Find(f => f.FlightId == flightId).FirstOrDefaultAsync();
 
-    public void AddFlight(Flight flight) =>
-        _collection.InsertOne(flight);
+    public async Task AddFlightAsync(Flight flight) =>
+        await _collection.InsertOneAsync(flight);
 
-    public void UpdateFlight(Flight flight) =>
-        _collection.ReplaceOne(f => f.FlightId == flight.FlightId, flight);
+    public async Task UpdateFlightAsync(Flight flight) =>
+        await _collection.ReplaceOneAsync(f => f.FlightId == flight.FlightId, flight);
 
-    public void DeleteFlight(string flightId) =>
-        _collection.DeleteOne(f => f.FlightId == flightId);
+    public async Task DeleteFlightAsync(string flightId) =>
+        await _collection.DeleteOneAsync(f => f.FlightId == flightId);
 }

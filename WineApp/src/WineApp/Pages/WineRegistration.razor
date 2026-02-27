@@ -283,17 +283,17 @@ else
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (isWineProducer && userId != null)
         {
-            currentProducer = WineProducerRepository.GetWineProducerByUserId(userId);
+            currentProducer = await WineProducerRepository.GetWineProducerByUserIdAsync(userId);
         }
 
-        LoadData();
+        await LoadData();
     }
 
-    private void LoadData()
+    private async Task LoadData()
     {
-        activeEvent = EventRepository.GetActiveEvent();
-        allWines = WineRepository.GetAllWines().ToList();
-        wineProducers = WineProducerRepository.GetAllWineProducers().ToList();
+        activeEvent = await EventRepository.GetActiveEventAsync();
+        allWines = (await WineRepository.GetAllWinesAsync()).ToList();
+        wineProducers = (await WineProducerRepository.GetAllWineProducersAsync()).ToList();
 
         if (activeEvent != null)
         {
@@ -316,7 +316,7 @@ else
         }
     }
 
-    private void InitializeNewWine()
+    private async Task InitializeNewWine()
     {
         newWine = new Wine
         {
@@ -537,7 +537,7 @@ else
         };
     }
 
-    private void AddGrape(Wine wine)
+    private async Task AddGrape(Wine wine)
     {
         if (string.IsNullOrWhiteSpace(newGrapeVariety) || newGrapePercentage <= 0)
         {
@@ -556,12 +556,12 @@ else
         newGrapePercentage = 0m;
     }
 
-    private void RemoveGrape(Wine wine, string grapeVariety)
+    private async Task RemoveGrape(Wine wine, string grapeVariety)
     {
         wine.GrapeBlend.Remove(grapeVariety);
     }
 
-    private void AddNewWine()
+    private async Task AddNewWine()
     {
         // Validate wine
         var (isValid, errors) = WineValidationService.ValidateWineRegistration(newWine);
@@ -573,7 +573,7 @@ else
 
         try
         {
-            WineRepository.AddWine(newWine);
+            await WineRepository.AddWineAsync(newWine);
             ShowStatus($"Vin '{newWine.Name}' er registrert!", "alert-success");
             
             // Reload data and reset form
@@ -592,7 +592,7 @@ else
         }
     }
 
-    private void StartEdit(Wine wine)
+    private async Task StartEdit(Wine wine)
     {
         editingWine = new Wine
         {
@@ -615,7 +615,7 @@ else
         };
     }
 
-    private void SaveEdit()
+    private async Task SaveEdit()
     {
         if (editingWine == null) return;
 
@@ -629,7 +629,7 @@ else
 
         try
         {
-            WineRepository.UpdateWine(editingWine);
+            await WineRepository.UpdateWineAsync(editingWine);
             ShowStatus($"Vin '{editingWine.Name}' er oppdatert!", "alert-success");
             editingWine = null;
             LoadData();
@@ -641,12 +641,12 @@ else
         }
     }
 
-    private void CancelEdit()
+    private async Task CancelEdit()
     {
         editingWine = null;
     }
 
-    private void HandleFormSubmit(bool isEdit)
+    private async Task HandleFormSubmit(bool isEdit)
     {
         if (isEdit)
         {
@@ -658,11 +658,11 @@ else
         }
     }
 
-    private void DeleteWine(string wineId)
+    private async Task DeleteWine(string wineId)
     {
         try
         {
-            WineRepository.DeleteWine(wineId);
+            await WineRepository.DeleteWineAsync(wineId);
             ShowStatus("Vin er slettet", "alert-success");
             LoadData();
             StateHasChanged();
@@ -673,19 +673,19 @@ else
         }
     }
 
-    private void ViewWine(Wine wine)
+    private async Task ViewWine(Wine wine)
     {
         viewingWine = wine;
         showViewModal = true;
     }
 
-    private void CloseViewModal()
+    private async Task CloseViewModal()
     {
         viewingWine = null;
         showViewModal = false;
     }
 
-    private void ShowStatus(string message, string cssClass)
+    private async Task ShowStatus(string message, string cssClass)
     {
         statusMessage = message;
         statusClass = cssClass;

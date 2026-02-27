@@ -7,17 +7,17 @@ public interface ITrophyService
     /// <summary>
     /// Finds "Årets Vinbonde" - highest score in Group A1 with Vinbonde status
     /// </summary>
-    (Wine? wine, WineResult? result) GetAaretsVinbonde(string eventId);
+    Task<(Wine? wine, WineResult? result)> GetAaretsVinbondeAsync(string eventId);
     
     /// <summary>
     /// Finds "Vinskuets beste norske vin" - highest score in A1, B, C, D
     /// </summary>
-    (Wine? wine, WineResult? result) GetBestNorwegianWine(string eventId);
+    Task<(Wine? wine, WineResult? result)> GetBestNorwegianWineAsync(string eventId);
     
     /// <summary>
     /// Finds "Vinskuets beste nordiske vin" - highest score in A1 and A2
     /// </summary>
-    (Wine? wine, WineResult? result) GetBestNordicWine(string eventId);
+    Task<(Wine? wine, WineResult? result)> GetBestNordicWineAsync(string eventId);
     
     /// <summary>
     /// Resolves tie-breaks: returns wine with highest single judge score

@@ -61,7 +61,7 @@
 @code {
     private bool accessDenied;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
         accessDenied = QueryHelpers.ParseQuery(uri.Query).ContainsKey("accessDenied");

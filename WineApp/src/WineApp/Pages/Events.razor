@@ -264,24 +264,24 @@ else
     private string statusMessage = string.Empty;
     private string statusClass = "alert-info";
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        LoadEvents();
+        await LoadEvents();
     }
 
-    private void LoadEvents()
+    private async Task LoadEvents()
     {
-        events = EventRepository.GetAllEvents().OrderByDescending(e => e.Year).ToList();
+        events = (await EventRepository.GetAllEventsAsync()).OrderByDescending(e => e.Year).ToList();
     }
 
-    private void ShowAddForm()
+    private async Task ShowAddForm()
     {
         currentEvent = new Event();
         isEditing = false;
         showForm = true;
     }
 
-    private void EditEvent(Event evt)
+    private async Task EditEvent(Event evt)
     {
         currentEvent = new Event
         {
@@ -318,7 +318,7 @@ else
         showForm = true;
     }
 
-    private void ViewDetails(Event evt)
+    private async Task ViewDetails(Event evt)
     {
         Navigation.NavigateTo($"/event-details/{evt.EventId}");
     }
@@ -329,13 +329,13 @@ else
         currentEvent = new();
     }
 
-    private void SaveEvent()
+    private async Task SaveEvent()
     {
         try
         {
             if (isEditing)
             {
-                EventRepository.UpdateEvent(currentEvent);
+                await EventRepository.UpdateEventAsync(currentEvent);
                 ShowStatus("Arrangement oppdatert", "alert-success");
             }
             else
@@ -345,13 +345,13 @@ else
                 foreach (var evt in activeEvents)
                 {
                     evt.IsActive = false;
-                    EventRepository.UpdateEvent(evt);
+                    await EventRepository.UpdateEventAsync(evt);
                 }
 
-                EventRepository.AddEvent(currentEvent);
+                await EventRepository.AddEventAsync(currentEvent);
                 ShowStatus("Arrangement opprettet", "alert-success");
             }
-            LoadEvents();
+            await LoadEvents();
             HideForm();
         }
         catch (Exception ex)
@@ -360,26 +360,26 @@ else
         }
     }
 
-    private void ActivateEvent(Event evt)
+    private async Task ActivateEvent(Event evt)
     {
         // Deactivate all other events
         foreach (var e in events.Where(e => e.IsActive))
         {
             e.IsActive = false;
-            EventRepository.UpdateEvent(e);
+            await EventRepository.UpdateEventAsync(e);
         }
 
         evt.IsActive = true;
-        EventRepository.UpdateEvent(evt);
-        LoadEvents();
+        await EventRepository.UpdateEventAsync(evt);
+        await LoadEvents();
         ShowStatus($"Arrangement '{evt.Name}' aktivert", "alert-success");
     }
 
-    private void DeactivateEvent(Event evt)
+    private async Task DeactivateEvent(Event evt)
     {
         evt.IsActive = false;
-        EventRepository.UpdateEvent(evt);
-        LoadEvents();
+        await EventRepository.UpdateEventAsync(evt);
+        await LoadEvents();
         ShowStatus($"Arrangement '{evt.Name}' deaktivert", "alert-warning");
     }
 
@@ -396,11 +396,11 @@ else
         }
     }
 
-    private void CalculateResults(string eventId)
+    private async Task CalculateResults(string eventId)
     {
         try
         {
-            var results = ScoreAggregationService.RecalculateEventResults(eventId);
+            var results = await ScoreAggregationService.RecalculateEventResultsAsync(eventId);
             ShowStatus($"Beregnet resultater for {results.Count} viner", "alert-success");
         }
         catch (Exception ex)
@@ -409,7 +409,7 @@ else
         }
     }
 
-    private void ExportEventData(string eventId)
+    private async Task ExportEventData(string eventId)
     {
         Navigation.NavigateTo($"/api/download/event/{eventId}", forceLoad: true);
     }

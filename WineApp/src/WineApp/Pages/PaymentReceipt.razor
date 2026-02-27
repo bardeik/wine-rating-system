@@ -310,26 +310,26 @@ else
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (userId != null)
         {
-            currentProducer = WineProducerRepository.GetWineProducerByUserId(userId);
+            currentProducer = await WineProducerRepository.GetWineProducerByUserIdAsync(userId);
         }
 
-        LoadData();
+        await LoadData();
     }
 
-    private void LoadData()
+    private async Task LoadData()
     {
-        activeEvent = EventRepository.GetActiveEvent();
+        activeEvent = await EventRepository.GetActiveEventAsync();
 
         if (activeEvent != null && currentProducer != null)
         {
-            wines = WineRepository.GetAllWines()
+            wines = (await WineRepository.GetAllWinesAsync())
                 .Where(w => w.WineProducerId == currentProducer.WineProducerId && 
                            w.EventId == activeEvent.EventId)
                 .ToList();
         }
     }
 
-    private void PrintReceipt()
+    private async Task PrintReceipt()
     {
         // TODO: Implement print functionality
         // Could use JavaScript interop to trigger browser print dialog

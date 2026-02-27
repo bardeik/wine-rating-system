@@ -77,11 +77,11 @@ else
 @code {
     private List<WineReportRow> reportRows = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        var wines     = WineRepository.GetAllWines();
-        var ratings   = WineRatingRepository.GetAllWineRatings();
-        var producers = WineProducerRepository.GetAllWineProducers();
+        var wines     = await WineRepository.GetAllWinesAsync();
+        var ratings   = await WineRatingRepository.GetAllWineRatingsAsync();
+        var producers = await WineProducerRepository.GetAllWineProducersAsync();
 
         reportRows = wines
             .Select(wine =>

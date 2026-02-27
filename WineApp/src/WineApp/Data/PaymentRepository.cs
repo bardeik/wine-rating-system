@@ -10,30 +10,30 @@ public class PaymentRepository : IPaymentRepository
     public PaymentRepository(WineMongoDbContext context) =>
         _payments = context.Payments;
 
-    public List<Payment> GetAllPayments() => 
-        _payments.Find(_ => true).ToList();
+    public async Task<List<Payment>> GetAllPaymentsAsync() =>
+        await _payments.Find(_ => true).ToListAsync();
 
-    public Payment? GetPaymentById(string id) => 
-        _payments.Find(p => p.PaymentId == id).FirstOrDefault();
+    public async Task<Payment?> GetPaymentByIdAsync(string id) =>
+        await _payments.Find(p => p.PaymentId == id).FirstOrDefaultAsync();
 
-    public List<Payment> GetPaymentsByProducerId(string producerId) => 
-        _payments.Find(p => p.WineProducerId == producerId).ToList();
+    public async Task<List<Payment>> GetPaymentsByProducerIdAsync(string producerId) =>
+        await _payments.Find(p => p.WineProducerId == producerId).ToListAsync();
 
-    public List<Payment> GetPaymentsByEventId(string eventId) => 
-        _payments.Find(p => p.EventId == eventId).ToList();
+    public async Task<List<Payment>> GetPaymentsByEventIdAsync(string eventId) =>
+        await _payments.Find(p => p.EventId == eventId).ToListAsync();
 
-    public List<Payment> GetUnpaidPayments() => 
-        _payments.Find(p => !p.IsPaid).ToList();
+    public async Task<List<Payment>> GetUnpaidPaymentsAsync() =>
+        await _payments.Find(p => !p.IsPaid).ToListAsync();
 
-    public List<Payment> GetPaymentsWithoutReceipt() => 
-        _payments.Find(p => p.IsPaid && !p.ReceiptSent).ToList();
+    public async Task<List<Payment>> GetPaymentsWithoutReceiptAsync() =>
+        await _payments.Find(p => p.IsPaid && !p.ReceiptSent).ToListAsync();
 
-    public void AddPayment(Payment payment) => 
-        _payments.InsertOne(payment);
+    public async Task AddPaymentAsync(Payment payment) =>
+        await _payments.InsertOneAsync(payment);
 
-    public void UpdatePayment(Payment payment) => 
-        _payments.ReplaceOne(p => p.PaymentId == payment.PaymentId, payment);
+    public async Task UpdatePaymentAsync(Payment payment) =>
+        await _payments.ReplaceOneAsync(p => p.PaymentId == payment.PaymentId, payment);
 
-    public void DeletePayment(string id) => 
-        _payments.DeleteOne(p => p.PaymentId == id);
+    public async Task DeletePaymentAsync(string id) =>
+        await _payments.DeleteOneAsync(p => p.PaymentId == id);
 }

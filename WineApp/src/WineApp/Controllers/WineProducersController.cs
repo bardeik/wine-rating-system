@@ -13,27 +13,27 @@ public class WineProducersController : ControllerBase
     public WineProducersController(IWineProducerRepository repo) => _repo = repo;
 
     [HttpGet]
-    public IEnumerable<WineProducer> Get() => _repo.GetAllWineProducers();
+    public async Task<IEnumerable<WineProducer>> Get() => await _repo.GetAllWineProducersAsync();
 
     [HttpGet("{id}", Name = "GetWineProducerByIdRoute")]
-    public ActionResult<WineProducer> Get(string id)
+    public async Task<ActionResult<WineProducer>> Get(string id)
     {
-        var producer = _repo.GetWineProducerById(id);
+        var producer = await _repo.GetWineProducerByIdAsync(id);
         return producer is null ? NotFound() : Ok(producer);
     }
 
     [HttpPost]
-    public IActionResult Post(WineProducer wineProducer)
+    public async Task<IActionResult> Post(WineProducer wineProducer)
     {
-        var wineProducerId = _repo.AddWineProducer(wineProducer);
+        var wineProducerId = await _repo.AddWineProducerAsync(wineProducer);
         return CreatedAtRoute("GetWineProducerByIdRoute", new { id = wineProducerId }, wineProducer);
     }
 
     [HttpDelete("{id}")]
-    public IActionResult Delete(string id)
+    public async Task<IActionResult> Delete(string id)
     {
-        if (_repo.GetWineProducerById(id) is null) return NotFound();
-        _repo.DeleteWineProducer(id);
+        if (await _repo.GetWineProducerByIdAsync(id) is null) return NotFound();
+        await _repo.DeleteWineProducerAsync(id);
         return NoContent();
     }
 }
