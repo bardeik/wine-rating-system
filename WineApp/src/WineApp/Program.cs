@@ -43,25 +43,27 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 
-// Register repositories
-builder.Services.AddSingleton<IWineProducerRepository, WineProducerRepository>();
-builder.Services.AddSingleton<IWineRatingRepository, WineRatingRepository>();
-builder.Services.AddSingleton<IWineRepository, WineRepository>();
-builder.Services.AddSingleton<IEventRepository, EventRepository>();
-builder.Services.AddSingleton<IWineResultRepository, WineResultRepository>();
-builder.Services.AddSingleton<IPaymentRepository, PaymentRepository>();
-builder.Services.AddSingleton<IFlightRepository, FlightRepository>();
+// Register repositories - Scoped so each Blazor Server circuit (user session) gets
+// its own instance, preventing shared mutable state across concurrent users.
+builder.Services.AddScoped<IWineProducerRepository, WineProducerRepository>();
+builder.Services.AddScoped<IWineRatingRepository, WineRatingRepository>();
+builder.Services.AddScoped<IWineRepository, WineRepository>();
+builder.Services.AddScoped<IEventRepository, EventRepository>();
+builder.Services.AddScoped<IWineResultRepository, WineResultRepository>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<IFlightRepository, FlightRepository>();
 
-// Register business logic services
-builder.Services.AddSingleton<IClassificationService, ClassificationService>();
-builder.Services.AddSingleton<IScoreAggregationService, ScoreAggregationService>();
-builder.Services.AddSingleton<IWineNumberService, WineNumberService>();
-builder.Services.AddSingleton<ITrophyService, TrophyService>();
-builder.Services.AddSingleton<IOutlierDetectionService, OutlierDetectionService>();
-builder.Services.AddSingleton<IWineValidationService, WineValidationService>();
-builder.Services.AddSingleton<IFlightService, FlightService>();
-builder.Services.AddSingleton<IExportService, ExportService>();
-builder.Services.AddSingleton<IPdfService, PdfService>();
+// Register business logic services - Scoped for the same reason; services that
+// inject Scoped repositories must themselves be Scoped or transient.
+builder.Services.AddScoped<IClassificationService, ClassificationService>();
+builder.Services.AddScoped<IScoreAggregationService, ScoreAggregationService>();
+builder.Services.AddScoped<IWineNumberService, WineNumberService>();
+builder.Services.AddScoped<ITrophyService, TrophyService>();
+builder.Services.AddScoped<IOutlierDetectionService, OutlierDetectionService>();
+builder.Services.AddScoped<IWineValidationService, WineValidationService>();
+builder.Services.AddScoped<IFlightService, FlightService>();
+builder.Services.AddScoped<IExportService, ExportService>();
+builder.Services.AddScoped<IPdfService, PdfService>();
 
 var app = builder.Build();
 
