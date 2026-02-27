@@ -248,13 +248,7 @@ else
     <div class="modal-backdrop show"></div>
 }
 
-@if (!string.IsNullOrEmpty(statusMessage))
-{
-    <div class="alert @statusClass alert-dismissible mt-3">
-        @statusMessage
-        <button type="button" class="btn-close" @onclick="() => statusMessage = string.Empty"></button>
-    </div>
-}
+<StatusAlert Message="@statusMessage" CssClass="@statusClass" OnDismiss="() => statusMessage = string.Empty" />
 </LoadingContainer>
 
 @code {

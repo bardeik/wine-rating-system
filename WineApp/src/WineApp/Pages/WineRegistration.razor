@@ -143,13 +143,7 @@ else
     }
 }
 
-@if (!string.IsNullOrEmpty(statusMessage))
-{
-    <div class="alert @statusClass alert-dismissible mt-3">
-        @statusMessage
-        <button type="button" class="btn-close" @onclick="() => statusMessage = string.Empty"></button>
-    </div>
-}
+<StatusAlert Message="@statusMessage" CssClass="@statusClass" OnDismiss="() => statusMessage = string.Empty" />
 
 @if (showViewModal && viewingWine != null)
 {
@@ -322,7 +316,7 @@ else
             // Initialize new wine form for both admin and producer
             if (canEdit)
             {
-                InitializeNewWine();
+                await InitializeNewWine();
             }
         }
     }
@@ -548,28 +542,30 @@ else
         };
     }
 
-    private async Task AddGrape(Wine wine)
+    private Task AddGrape(Wine wine)
     {
         if (string.IsNullOrWhiteSpace(newGrapeVariety) || newGrapePercentage <= 0)
         {
             ShowStatus("Vennligst fyll inn både druesort og prosent", "alert-warning");
-            return;
+            return Task.CompletedTask;
         }
 
         if (wine.GrapeBlend.ContainsKey(newGrapeVariety))
         {
             ShowStatus($"Druesort '{newGrapeVariety}' er allerede lagt til", "alert-warning");
-            return;
+            return Task.CompletedTask;
         }
 
         wine.GrapeBlend[newGrapeVariety] = newGrapePercentage;
         newGrapeVariety = string.Empty;
         newGrapePercentage = 0m;
+        return Task.CompletedTask;
     }
 
-    private async Task RemoveGrape(Wine wine, string grapeVariety)
+    private Task RemoveGrape(Wine wine, string grapeVariety)
     {
         wine.GrapeBlend.Remove(grapeVariety);
+        return Task.CompletedTask;
     }
 
     private async Task AddNewWine()
@@ -588,14 +584,14 @@ else
             ShowStatus($"Vin '{newWine.Name}' er registrert!", "alert-success");
             
             // Reload data and reset form
-            LoadData();
+            await LoadData();
             
             // Clear grape blend editor inputs
             newGrapeVariety = string.Empty;
             newGrapePercentage = 0m;
             
             // Force UI update
-            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
@@ -603,7 +599,7 @@ else
         }
     }
 
-    private async Task StartEdit(Wine wine)
+    private Task StartEdit(Wine wine)
     {
         editingWine = new Wine
         {
@@ -624,6 +620,7 @@ else
             SubmissionDate = wine.SubmissionDate,
             GrapeBlend = new Dictionary<string, decimal>(wine.GrapeBlend)
         };
+        return Task.CompletedTask;
     }
 
     private async Task SaveEdit()
@@ -643,8 +640,8 @@ else
             await WineCatalog.UpdateWineAsync(editingWine);
             ShowStatus($"Vin '{editingWine.Name}' er oppdatert!", "alert-success");
             editingWine = null;
-            LoadData();
-            StateHasChanged();
+            await LoadData();
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
@@ -652,20 +649,21 @@ else
         }
     }
 
-    private async Task CancelEdit()
+    private Task CancelEdit()
     {
         editingWine = null;
+        return Task.CompletedTask;
     }
 
     private async Task HandleFormSubmit(bool isEdit)
     {
         if (isEdit)
         {
-            SaveEdit();
+            await SaveEdit();
         }
         else
         {
-            AddNewWine();
+            await AddNewWine();
         }
     }
 
@@ -675,8 +673,8 @@ else
         {
             await WineCatalog.DeleteWineAsync(wineId);
             ShowStatus("Vin er slettet", "alert-success");
-            LoadData();
-            StateHasChanged();
+            await LoadData();
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
@@ -684,19 +682,21 @@ else
         }
     }
 
-    private async Task ViewWine(Wine wine)
+    private Task ViewWine(Wine wine)
     {
         viewingWine = wine;
         showViewModal = true;
+        return Task.CompletedTask;
     }
 
-    private async Task CloseViewModal()
+    private Task CloseViewModal()
     {
         viewingWine = null;
         showViewModal = false;
+        return Task.CompletedTask;
     }
 
-    private async Task ShowStatus(string message, string cssClass)
+    private void ShowStatus(string message, string cssClass)
     {
         statusMessage = message;
         statusClass = cssClass;

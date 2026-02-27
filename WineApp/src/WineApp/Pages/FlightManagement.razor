@@ -130,13 +130,7 @@ else
     }
 }
 
-@if (!string.IsNullOrEmpty(statusMessage))
-{
-    <div class="alert @statusClass alert-dismissible mt-3">
-        @statusMessage
-        <button type="button" class="btn-close" @onclick="() => statusMessage = string.Empty"></button>
-    </div>
-}
+<StatusAlert Message="@statusMessage" CssClass="@statusClass" OnDismiss="() => statusMessage = string.Empty" />
 </LoadingContainer>
 
 @code {
@@ -198,7 +192,7 @@ else
             foreach (var flight in flights)
                 flightWines[flight.FlightId] = await FlightService.GetWinesInFlightAsync(flight.FlightId);
             ShowStatus($"✓ Opprettet {flights.Count} flights med {winesPerFlight} viner hver", "alert-success");
-            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
@@ -237,7 +231,7 @@ else
 
         flights.Clear();
         ShowStatus("✓ Alle flights slettet", "alert-success");
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task DeleteFlight(string flightId)
@@ -245,7 +239,7 @@ else
         await FlightService.DeleteFlightAsync(flightId);
         await LoadData();
         ShowStatus("✓ Flight slettet", "alert-success");
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task ExportFlightList()

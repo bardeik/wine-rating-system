@@ -11,11 +11,6 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
-    });
 
 // MongoDB context (domain collections)
 builder.Services.AddSingleton<WineMongoDbContext>();
@@ -95,7 +90,6 @@ app.UseAuthorization();
 app.MapRazorPages();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
-app.MapControllers();
 app.MapDownloadEndpoints();
 
 app.Run();

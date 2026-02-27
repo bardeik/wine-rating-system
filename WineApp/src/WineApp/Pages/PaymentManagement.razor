@@ -215,13 +215,7 @@ else
     </div>
 }
 
-@if (!string.IsNullOrEmpty(statusMessage))
-{
-    <div class="alert @statusClass alert-dismissible mt-3">
-        @statusMessage
-        <button type="button" class="btn-close" @onclick="() => statusMessage = string.Empty"></button>
-    </div>
-}
+<StatusAlert Message="@statusMessage" CssClass="@statusClass" OnDismiss="() => statusMessage = string.Empty" />
 
 <!-- Producer Details Modal -->
 @if (showDetailsModal && selectedProducer != null && activeEvent != null)
@@ -505,7 +499,7 @@ else
 
         ShowStatus($"✓ Betaling bekreftet for {producer.WineyardName} ({wines.Count} viner)", "alert-success");
         await LoadData();
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task MarkWineAsPaid(Wine wine)
@@ -515,7 +509,7 @@ else
 
         ShowStatus($"✓ Vin '{wine.Name}' markert som betalt", "alert-success");
         await LoadData();
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task ConfirmAllWinesForProducer(WineProducer producer)
@@ -542,7 +536,7 @@ else
         ShowStatus($"✓ Alle betalinger bekreftet ({unpaidWines.Count} viner)", "alert-success");
         CloseBulkConfirmModal();
         await LoadData();
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task AssignAllWineNumbers()
@@ -554,7 +548,7 @@ else
             var assignments = await WineNumberService.AssignWineNumbersAsync(activeEvent.EventId);
             ShowStatus($"✓ Tildelt vinnummer til {assignments.Count} viner", "alert-success");
             await LoadData();
-            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
@@ -569,7 +563,7 @@ else
         await WineNumberService.AssignWineNumbersAsync(activeEvent.EventId);
         ShowStatus($"✓ Vinnummer tildelt", "alert-success");
         await LoadData();
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private void ShowStatus(string message, string cssClass)
