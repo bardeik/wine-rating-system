@@ -20,6 +20,13 @@ public class ExportService : IExportService
         HasHeaderRecord = false,
     };
 
+    private readonly TimeProvider _timeProvider;
+
+    public ExportService(TimeProvider timeProvider)
+    {
+        _timeProvider = timeProvider;
+    }
+
     public string ExportResultsToCSV(List<WineResult> results, List<Wine> wines, List<WineProducer> producers)
     {
         var rows = results
@@ -95,7 +102,7 @@ public class ExportService : IExportService
 
         // Event metadata (narrative comment lines)
         sb.AppendLine($"# {eventData.Name} - Komplett data-eksport");
-        sb.AppendLine($"# Eksportert: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"# Eksportert: {_timeProvider.GetLocalNow().DateTime:yyyy-MM-dd HH:mm:ss}");
         sb.AppendLine();
 
         // Event info as key-value rows (no header row)

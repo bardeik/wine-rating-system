@@ -4,6 +4,13 @@ namespace WineApp.Services;
 
 public class WineValidationService : IWineValidationService
 {
+    private readonly TimeProvider _timeProvider;
+
+    public WineValidationService(TimeProvider timeProvider)
+    {
+        _timeProvider = timeProvider;
+    }
+
     public (bool isValid, string errorMessage) ValidateGrapeBlend(Dictionary<string, decimal> grapeBlend)
     {
         if (grapeBlend == null || !grapeBlend.Any())
@@ -49,8 +56,9 @@ public class WineValidationService : IWineValidationService
         if (string.IsNullOrWhiteSpace(wine.RatingName))
             errors.Add("Vurderingsnavn er påkrevd");
 
-        if (wine.Vintage < 1900 || wine.Vintage > DateTime.Now.Year + 1)
-            errors.Add($"Årgang må være mellom 1900 og {DateTime.Now.Year + 1}");
+        var maxVintage = _timeProvider.GetLocalNow().Year + 1;
+        if (wine.Vintage < 1900 || wine.Vintage > maxVintage)
+            errors.Add($"Årgang må være mellom 1900 og {maxVintage}");
 
         if (wine.AlcoholPercentage < 0 || wine.AlcoholPercentage > 100)
             errors.Add("Alkoholprosent må være mellom 0 og 100");

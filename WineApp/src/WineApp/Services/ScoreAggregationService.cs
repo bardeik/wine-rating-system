@@ -10,19 +10,22 @@ public class ScoreAggregationService : IScoreAggregationService
     private readonly IEventRepository _eventRepository;
     private readonly IWineResultRepository _wineResultRepository;
     private readonly IClassificationService _classificationService;
+    private readonly TimeProvider _timeProvider;
 
     public ScoreAggregationService(
         IWineRatingRepository wineRatingRepository,
         IWineRepository wineRepository,
         IEventRepository eventRepository,
         IWineResultRepository wineResultRepository,
-        IClassificationService classificationService)
+        IClassificationService classificationService,
+        TimeProvider timeProvider)
     {
         _wineRatingRepository = wineRatingRepository;
         _wineRepository = wineRepository;
         _eventRepository = eventRepository;
         _wineResultRepository = wineResultRepository;
         _classificationService = classificationService;
+        _timeProvider = timeProvider;
     }
 
     public WineResult CalculateWineResult(string wineId, Event eventConfig, List<WineRating> ratings)
@@ -87,7 +90,7 @@ public class ScoreAggregationService : IScoreAggregationService
             HighestScoreJudgeId = judgeId,
             MeetsGateValues = meetsGateValues,
             NumberOfRatings = ratings.Count,
-            CalculationDate = DateTime.UtcNow
+            CalculationDate = _timeProvider.GetUtcNow().UtcDateTime
         };
     }
 

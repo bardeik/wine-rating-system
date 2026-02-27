@@ -15,6 +15,9 @@ builder.Services.AddServerSideBlazor();
 // MongoDB context (domain collections)
 builder.Services.AddSingleton<WineMongoDbContext>();
 
+// Clock abstraction — lets tests substitute a frozen clock
+builder.Services.AddSingleton(TimeProvider.System);
+
 // MongoDB Identity
 var mongoConnectionString = builder.Configuration.GetConnectionString("MongoDB") ?? "mongodb://localhost:27017";
 var mongoDatabaseName = builder.Configuration["MongoDbSettings:DatabaseName"] ?? "wineapp";

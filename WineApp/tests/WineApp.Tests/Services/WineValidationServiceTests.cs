@@ -6,7 +6,9 @@ namespace WineApp.Tests.Services;
 
 public class WineValidationServiceTests
 {
-    private readonly WineValidationService _sut = new();
+    // Use the real system clock for tests that don’t care about time.
+    // Use FrozenTimeProvider in tests that verify time-sensitive logic.
+    private readonly WineValidationService _sut = new(TimeProvider.System);
 
     // ── ValidateGrapeBlend ─────────────────────────────────────────
 
@@ -170,15 +172,45 @@ public class WineValidationServiceTests
     }
 
     [Fact]
-    public void ValidateWineRegistration_InvalidVintage_ReturnsError()
+    public void ValidateWineRegistration_VintageTooOld_ReturnsError()
     {
         var wine = ValidWine();
-        wine.Vintage = 1800;
+        wine.Vintage = 1800; // always below minimum of 1900
 
         var (isValid, errors) = _sut.ValidateWineRegistration(wine);
 
         isValid.Should().BeFalse();
         errors.Should().ContainSingle(e => e.Contains("Årgang"));
+    }
+
+    [Fact]
+    public void ValidateWineRegistration_VintageTooFarInFuture_ReturnsError()
+    {
+        // Freeze clock at 2026-06-01 → max allowed vintage is 2027
+        var clock = FrozenTimeProvider.At(2026, 6, 1);
+        var sut = new WineValidationService(clock);
+        var wine = ValidWine();
+        wine.Vintage = 2028; // one year beyond the allowed maximum
+
+        var (isValid, errors) = sut.ValidateWineRegistration(wine);
+
+        isValid.Should().BeFalse();
+        errors.Should().ContainSingle(e => e.Contains("Årgang") && e.Contains("2027"));
+    }
+
+    [Fact]
+    public void ValidateWineRegistration_VintageAtMaxAllowed_IsValid()
+    {
+        // Freeze clock at 2026-06-01 → max allowed vintage is exactly 2027
+        var clock = FrozenTimeProvider.At(2026, 6, 1);
+        var sut = new WineValidationService(clock);
+        var wine = ValidWine();
+        wine.Vintage = 2027;
+
+        var (isValid, errors) = sut.ValidateWineRegistration(wine);
+
+        isValid.Should().BeTrue();
+        errors.Should().BeEmpty();
     }
 
     [Fact]

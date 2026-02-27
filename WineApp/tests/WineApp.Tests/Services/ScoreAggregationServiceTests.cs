@@ -14,12 +14,13 @@ public class ScoreAggregationServiceTests
     private readonly Mock<IWineResultRepository> _wineResultRepo = new();
     private readonly ClassificationService _classificationService = new();
 
-    private ScoreAggregationService CreateSut() => new(
+    private ScoreAggregationService CreateSut(TimeProvider? timeProvider = null) => new(
         _wineRatingRepo.Object,
         _wineRepo.Object,
         _eventRepo.Object,
         _wineResultRepo.Object,
-        _classificationService);
+        _classificationService,
+        timeProvider ?? TimeProvider.System);
 
     private static Event DefaultEvent() => new()
     {
@@ -158,6 +159,20 @@ public class ScoreAggregationServiceTests
         result.AverageAppearance.Should().Be(Math.Round(2.25m, 1));
         result.AverageNose.Should().Be(Math.Round(3.25m, 1));
         result.AverageTaste.Should().Be(Math.Round(9.5m, 1));
+    }
+
+    [Fact]
+    public void CalculateWineResult_CalculationDateReflectsInjectedClock()
+    {
+        var frozenTime = FrozenTimeProvider.At(2026, 3, 15, 14, 30);
+        var ratings = new List<WineRating>
+        {
+            new() { WineId = "wine-1", JudgeId = "judge-1", Appearance = 2.5m, Nose = 3.5m, Taste = 11.5m }
+        };
+
+        var result = CreateSut(frozenTime).CalculateWineResult("wine-1", DefaultEvent(), ratings);
+
+        result.CalculationDate.Should().Be(new DateTime(2026, 3, 15, 14, 30, 0, DateTimeKind.Utc));
     }
 
     // ── GetHighestSingleScore ─────────────────────────────────────

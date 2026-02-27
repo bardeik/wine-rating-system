@@ -7,6 +7,13 @@ namespace WineApp.Services;
 
 public class PdfService : IPdfService
 {
+    private readonly TimeProvider _timeProvider;
+
+    public PdfService(TimeProvider timeProvider)
+    {
+        _timeProvider = timeProvider;
+    }
+
     public byte[] GenerateTrophyReport(
         Event eventData,
         (Wine? wine, WineResult? result) aaretsVinbonde,
@@ -85,7 +92,7 @@ public class PdfService : IPdfService
                     .Text(text =>
                     {
                         text.Span("Norsk Vinskue - ");
-                        text.Span($"Generert {DateTime.Now:dd.MM.yyyy HH:mm}");
+                        text.Span($"Generert {_timeProvider.GetLocalNow().DateTime:dd.MM.yyyy HH:mm}");
                     });
             });
         });
