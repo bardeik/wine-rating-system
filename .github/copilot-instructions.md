@@ -99,15 +99,19 @@ Business logic and cross-cutting concerns live in `Services/`. **Blazor pages in
 - **NuGet packages**: `AspNetCore.Identity.MongoDbCore` 7.0.0, `MongoDB.Driver` 3.6.0
 - **Project file**: modern SDK-style `.csproj` with `ImplicitUsings` and `Nullable` enabled
 - **Connection string**: `appsettings.json` → `ConnectionStrings:MongoDB` and `MongoDbSettings:DatabaseName`
+- **Test project**: `WineApp/tests/WineApp.Tests/` — xUnit 2.x, Moq 4.x, FluentAssertions 8.x; added to the solution
 
 ## Key Conventions
 
 ### Dependency Injection
-All repositories and services are registered as **Scoped** so each Blazor Server circuit gets its own instance, preventing shared mutable state across concurrent users. `WineMongoDbContext` stays `AddSingleton`.
+All repositories and services are registered as **Scoped** so each Blazor Server circuit gets its own instance, preventing shared mutable state across concurrent users. `WineMongoDbContext` stays `AddSingleton`. `TimeProvider.System` is registered as `AddSingleton` so the production clock is injectable and replaceable in tests.
 
 ```csharp
 // MongoDB context — Singleton (thread-safe, holds collection references only)
 builder.Services.AddSingleton<WineMongoDbContext>();
+
+// Clock abstraction — lets tests substitute a frozen clock
+builder.Services.AddSingleton(TimeProvider.System);
 
 // Repositories — Scoped
 builder.Services.AddScoped<IWineRepository, WineRepository>();
@@ -180,6 +184,34 @@ protected override async Task OnInitializedAsync()
 }
 ```
 
+### TimeProvider Pattern
+Never use `DateTime.Now` or `DateTime.UtcNow` directly inside services. Inject `TimeProvider` instead so the clock can be frozen in tests:
+
+```csharp
+// Service constructor
+public class MyService : IMyService
+{
+    private readonly TimeProvider _timeProvider;
+
+    public MyService(TimeProvider timeProvider)
+    {
+        _timeProvider = timeProvider;
+    }
+
+    public void DoSomething()
+    {
+        var now   = _timeProvider.GetLocalNow();     // replaces DateTime.Now
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime; // replaces DateTime.UtcNow
+    }
+}
+```
+
+In tests, use `FrozenTimeProvider` from `WineApp.Tests` to pin time:
+```csharp
+var clock = FrozenTimeProvider.At(2026, 6, 1);
+var sut = new MyService(clock);  // now is deterministically 2026-06-01
+```
+
 ## Development Workflow
 
 ### Prerequisites
@@ -195,6 +227,16 @@ dotnet run
 ```
 On first run, `Program.cs` seeds all roles, user accounts, sample wine producers, wines, and ratings into MongoDB if the collections are empty.
 
+### Running Tests
+```bash
+cd WineApp
+dotnet test tests/WineApp.Tests/WineApp.Tests.csproj
+```
+- Tests use **xUnit**, **Moq** (for repository mocks), and **FluentAssertions**
+- `GlobalUsings.cs` in the test project provides global usings for all three libraries plus the main project namespaces
+- `FrozenTimeProvider` (in `WineApp.Tests`) freezes the clock for deterministic time-dependent tests
+- No MongoDB or Blazor infrastructure is needed — all services are tested with in-memory mocks
+
 ### Blazor Development
 - Components are hot-reloadable in development mode
 - Use `@code` blocks for C# logic within `.razor` files
@@ -205,6 +247,7 @@ On first run, `Program.cs` seeds all roles, user accounts, sample wine producers
 ## Project Structure Notes
 - **Multiple legacy projects**: `WineRatingApp`, `WebAppCore`, `skeleton-typescript-aspnetcore` appear to be earlier iterations — ignore these
 - **Focus on WineApp**: primary working implementation is in `WineApp/src/WineApp/`
+- **Test project**: `WineApp/tests/WineApp.Tests/` — unit tests for service layer (no Blazor/MongoDB needed)
 - **No REST API**: `Controllers/` is intentionally empty; all UI interactions go through Blazor service injection
 
 ## Common Tasks
@@ -232,8 +275,10 @@ On first run, `Program.cs` seeds all roles, user accounts, sample wine producers
 ### Adding a New Service
 1. Create interface `Services/IMyService.cs` with async method signatures
 2. Implement in `Services/MyService.cs`; inject required repositories or other services via constructor
+   - If the service uses the current date/time, inject `TimeProvider` instead of calling `DateTime.Now`/`UtcNow` directly
 3. Register in `Program.cs`: `builder.Services.AddScoped<IMyService, MyService>()`
 4. Inject into pages via `@inject IMyService MyService`
+5. Add a corresponding `Services/MyServiceTests.cs` in `WineApp/tests/WineApp.Tests/Services/`; mock repositories with Moq and use `FrozenTimeProvider` for time-sensitive paths
 
 ## Technology Stack
 - **.NET SDK**: 10.0
@@ -244,4 +289,5 @@ On first run, `Program.cs` seeds all roles, user accounts, sample wine producers
 - **Bootstrap**: for styling (referenced in `wwwroot/css/`)
 - **No JavaScript framework**: pure Blazor/C#
 - **No REST API**: Blazor Server uses direct DI — no controllers, no HttpClient
+- **Unit tests**: xUnit 2.x + Moq 4.x + FluentAssertions 8.x in `WineApp/tests/WineApp.Tests/`
 
