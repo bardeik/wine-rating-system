@@ -159,11 +159,6 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapBlazorHub();
-// MapStaticAssets serves Blazor framework files (_framework/blazor.server.js etc.)
-// which in .NET 9+ are NOT physical files in wwwroot — they are embedded in the
-// runtime and served via a static web asset manifest. UseStaticFiles alone cannot
-// serve them; MapStaticAssets() is required.
-app.MapStaticAssets();
 app.MapFallbackToPage("/_Host");
 app.MapDownloadEndpoints();
 
