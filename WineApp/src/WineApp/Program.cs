@@ -134,6 +134,29 @@ app.Use(async (context, next) =>
 // routing traffic to it. Must respond before authentication middleware runs.
 app.MapGet("/health", () => Results.Ok("healthy"));
 
+// Temporary diagnostics endpoint — verifies static files are present in the
+// Docker image at runtime. Remove once the deployment is confirmed working.
+app.MapGet("/debug/files", (IWebHostEnvironment env) =>
+{
+    var webRoot = env.WebRootPath;
+    var contentRoot = env.ContentRootPath;
+    var blazorJs = Path.Combine(webRoot ?? "", "_framework", "blazor.server.js");
+    var siteJs = Path.Combine(webRoot ?? "", "js", "site.js");
+    return Results.Ok(new
+    {
+        contentRoot,
+        webRoot,
+        blazorJsExists = File.Exists(blazorJs),
+        siteJsExists = File.Exists(siteJs),
+        wwwrootExists = Directory.Exists(webRoot ?? ""),
+        wwwrootFiles = Directory.Exists(webRoot ?? "")
+            ? Directory.GetFiles(webRoot!, "*", SearchOption.AllDirectories)
+                       .Select(f => f.Replace(webRoot!, ""))
+                       .ToArray()
+            : Array.Empty<string>()
+    });
+});
+
 app.UseStaticFiles();
 app.UseRouting();
 
@@ -142,10 +165,6 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapBlazorHub();
-// MapStaticAssets is required in .NET 9+ to serve the Blazor framework files
-// (_framework/blazor.server.js etc.) which are published with a fingerprint
-// manifest that UseStaticFiles alone cannot read.
-app.MapStaticAssets();
 app.MapFallbackToPage("/_Host");
 app.MapDownloadEndpoints();
 
