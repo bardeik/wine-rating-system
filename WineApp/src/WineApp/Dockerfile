@@ -10,19 +10,19 @@ RUN dotnet restore "WineApp.csproj"
 COPY . .
 RUN dotnet publish "WineApp.csproj" -c Release -o /app/publish --no-restore
 
+# The Linux SDK omits _framework/blazor.server.js from the publish output.
+# Copy the pre-built files from .docker-assets (built once on Windows and committed)
+# so UseStaticFiles can serve them at /_framework/blazor.server.js.
+RUN mkdir -p /app/publish/wwwroot/_framework && \
+    cp .docker-assets/_framework/blazor.server.js    /app/publish/wwwroot/_framework/ && \
+    cp .docker-assets/_framework/blazor.server.js.gz /app/publish/wwwroot/_framework/ && \
+    cp .docker-assets/_framework/blazor.server.js.br /app/publish/wwwroot/_framework/
+
 # ── Runtime stage ─────────────────────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
 COPY --from=build /app/publish .
-
-# The Linux SDK does not include _framework/blazor.server.js in the publish output.
-# The file lives in the ASP.NET shared framework under /usr/share/dotnet.
-# Copy it (and compressed variants) to wwwroot/_framework so UseStaticFiles serves it.
-RUN mkdir -p wwwroot/_framework && \
-    find /usr/share/dotnet -name "blazor.server.js"    | head -1 | xargs -I{} cp {} wwwroot/_framework/ && \
-    find /usr/share/dotnet -name "blazor.server.js.gz" | head -1 | xargs -I{} cp {} wwwroot/_framework/ && \
-    find /usr/share/dotnet -name "blazor.server.js.br" | head -1 | xargs -I{} cp {} wwwroot/_framework/
 
 # Fly.io routes external HTTPS → internal HTTP on 8080
 ENV ASPNETCORE_URLS=http://+:8080
