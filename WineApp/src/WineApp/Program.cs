@@ -96,14 +96,20 @@ if (!app.Environment.IsDevelopment())
 
 // Fly.io (and most reverse proxies) terminate TLS at the edge and forward
 // requests internally as plain HTTP. UseForwardedHeaders teaches ASP.NET Core
-// to read X-Forwarded-Proto / X-Forwarded-For so UseHttpsRedirection knows
-// the original request was already HTTPS and won't redirect static assets.
-app.UseForwardedHeaders(new ForwardedHeadersOptions
+// to read X-Forwarded-Proto / X-Forwarded-For so it knows the original request
+// was HTTPS. KnownNetworks/KnownProxies are cleared so the header is trusted
+// regardless of which internal IP the Fly.io proxy originates from.
+// UseHttpsRedirection is intentionally omitted: Fly.io enforces HTTPS at the
+// edge via force_https = true in fly.toml, so in-app redirection is redundant
+// and would cause a redirect loop (the app only ever receives plain HTTP internally).
+var forwardedOptions = new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
-
-app.UseHttpsRedirection();
+};
+// Clear the default loopback-only restrictions so Fly.io's edge proxy is trusted
+forwardedOptions.KnownNetworks.Clear();
+forwardedOptions.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedOptions);
 
 // Security headers
 app.Use(async (context, next) =>
