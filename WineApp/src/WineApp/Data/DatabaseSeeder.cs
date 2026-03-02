@@ -23,14 +23,14 @@ public class DatabaseSeeder
         // Nothing happens if either variable is missing or the user already exists.
         await SeedProductionAdminAsync(userManager);
 
-        // Always seed the built-in admin and viewer accounts so the app is usable
-        // on first startup regardless of environment.
-        await SeedAdminAndViewerUsersAsync(userManager);
-
         // Sample data with well-known passwords must never run in Production.
         // Set ASPNETCORE_ENVIRONMENT=Production (or any non-Development value) to skip.
         if (!env.IsDevelopment())
             return;
+
+        // Seed admin and viewer users (Development only — use ADMIN_EMAIL/ADMIN_PASSWORD
+        // secrets for Production via SeedProductionAdminAsync above)
+        await SeedAdminAndViewerUsersAsync(userManager);
 
         // Seed judges
         await SeedJudgesAsync(userManager);
