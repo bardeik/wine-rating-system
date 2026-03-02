@@ -99,7 +99,7 @@ Business logic and cross-cutting concerns live in `Services/`. **Blazor pages in
 - **NuGet packages**: `AspNetCore.Identity.MongoDbCore` 7.0.0, `MongoDB.Driver` 3.6.0
 - **Project file**: modern SDK-style `.csproj` with `ImplicitUsings` and `Nullable` enabled
 - **Connection string**: `appsettings.json` → `ConnectionStrings:MongoDB` and `MongoDbSettings:DatabaseName`
-- **Test project**: `WineApp/tests/WineApp.Tests/` — xUnit 2.x, Moq 4.x, FluentAssertions 8.x; added to the solution
+- **Test project**: `WineApp/tests/WineApp.Tests/` — xUnit 2.x, Moq 4.x, Shouldly 4.x; added to the solution
 
 ## Key Conventions
 
@@ -232,7 +232,7 @@ On first run, `Program.cs` seeds all roles, user accounts, sample wine producers
 cd WineApp
 dotnet test tests/WineApp.Tests/WineApp.Tests.csproj
 ```
-- Tests use **xUnit**, **Moq** (for repository mocks), and **FluentAssertions**
+- Tests use **xUnit**, **Moq** (for repository mocks), and **Shouldly** (for assertions)
 - `GlobalUsings.cs` in the test project provides global usings for all three libraries plus the main project namespaces
 - `FrozenTimeProvider` (in `WineApp.Tests`) freezes the clock for deterministic time-dependent tests
 - No MongoDB or Blazor infrastructure is needed — all services are tested with in-memory mocks
@@ -278,7 +278,7 @@ dotnet test tests/WineApp.Tests/WineApp.Tests.csproj
    - If the service uses the current date/time, inject `TimeProvider` instead of calling `DateTime.Now`/`UtcNow` directly
 3. Register in `Program.cs`: `builder.Services.AddScoped<IMyService, MyService>()`
 4. Inject into pages via `@inject IMyService MyService`
-5. Add a corresponding `Services/MyServiceTests.cs` in `WineApp/tests/WineApp.Tests/Services/`; mock repositories with Moq and use `FrozenTimeProvider` for time-sensitive paths
+5. Add a corresponding `Services/MyServiceTests.cs` in `WineApp/tests/WineApp.Tests/Services/`; mock repositories with Moq, assert with Shouldly, and use `FrozenTimeProvider` for time-sensitive paths
 
 ## Technology Stack
 - **.NET SDK**: 10.0
@@ -289,5 +289,5 @@ dotnet test tests/WineApp.Tests/WineApp.Tests.csproj
 - **Bootstrap**: for styling (referenced in `wwwroot/css/`)
 - **No JavaScript framework**: pure Blazor/C#
 - **No REST API**: Blazor Server uses direct DI — no controllers, no HttpClient
-- **Unit tests**: xUnit 2.x + Moq 4.x + FluentAssertions 8.x in `WineApp/tests/WineApp.Tests/`
+- **Unit tests**: xUnit 2.x + Moq 4.x + Shouldly 4.x in `WineApp/tests/WineApp.Tests/`
 

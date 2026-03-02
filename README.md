@@ -88,7 +88,7 @@ A public-facing page (**Public Results**) shows final results without requiring 
 | Database | MongoDB (via MongoDB.Driver 3.6.0) |
 | Authentication | ASP.NET Core Identity + AspNetCore.Identity.MongoDbCore 7.0.0 |
 | Styling | Bootstrap (CSS) |
-| Unit tests | xUnit 2.x + Moq 4.x + FluentAssertions 8.x |
+| Unit tests | xUnit 2.x + Moq 4.x + Shouldly 4.x |
 
 ### Project Layout
 
@@ -203,4 +203,4 @@ cd WineApp
 dotnet test tests/WineApp.Tests/WineApp.Tests.csproj
 ```
 
-Tests are pure unit tests — no MongoDB or running Blazor server required. All repositories are mocked with Moq.
+Tests are pure unit tests — no MongoDB or running Blazor server required. All repositories are mocked with Moq. Assertions use **Shouldly** (MIT licence).
