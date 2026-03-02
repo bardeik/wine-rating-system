@@ -81,10 +81,18 @@ builder.Services.AddScoped<IPdfService, PdfService>();
 
 var app = builder.Build();
 
-// Seed roles, default admin and sample data on startup
-using (var scope = app.Services.CreateScope())
+// Seed roles, default admin and sample data on startup.
+// Wrapped in try-catch so a MongoDB connectivity problem during seeding does not
+// crash the process — the app can still start and serve requests.
+try
 {
+    using var scope = app.Services.CreateScope();
     await DatabaseSeeder.SeedAsync(scope.ServiceProvider);
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, "Database seeding failed — the app will continue but some data may be missing.");
 }
 
 // Configure the HTTP request pipeline
