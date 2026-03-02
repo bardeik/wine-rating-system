@@ -43,10 +43,16 @@ public class LoginModel : PageModel
             return Page();
 
         var result = await _signInManager.PasswordSignInAsync(
-            Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+            Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
 
         if (result.Succeeded)
             return LocalRedirect(Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Content("~/"));
+
+        if (result.IsLockedOut)
+        {
+            ModelState.AddModelError(string.Empty, "Kontoen er midlertidig låst på grunn av for mange mislykkede forsøk. Prøv igjen om 15 minutter.");
+            return Page();
+        }
 
         ModelState.AddModelError(string.Empty, "Ugyldig e-post eller passord.");
         return Page();

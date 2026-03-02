@@ -10,11 +10,17 @@ public class DatabaseSeeder
 {
     public static async Task SeedAsync(IServiceProvider services)
     {
+        var env = services.GetRequiredService<IWebHostEnvironment>();
         var roleManager = services.GetRequiredService<RoleManager<MongoIdentityRole<Guid>>>();
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
 
-        // Seed roles
+        // Always seed roles (safe in all environments)
         await SeedRolesAsync(roleManager);
+
+        // Sample data with well-known passwords must never run in Production.
+        // Set ASPNETCORE_ENVIRONMENT=Production (or any non-Development value) to skip.
+        if (!env.IsDevelopment())
+            return;
 
         // Seed admin and viewer users
         await SeedAdminAndViewerUsersAsync(userManager);

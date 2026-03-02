@@ -32,7 +32,7 @@ public static class DownloadEndpointExtensions
             var fileName = $"Resultater_{evt.Name}_{DateTime.Now:yyyyMMdd}.csv";
 
             return Results.File(bytes, "text/csv", fileName);
-        }).RequireAuthorization();
+        }).RequireAuthorization(policy => policy.RequireRole("Admin", "Viewer"));
 
         // Download trophy winners for an event
         app.MapGet("/api/download/trophies/{eventId}", async (
@@ -55,7 +55,7 @@ public static class DownloadEndpointExtensions
             var fileName = $"Pokaler_{evt.Name}_{DateTime.Now:yyyyMMdd}.csv";
 
             return Results.File(bytes, "text/csv", fileName);
-        }).RequireAuthorization();
+        }).RequireAuthorization(policy => policy.RequireRole("Admin", "Viewer"));
 
         // Download complete event archive (wines, ratings, results)
         app.MapGet("/api/download/event/{eventId}", async (
@@ -130,7 +130,7 @@ public static class DownloadEndpointExtensions
             var fileName = $"Pokaler_{evt.Name}_{DateTime.Now:yyyyMMdd}.pdf";
 
             return Results.File(pdf, "application/pdf", fileName);
-        }).RequireAuthorization();
+        }).RequireAuthorization(policy => policy.RequireRole("Admin", "Viewer"));
 
         return app;
     }
