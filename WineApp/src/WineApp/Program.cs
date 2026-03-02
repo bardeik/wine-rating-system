@@ -130,6 +130,10 @@ app.Use(async (context, next) =>
     await next();
 });
 
+// Health check endpoint — used by Fly.io to verify the machine is alive before
+// routing traffic to it. Must respond before authentication middleware runs.
+app.MapGet("/health", () => Results.Ok("healthy"));
+
 app.UseStaticFiles();
 app.UseRouting();
 
