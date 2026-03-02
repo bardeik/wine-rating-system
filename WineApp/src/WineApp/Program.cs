@@ -24,6 +24,9 @@ var mongoDatabaseName = builder.Configuration["MongoDbSettings:DatabaseName"] ??
 
 builder.Services.AddIdentity<ApplicationUser, MongoIdentityRole<Guid>>(options =>
 {
+    // RequireConfirmedAccount is intentionally false: all user accounts are created
+    // by an Admin (judges, producers) or by the seeder — there is no public
+    // self-registration flow, so email confirmation is unnecessary.
     options.SignIn.RequireConfirmedAccount = false;
     options.Password.RequiredLength = 8;
     options.Password.RequireNonAlphanumeric = true;
