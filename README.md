@@ -228,3 +228,10 @@ Tests are pure unit tests — no MongoDB or running Blazor server required. All 
 ## Third-Party Notices
 
 PDF generation is powered by **[QuestPDF](https://www.questpdf.com/)**, an open-source .NET library licensed under the [QuestPDF Community License](https://www.questpdf.com/license/).
+
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
