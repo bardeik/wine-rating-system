@@ -1,5 +1,4 @@
-using FluentAssertions;
-using Moq;
+﻿using Moq;
 using WineApp.Data;
 using WineApp.Models;
 using WineApp.Services;
@@ -47,9 +46,9 @@ public class ScoreAggregationServiceTests
     {
         var result = CreateSut().CalculateWineResult("wine-1", DefaultEvent(), []);
 
-        result.WineId.Should().Be("wine-1");
-        result.Classification.Should().Be(Classification.NotApproved);
-        result.NumberOfRatings.Should().Be(0);
+        result.WineId.ShouldBe("wine-1");
+        result.Classification.ShouldBe(Classification.NotApproved);
+        result.NumberOfRatings.ShouldBe(0);
     }
 
     [Fact]
@@ -63,8 +62,8 @@ public class ScoreAggregationServiceTests
 
         var result = CreateSut().CalculateWineResult("wine-1", DefaultEvent(), ratings);
 
-        result.IsDefective.Should().BeTrue();
-        result.Classification.Should().Be(Classification.NotApproved);
+        result.IsDefective.ShouldBeTrue();
+        result.Classification.ShouldBe(Classification.NotApproved);
     }
 
     [Fact]
@@ -77,7 +76,7 @@ public class ScoreAggregationServiceTests
 
         var result = CreateSut().CalculateWineResult("wine-1", DefaultEvent(), ratings);
 
-        result.IsDefective.Should().BeTrue();
+        result.IsDefective.ShouldBeTrue();
     }
 
     [Fact]
@@ -92,8 +91,8 @@ public class ScoreAggregationServiceTests
 
         var result = CreateSut().CalculateWineResult("wine-1", DefaultEvent(), ratings);
 
-        result.MeetsGateValues.Should().BeFalse();
-        result.Classification.Should().Be(Classification.NotApproved);
+        result.MeetsGateValues.ShouldBeFalse();
+        result.Classification.ShouldBe(Classification.NotApproved);
     }
 
     [Fact]
@@ -108,10 +107,10 @@ public class ScoreAggregationServiceTests
 
         var result = CreateSut().CalculateWineResult("wine-1", DefaultEvent(), ratings);
 
-        result.Classification.Should().Be(Classification.Gold);
-        result.NumberOfRatings.Should().Be(2);
-        result.IsDefective.Should().BeFalse();
-        result.MeetsGateValues.Should().BeTrue();
+        result.Classification.ShouldBe(Classification.Gold);
+        result.NumberOfRatings.ShouldBe(2);
+        result.IsDefective.ShouldBeFalse();
+        result.MeetsGateValues.ShouldBeTrue();
     }
 
     [Fact]
@@ -126,8 +125,8 @@ public class ScoreAggregationServiceTests
 
         var result = CreateSut().CalculateWineResult("wine-1", DefaultEvent(), ratings);
 
-        result.IsOutlier.Should().BeTrue();
-        result.Spread.Should().BeGreaterThan(4.0m);
+        result.IsOutlier.ShouldBeTrue();
+        result.Spread.ShouldBeGreaterThan(4.0m);
     }
 
     [Fact]
@@ -141,7 +140,7 @@ public class ScoreAggregationServiceTests
 
         var result = CreateSut().CalculateWineResult("wine-1", DefaultEvent(), ratings);
 
-        result.IsOutlier.Should().BeFalse();
+        result.IsOutlier.ShouldBeFalse();
     }
 
     [Fact]
@@ -156,9 +155,9 @@ public class ScoreAggregationServiceTests
 
         var result = CreateSut().CalculateWineResult("wine-1", DefaultEvent(), ratings);
 
-        result.AverageAppearance.Should().Be(Math.Round(2.25m, 1));
-        result.AverageNose.Should().Be(Math.Round(3.25m, 1));
-        result.AverageTaste.Should().Be(Math.Round(9.5m, 1));
+        result.AverageAppearance.ShouldBe(Math.Round(2.25m, 1));
+        result.AverageNose.ShouldBe(Math.Round(3.25m, 1));
+        result.AverageTaste.ShouldBe(Math.Round(9.5m, 1));
     }
 
     [Fact]
@@ -172,7 +171,7 @@ public class ScoreAggregationServiceTests
 
         var result = CreateSut(frozenTime).CalculateWineResult("wine-1", DefaultEvent(), ratings);
 
-        result.CalculationDate.Should().Be(new DateTime(2026, 3, 15, 14, 30, 0, DateTimeKind.Utc));
+        result.CalculationDate.ShouldBe(new DateTime(2026, 3, 15, 14, 30, 0, DateTimeKind.Utc));
     }
 
     // ── GetHighestSingleScore ─────────────────────────────────────
@@ -182,8 +181,8 @@ public class ScoreAggregationServiceTests
     {
         var (score, judgeId) = CreateSut().GetHighestSingleScore([]);
 
-        score.Should().Be(0);
-        judgeId.Should().BeEmpty();
+        score.ShouldBe(0);
+        judgeId.ShouldBeEmpty();
     }
 
     [Fact]
@@ -198,8 +197,8 @@ public class ScoreAggregationServiceTests
 
         var (score, judgeId) = CreateSut().GetHighestSingleScore(ratings);
 
-        score.Should().Be(18m);
-        judgeId.Should().Be("judge-2");
+        score.ShouldBe(18m);
+        judgeId.ShouldBe("judge-2");
     }
 
     [Fact]
@@ -212,8 +211,8 @@ public class ScoreAggregationServiceTests
 
         var (score, judgeId) = CreateSut().GetHighestSingleScore(ratings);
 
-        score.Should().Be(17m);
-        judgeId.Should().Be("judge-1");
+        score.ShouldBe(17m);
+        judgeId.ShouldBe("judge-1");
     }
 
     // ── CalculateSpread ───────────────────────────────────────────
@@ -223,7 +222,7 @@ public class ScoreAggregationServiceTests
     {
         var result = CreateSut().CalculateSpread([]);
 
-        result.Should().Be(0);
+        result.ShouldBe(0);
     }
 
     [Fact]
@@ -237,7 +236,7 @@ public class ScoreAggregationServiceTests
 
         var result = CreateSut().CalculateSpread(ratings);
 
-        result.Should().Be(0);
+        result.ShouldBe(0);
     }
 
     [Fact]
@@ -252,7 +251,7 @@ public class ScoreAggregationServiceTests
 
         var result = CreateSut().CalculateSpread(ratings);
 
-        result.Should().Be(Math.Round(18m - 10.5m, 1));
+        result.ShouldBe(Math.Round(18m - 10.5m, 1));
     }
 
     [Fact]
@@ -265,7 +264,7 @@ public class ScoreAggregationServiceTests
 
         var result = CreateSut().CalculateSpread(ratings);
 
-        result.Should().Be(0);
+        result.ShouldBe(0);
     }
 
     // ── RecalculateEventResultsAsync ──────────────────────────────
@@ -275,8 +274,7 @@ public class ScoreAggregationServiceTests
     {
         _eventRepo.Setup(r => r.GetEventByIdAsync("missing")).ReturnsAsync((Event?)null);
 
-        await CreateSut().Invoking(s => s.RecalculateEventResultsAsync("missing"))
-            .Should().ThrowAsync<InvalidOperationException>();
+        await Should.ThrowAsync<InvalidOperationException>(() => CreateSut().RecalculateEventResultsAsync("missing"));
     }
 
     [Fact]
@@ -298,8 +296,8 @@ public class ScoreAggregationServiceTests
 
         var results = await CreateSut().RecalculateEventResultsAsync("event-1");
 
-        results.Should().HaveCount(1);
-        results[0].WineId.Should().Be("wine-1");
+        results.Count.ShouldBe(1);
+        results[0].WineId.ShouldBe("wine-1");
         _wineResultRepo.Verify(r => r.AddWineResultAsync(It.IsAny<WineResult>()), Times.Once);
     }
 

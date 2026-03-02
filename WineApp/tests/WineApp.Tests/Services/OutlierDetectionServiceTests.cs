@@ -1,5 +1,4 @@
-using FluentAssertions;
-using Moq;
+﻿using Moq;
 using WineApp.Data;
 using WineApp.Models;
 using WineApp.Services;
@@ -26,7 +25,7 @@ public class OutlierDetectionServiceTests
 
         var result = await CreateSut().RequiresReJudgingAsync("missing", 4.0m);
 
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -37,7 +36,7 @@ public class OutlierDetectionServiceTests
 
         var result = await CreateSut().RequiresReJudgingAsync("wine-1", 4.0m);
 
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -49,7 +48,7 @@ public class OutlierDetectionServiceTests
         // Spread must be strictly greater than the threshold
         var result = await CreateSut().RequiresReJudgingAsync("wine-1", 4.0m);
 
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -60,7 +59,7 @@ public class OutlierDetectionServiceTests
 
         var result = await CreateSut().RequiresReJudgingAsync("wine-1", 4.0m);
 
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     // ── GetOutlierWinesAsync ──────────────────────────────────────
@@ -73,7 +72,7 @@ public class OutlierDetectionServiceTests
 
         var result = await CreateSut().GetOutlierWinesAsync("event-1");
 
-        result.Should().BeEmpty();
+        result.ShouldBeEmpty();
     }
 
     [Fact]
@@ -87,9 +86,9 @@ public class OutlierDetectionServiceTests
 
         var result = await CreateSut().GetOutlierWinesAsync("event-1");
 
-        result.Should().HaveCount(1);
-        result[0].wine.WineId.Should().Be("wine-1");
-        result[0].spread.Should().Be(5.0m);
+        result.Count.ShouldBe(1);
+        result[0].wine.WineId.ShouldBe("wine-1");
+        result[0].spread.ShouldBe(5.0m);
     }
 
     [Fact]
@@ -103,7 +102,7 @@ public class OutlierDetectionServiceTests
 
         var result = await CreateSut().GetOutlierWinesAsync("event-1");
 
-        result.Should().BeEmpty();
+        result.ShouldBeEmpty();
     }
 
     [Fact]
@@ -119,9 +118,9 @@ public class OutlierDetectionServiceTests
 
         var outliers = await CreateSut().GetOutlierWinesAsync("event-1");
 
-        outliers.Should().HaveCount(2);
-        outliers[0].wine.WineId.Should().Be("wine-2"); // higher spread first
-        outliers[1].wine.WineId.Should().Be("wine-1");
+        outliers.Count.ShouldBe(2);
+        outliers[0].wine.WineId.ShouldBe("wine-2"); // higher spread first
+        outliers[1].wine.WineId.ShouldBe("wine-1");
     }
 
     // ── AnalyzeJudgePatternsAsync ─────────────────────────────────
@@ -144,7 +143,7 @@ public class OutlierDetectionServiceTests
 
         var patterns = await CreateSut().AnalyzeJudgePatternsAsync("event-1");
 
-        patterns.Should().NotContainKey("judge-1");
+        patterns.ShouldNotContainKey("judge-1");
     }
 
     [Fact]
@@ -166,8 +165,8 @@ public class OutlierDetectionServiceTests
 
         var patterns = await CreateSut().AnalyzeJudgePatternsAsync("event-1");
 
-        patterns.Should().ContainKey("harsh-judge");
-        patterns["harsh-judge"].Should().ContainSingle(s => s.Contains("Lavt gjennomsnitt"));
+        patterns.ShouldContainKey("harsh-judge");
+        patterns["harsh-judge"].Count(s => s.Contains("Lavt gjennomsnitt")).ShouldBe(1);
     }
 
     [Fact]
@@ -189,8 +188,8 @@ public class OutlierDetectionServiceTests
 
         var patterns = await CreateSut().AnalyzeJudgePatternsAsync("event-1");
 
-        patterns.Should().ContainKey("generous-judge");
-        patterns["generous-judge"].Should().ContainSingle(s => s.Contains("Høyt gjennomsnitt"));
+        patterns.ShouldContainKey("generous-judge");
+        patterns["generous-judge"].Count(s => s.Contains("Høyt gjennomsnitt")).ShouldBe(1);
     }
 
     [Fact]
@@ -212,8 +211,8 @@ public class OutlierDetectionServiceTests
 
         var patterns = await CreateSut().AnalyzeJudgePatternsAsync("event-1");
 
-        patterns.Should().ContainKey("monotone-judge");
-        patterns["monotone-judge"].Should().ContainSingle(s => s.Contains("variasjon"));
+        patterns.ShouldContainKey("monotone-judge");
+        patterns["monotone-judge"].Count(s => s.Contains("variasjon")).ShouldBe(1);
     }
 
     [Fact]
@@ -240,8 +239,8 @@ public class OutlierDetectionServiceTests
 
         var patterns = await CreateSut().AnalyzeJudgePatternsAsync("event-1");
 
-        patterns.Should().ContainKey("picky-judge");
-        patterns["picky-judge"].Should().ContainSingle(s => s.Contains("feilbeheftede"));
+        patterns.ShouldContainKey("picky-judge");
+        patterns["picky-judge"].Count(s => s.Contains("feilbeheftede")).ShouldBe(1);
     }
 
     [Fact]
@@ -252,6 +251,6 @@ public class OutlierDetectionServiceTests
 
         var patterns = await CreateSut().AnalyzeJudgePatternsAsync("event-1");
 
-        patterns.Should().BeEmpty();
+        patterns.ShouldBeEmpty();
     }
 }

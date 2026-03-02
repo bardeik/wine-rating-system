@@ -1,5 +1,5 @@
 global using Xunit;
-global using FluentAssertions;
+global using Shouldly;
 global using Moq;
 global using WineApp.Models;
 global using WineApp.Services;

@@ -1,5 +1,4 @@
-using FluentAssertions;
-using Moq;
+﻿using Moq;
 using WineApp.Data;
 using WineApp.Models;
 using WineApp.Services;
@@ -20,7 +19,7 @@ public class TrophyServiceTests
     {
         var result = CreateSut().ResolveTieBreaks([]);
 
-        result.Should().BeEmpty();
+        result.ShouldBeEmpty();
     }
 
     [Fact]
@@ -31,9 +30,9 @@ public class TrophyServiceTests
 
         var result = CreateSut().ResolveTieBreaks([(wine, wineResult)]);
 
-        result.Should().HaveCount(1);
-        result[0].requiresLottery.Should().BeFalse();
-        result[0].wine.WineId.Should().Be("wine-1");
+        result.Count.ShouldBe(1);
+        result[0].requiresLottery.ShouldBeFalse();
+        result[0].wine.WineId.ShouldBe("wine-1");
     }
 
     [Fact]
@@ -46,9 +45,9 @@ public class TrophyServiceTests
 
         var result = CreateSut().ResolveTieBreaks([(wine1, result1), (wine2, result2)]);
 
-        result.Should().HaveCount(1);
-        result[0].wine.WineId.Should().Be("wine-1");
-        result[0].requiresLottery.Should().BeFalse();
+        result.Count.ShouldBe(1);
+        result[0].wine.WineId.ShouldBe("wine-1");
+        result[0].requiresLottery.ShouldBeFalse();
     }
 
     [Fact]
@@ -61,8 +60,8 @@ public class TrophyServiceTests
 
         var result = CreateSut().ResolveTieBreaks([(wine1, result1), (wine2, result2)]);
 
-        result.Should().HaveCount(2);
-        result.Should().AllSatisfy(r => r.requiresLottery.Should().BeTrue());
+        result.Count.ShouldBe(2);
+        result.ShouldAllBe(r => r.requiresLottery);
     }
 
     [Fact]
@@ -76,8 +75,8 @@ public class TrophyServiceTests
         var result = CreateSut().ResolveTieBreaks([(winnerWine, winnerResult), (loserWine, loserResult)]);
 
         // Only the wine with the highest TotalScore should be considered
-        result.Should().HaveCount(1);
-        result[0].wine.WineId.Should().Be("wine-winner");
+        result.Count.ShouldBe(1);
+        result[0].wine.WineId.ShouldBe("wine-winner");
     }
 
     [Fact]
@@ -92,9 +91,9 @@ public class TrophyServiceTests
 
         var result = CreateSut().ResolveTieBreaks([(wine1, r1), (wine2, r2), (wine3, r3)]);
 
-        result.Should().HaveCount(1);
-        result[0].wine.WineId.Should().Be("wine-1");
-        result[0].requiresLottery.Should().BeFalse();
+        result.Count.ShouldBe(1);
+        result[0].wine.WineId.ShouldBe("wine-1");
+        result[0].requiresLottery.ShouldBeFalse();
     }
 
     // ── GetBestNorwegianWineAsync ─────────────────────────────────
@@ -111,8 +110,8 @@ public class TrophyServiceTests
 
         var (wine, wineResult) = await CreateSut().GetBestNorwegianWineAsync("event-1");
 
-        wine.Should().BeNull();
-        wineResult.Should().BeNull();
+        wine.ShouldBeNull();
+        wineResult.ShouldBeNull();
     }
 
     [Fact]
@@ -133,8 +132,8 @@ public class TrophyServiceTests
 
         var (bestWine, bestResult) = await CreateSut().GetBestNorwegianWineAsync("event-1");
 
-        bestWine!.WineId.Should().Be("wine-a1");
-        bestResult!.TotalScore.Should().Be(17.0m);
+        bestWine!.WineId.ShouldBe("wine-a1");
+        bestResult!.TotalScore.ShouldBe(17.0m);
     }
 
     [Fact]
@@ -156,7 +155,7 @@ public class TrophyServiceTests
         var (bestWine, _) = await CreateSut().GetBestNorwegianWineAsync("event-1");
 
         // A2 wines should not count as Norwegian
-        bestWine!.WineId.Should().Be("wine-a1");
+        bestWine!.WineId.ShouldBe("wine-a1");
     }
 
     // ── GetBestNordicWineAsync ────────────────────────────────────
@@ -180,6 +179,6 @@ public class TrophyServiceTests
         var (bestWine, _) = await CreateSut().GetBestNordicWineAsync("event-1");
 
         // Only A1 and A2 are Nordic groups; Group B should not be included
-        bestWine!.WineId.Should().Be("wine-a2");
+        bestWine!.WineId.ShouldBe("wine-a2");
     }
 }

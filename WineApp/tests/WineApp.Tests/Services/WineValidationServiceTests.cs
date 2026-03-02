@@ -1,5 +1,4 @@
-using FluentAssertions;
-using WineApp.Models;
+﻿using WineApp.Models;
 using WineApp.Services;
 
 namespace WineApp.Tests.Services;
@@ -17,8 +16,8 @@ public class WineValidationServiceTests
     {
         var (isValid, message) = _sut.ValidateGrapeBlend(null!);
 
-        isValid.Should().BeFalse();
-        message.Should().NotBeEmpty();
+        isValid.ShouldBeFalse();
+        message.ShouldNotBeEmpty();
     }
 
     [Fact]
@@ -26,8 +25,8 @@ public class WineValidationServiceTests
     {
         var (isValid, message) = _sut.ValidateGrapeBlend([]);
 
-        isValid.Should().BeFalse();
-        message.Should().NotBeEmpty();
+        isValid.ShouldBeFalse();
+        message.ShouldNotBeEmpty();
     }
 
     [Fact]
@@ -37,8 +36,8 @@ public class WineValidationServiceTests
 
         var (isValid, message) = _sut.ValidateGrapeBlend(blend);
 
-        isValid.Should().BeFalse();
-        message.Should().Contain("100");
+        isValid.ShouldBeFalse();
+        message.ShouldContain("100");
     }
 
     [Fact]
@@ -48,8 +47,8 @@ public class WineValidationServiceTests
 
         var (isValid, message) = _sut.ValidateGrapeBlend(blend);
 
-        isValid.Should().BeFalse();
-        message.Should().NotBeEmpty();
+        isValid.ShouldBeFalse();
+        message.ShouldNotBeEmpty();
     }
 
     [Fact]
@@ -59,8 +58,8 @@ public class WineValidationServiceTests
 
         var (isValid, message) = _sut.ValidateGrapeBlend(blend);
 
-        isValid.Should().BeFalse();
-        message.Should().NotBeEmpty();
+        isValid.ShouldBeFalse();
+        message.ShouldNotBeEmpty();
     }
 
     [Fact]
@@ -70,8 +69,8 @@ public class WineValidationServiceTests
 
         var (isValid, message) = _sut.ValidateGrapeBlend(blend);
 
-        isValid.Should().BeTrue();
-        message.Should().BeEmpty();
+        isValid.ShouldBeTrue();
+        message.ShouldBeEmpty();
     }
 
     [Fact]
@@ -81,7 +80,7 @@ public class WineValidationServiceTests
 
         var (isValid, _) = _sut.ValidateGrapeBlend(blend);
 
-        isValid.Should().BeTrue();
+        isValid.ShouldBeTrue();
     }
 
     [Fact]
@@ -92,7 +91,7 @@ public class WineValidationServiceTests
 
         var (isValid, _) = _sut.ValidateGrapeBlend(blend);
 
-        isValid.Should().BeTrue();
+        isValid.ShouldBeTrue();
     }
 
     // ── ValidateVinbondeEligibility ────────────────────────────────
@@ -104,8 +103,8 @@ public class WineValidationServiceTests
 
         var (isValid, message) = _sut.ValidateVinbondeEligibility(wine);
 
-        isValid.Should().BeTrue();
-        message.Should().BeEmpty();
+        isValid.ShouldBeTrue();
+        message.ShouldBeEmpty();
     }
 
     [Fact]
@@ -115,8 +114,8 @@ public class WineValidationServiceTests
 
         var (isValid, message) = _sut.ValidateVinbondeEligibility(wine);
 
-        isValid.Should().BeTrue();
-        message.Should().BeEmpty();
+        isValid.ShouldBeTrue();
+        message.ShouldBeEmpty();
     }
 
     [Theory]
@@ -130,8 +129,8 @@ public class WineValidationServiceTests
 
         var (isValid, message) = _sut.ValidateVinbondeEligibility(wine);
 
-        isValid.Should().BeFalse();
-        message.Should().NotBeEmpty();
+        isValid.ShouldBeFalse();
+        message.ShouldNotBeEmpty();
     }
 
     // ── ValidateWineRegistration ──────────────────────────────────
@@ -143,8 +142,8 @@ public class WineValidationServiceTests
 
         var (isValid, errors) = _sut.ValidateWineRegistration(wine);
 
-        isValid.Should().BeTrue();
-        errors.Should().BeEmpty();
+        isValid.ShouldBeTrue();
+        errors.ShouldBeEmpty();
     }
 
     [Fact]
@@ -155,8 +154,8 @@ public class WineValidationServiceTests
 
         var (isValid, errors) = _sut.ValidateWineRegistration(wine);
 
-        isValid.Should().BeFalse();
-        errors.Should().ContainSingle(e => e.Contains("Vinnavn"));
+        isValid.ShouldBeFalse();
+        errors.Count(e => e.Contains("Vinnavn")).ShouldBe(1);
     }
 
     [Fact]
@@ -167,8 +166,8 @@ public class WineValidationServiceTests
 
         var (isValid, errors) = _sut.ValidateWineRegistration(wine);
 
-        isValid.Should().BeFalse();
-        errors.Should().ContainSingle(e => e.Contains("Vurderingsnavn"));
+        isValid.ShouldBeFalse();
+        errors.Count(e => e.Contains("Vurderingsnavn")).ShouldBe(1);
     }
 
     [Fact]
@@ -179,8 +178,8 @@ public class WineValidationServiceTests
 
         var (isValid, errors) = _sut.ValidateWineRegistration(wine);
 
-        isValid.Should().BeFalse();
-        errors.Should().ContainSingle(e => e.Contains("Årgang"));
+        isValid.ShouldBeFalse();
+        errors.Count(e => e.Contains("Årgang")).ShouldBe(1);
     }
 
     [Fact]
@@ -194,8 +193,8 @@ public class WineValidationServiceTests
 
         var (isValid, errors) = sut.ValidateWineRegistration(wine);
 
-        isValid.Should().BeFalse();
-        errors.Should().ContainSingle(e => e.Contains("Årgang") && e.Contains("2027"));
+        isValid.ShouldBeFalse();
+        errors.Count(e => e.Contains("Årgang") && e.Contains("2027")).ShouldBe(1);
     }
 
     [Fact]
@@ -209,8 +208,8 @@ public class WineValidationServiceTests
 
         var (isValid, errors) = sut.ValidateWineRegistration(wine);
 
-        isValid.Should().BeTrue();
-        errors.Should().BeEmpty();
+        isValid.ShouldBeTrue();
+        errors.ShouldBeEmpty();
     }
 
     [Fact]
@@ -221,8 +220,8 @@ public class WineValidationServiceTests
 
         var (isValid, errors) = _sut.ValidateWineRegistration(wine);
 
-        isValid.Should().BeFalse();
-        errors.Should().ContainSingle(e => e.Contains("Alkohol"));
+        isValid.ShouldBeFalse();
+        errors.Count(e => e.Contains("Alkohol")).ShouldBe(1);
     }
 
     [Fact]
@@ -233,8 +232,8 @@ public class WineValidationServiceTests
 
         var (isValid, errors) = _sut.ValidateWineRegistration(wine);
 
-        isValid.Should().BeFalse();
-        errors.Should().ContainSingle(e => e.Contains("Land"));
+        isValid.ShouldBeFalse();
+        errors.Count(e => e.Contains("Land")).ShouldBe(1);
     }
 
     [Fact]
@@ -245,8 +244,8 @@ public class WineValidationServiceTests
 
         var (isValid, errors) = _sut.ValidateWineRegistration(wine);
 
-        isValid.Should().BeFalse();
-        errors.Should().ContainSingle(e => e.Contains("Vinprodusent"));
+        isValid.ShouldBeFalse();
+        errors.Count(e => e.Contains("Vinprodusent")).ShouldBe(1);
     }
 
     [Fact]
@@ -258,8 +257,8 @@ public class WineValidationServiceTests
 
         var (isValid, errors) = _sut.ValidateWineRegistration(wine);
 
-        isValid.Should().BeFalse();
-        errors.Should().ContainSingle(e => e.Contains("A2"));
+        isValid.ShouldBeFalse();
+        errors.Count(e => e.Contains("A2")).ShouldBe(1);
     }
 
     [Fact]
@@ -270,8 +269,8 @@ public class WineValidationServiceTests
 
         var (isValid, errors) = _sut.ValidateWineRegistration(wine);
 
-        isValid.Should().BeFalse();
-        errors.Should().NotBeEmpty();
+        isValid.ShouldBeFalse();
+        errors.ShouldNotBeEmpty();
     }
 
     [Fact]
@@ -283,8 +282,8 @@ public class WineValidationServiceTests
 
         var (isValid, errors) = _sut.ValidateWineRegistration(wine);
 
-        isValid.Should().BeFalse();
-        errors.Should().ContainSingle(e => e.Contains("Vinbonde"));
+        isValid.ShouldBeFalse();
+        errors.Count(e => e.Contains("Vinbonde")).ShouldBe(1);
     }
 
     // ── ValidateWineForRating ─────────────────────────────────────
@@ -296,8 +295,8 @@ public class WineValidationServiceTests
 
         var (isValid, message) = _sut.ValidateWineForRating(wine);
 
-        isValid.Should().BeFalse();
-        message.Should().NotBeEmpty();
+        isValid.ShouldBeFalse();
+        message.ShouldNotBeEmpty();
     }
 
     [Fact]
@@ -307,8 +306,8 @@ public class WineValidationServiceTests
 
         var (isValid, message) = _sut.ValidateWineForRating(wine);
 
-        isValid.Should().BeFalse();
-        message.Should().NotBeEmpty();
+        isValid.ShouldBeFalse();
+        message.ShouldNotBeEmpty();
     }
 
     [Fact]
@@ -318,8 +317,8 @@ public class WineValidationServiceTests
 
         var (isValid, message) = _sut.ValidateWineForRating(wine);
 
-        isValid.Should().BeTrue();
-        message.Should().BeEmpty();
+        isValid.ShouldBeTrue();
+        message.ShouldBeEmpty();
     }
 
     // ── Helpers ───────────────────────────────────────────────────

@@ -1,5 +1,4 @@
-using FluentAssertions;
-using Moq;
+﻿using Moq;
 using WineApp.Data;
 using WineApp.Models;
 using WineApp.Services;
@@ -19,7 +18,7 @@ public class WineNumberServiceTests
     {
         var order = CreateSut().GetCategoryOrder();
 
-        order.Should().HaveCount(6);
+        order.Count.ShouldBe(6);
     }
 
     [Fact]
@@ -27,7 +26,7 @@ public class WineNumberServiceTests
     {
         var order = CreateSut().GetCategoryOrder();
 
-        order[0].Should().Be(WineCategory.Hvitvin);
+        order[0].ShouldBe(WineCategory.Hvitvin);
     }
 
     [Fact]
@@ -35,7 +34,7 @@ public class WineNumberServiceTests
     {
         var order = CreateSut().GetCategoryOrder();
 
-        order[^1].Should().Be(WineCategory.Hetvin);
+        order[^1].ShouldBe(WineCategory.Hetvin);
     }
 
     [Fact]
@@ -53,7 +52,7 @@ public class WineNumberServiceTests
 
         var order = CreateSut().GetCategoryOrder();
 
-        order.Should().ContainInOrder(expected);
+        order.ShouldBe(expected);
     }
 
     [Fact]
@@ -62,7 +61,7 @@ public class WineNumberServiceTests
         var order = CreateSut().GetCategoryOrder();
 
         var allCategories = Enum.GetValues<WineCategory>();
-        order.Should().Contain(allCategories);
+        order.ShouldBe(allCategories, ignoreOrder: true);
     }
 
     // ── GetNextWineNumberAsync ────────────────────────────────────
@@ -74,7 +73,7 @@ public class WineNumberServiceTests
 
         var next = await CreateSut().GetNextWineNumberAsync("event-1");
 
-        next.Should().Be(1);
+        next.ShouldBe(1);
     }
 
     [Fact]
@@ -90,7 +89,7 @@ public class WineNumberServiceTests
 
         var next = await CreateSut().GetNextWineNumberAsync("event-1");
 
-        next.Should().Be(8);
+        next.ShouldBe(8);
     }
 
     [Fact]
@@ -105,7 +104,7 @@ public class WineNumberServiceTests
 
         var next = await CreateSut().GetNextWineNumberAsync("event-1");
 
-        next.Should().Be(3);
+        next.ShouldBe(3);
     }
 
     // ── ValidateWineNumbersAsync ──────────────────────────────────
@@ -117,7 +116,7 @@ public class WineNumberServiceTests
 
         var result = await CreateSut().ValidateWineNumbersAsync("event-1");
 
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -133,7 +132,7 @@ public class WineNumberServiceTests
 
         var result = await CreateSut().ValidateWineNumbersAsync("event-1");
 
-        result.Should().BeTrue();
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -148,7 +147,7 @@ public class WineNumberServiceTests
 
         var result = await CreateSut().ValidateWineNumbersAsync("event-1");
 
-        result.Should().BeFalse();
+        result.ShouldBeFalse();
     }
 
     // ── AssignWineNumbersAsync ────────────────────────────────────
@@ -164,7 +163,7 @@ public class WineNumberServiceTests
 
         var result = await CreateSut().AssignWineNumbersAsync("event-1");
 
-        result.Should().BeEmpty();
+        result.ShouldBeEmpty();
     }
 
     [Fact]
@@ -181,11 +180,11 @@ public class WineNumberServiceTests
 
         var result = await CreateSut().AssignWineNumbersAsync("event-1");
 
-        result.Should().HaveCount(3);
+        result.Count.ShouldBe(3);
         // White wine gets number 1 (first in category order), rosé gets 2, red gets 3
-        result["wine-white"].Should().Be(1);
-        result["wine-rose"].Should().Be(2);
-        result["wine-red"].Should().Be(3);
+        result["wine-white"].ShouldBe(1);
+        result["wine-rose"].ShouldBe(2);
+        result["wine-red"].ShouldBe(3);
     }
 
     [Fact]
@@ -200,6 +199,6 @@ public class WineNumberServiceTests
 
         var result = await CreateSut().AssignWineNumbersAsync("event-1");
 
-        result["wine-1"].Should().Be(1);
+        result["wine-1"].ShouldBe(1);
     }
 }
