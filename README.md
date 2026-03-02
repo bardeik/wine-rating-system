@@ -105,6 +105,7 @@ A public-facing page (**Public Results**) shows final results without requiring 
 | Database | MongoDB (via MongoDB.Driver 3.6.0) |
 | Authentication | ASP.NET Core Identity + AspNetCore.Identity.MongoDbCore 7.0.0 |
 | Styling | Bootstrap (CSS) |
+| PDF generation | [QuestPDF](https://www.questpdf.com/) |
 | Unit tests | xUnit 2.x + Moq 4.x + Shouldly 4.x |
 
 ### Project Layout
@@ -221,3 +222,9 @@ dotnet test tests/WineApp.Tests/WineApp.Tests.csproj
 ```
 
 Tests are pure unit tests — no MongoDB or running Blazor server required. All repositories are mocked with Moq. Assertions use **Shouldly** (MIT licence).
+
+---
+
+## Third-Party Notices
+
+PDF generation is powered by **[QuestPDF](https://www.questpdf.com/)**, an open-source .NET library licensed under the [QuestPDF Community License](https://www.questpdf.com/license/).
