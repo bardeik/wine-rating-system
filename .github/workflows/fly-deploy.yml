@@ -26,6 +26,8 @@ jobs:
           flyctl secrets set \
             "ConnectionStrings__MongoDB=${{ secrets.MONGODB_CONNECTION_STRING }}" \
             "MongoDbSettings__DatabaseName=${{ secrets.MONGODB_DATABASE_NAME }}" \
+            "ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}" \
+            "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" \
             --stage
 
       - name: Deploy to Fly.io

@@ -17,6 +17,12 @@ public class DatabaseSeeder
         // Always seed roles (safe in all environments)
         await SeedRolesAsync(roleManager);
 
+        // Seed a production admin from environment variables when running outside
+        // Development. Set ADMIN_EMAIL and ADMIN_PASSWORD as Fly.io secrets (or
+        // any environment variable) before the first deploy.
+        // Nothing happens if either variable is missing or the user already exists.
+        await SeedProductionAdminAsync(userManager);
+
         // Sample data with well-known passwords must never run in Production.
         // Set ASPNETCORE_ENVIRONMENT=Production (or any non-Development value) to skip.
         if (!env.IsDevelopment())
@@ -38,6 +44,38 @@ public class DatabaseSeeder
         {
             if (!await roleManager.RoleExistsAsync(role))
                 await roleManager.CreateAsync(new MongoIdentityRole<Guid>(role));
+        }
+    }
+
+    /// <summary>
+    /// Creates an admin account from ADMIN_EMAIL and ADMIN_PASSWORD environment variables.
+    /// Safe to call in Production — skips silently if either variable is absent or the
+    /// account already exists.
+    /// </summary>
+    private static async Task SeedProductionAdminAsync(UserManager<ApplicationUser> userManager)
+    {
+        var email = Environment.GetEnvironmentVariable("ADMIN_EMAIL");
+        var password = Environment.GetEnvironmentVariable("ADMIN_PASSWORD");
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+            return;
+
+        if (await userManager.FindByEmailAsync(email) is not null)
+            return;
+
+        var admin = new ApplicationUser
+        {
+            UserName = email,
+            Email = email,
+            DisplayName = "Administrator",
+            EmailConfirmed = true
+        };
+
+        var result = await userManager.CreateAsync(admin, password);
+        if (result.Succeeded)
+        {
+            await userManager.AddToRoleAsync(admin, "Admin");
+            await userManager.AddToRoleAsync(admin, "Viewer");
         }
     }
 

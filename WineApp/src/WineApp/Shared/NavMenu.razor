@@ -108,6 +108,9 @@
     <div class="nav-bottom px-3">
         <AuthorizeView>
             <Authorized>
+                <NavLink class="btn btn-outline-light w-100 mb-2" href="account/change-password">
+                    <span class="oi oi-lock-locked" aria-hidden="true"></span> Endre passord
+                </NavLink>
                 <button class="btn btn-outline-light w-100" @onclick="Logout">
                     <span class="oi oi-account-logout" aria-hidden="true"></span> Logg ut (@context.User.Identity?.Name)
                 </button>

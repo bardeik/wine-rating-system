@@ -1,4 +1,5 @@
 ﻿using AspNetCore.Identity.MongoDbCore.Models;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using MongoDB.Bson;
 using WineApp.Data;
@@ -92,6 +93,15 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
+
+// Fly.io (and most reverse proxies) terminate TLS at the edge and forward
+// requests internally as plain HTTP. UseForwardedHeaders teaches ASP.NET Core
+// to read X-Forwarded-Proto / X-Forwarded-For so UseHttpsRedirection knows
+// the original request was already HTTPS and won't redirect static assets.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 app.UseHttpsRedirection();
 
