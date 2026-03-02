@@ -137,19 +137,17 @@ app.MapGet("/health", () => Results.Ok("healthy"));
 // Temporary diagnostics endpoint — remove once deployment is confirmed working.
 app.MapGet("/debug/files", (IWebHostEnvironment env) =>
 {
-    var webRoot = env.WebRootPath ?? "";
     var contentRoot = env.ContentRootPath ?? "";
-    var allAppFiles = Directory.Exists("/app")
-        ? Directory.GetFiles("/app", "*", SearchOption.AllDirectories)
-                   .Select(f => f.Replace("/app", ""))
-                   .OrderBy(f => f)
-                   .ToArray()
-        : Array.Empty<string>();
+    var manifestPath = Path.Combine(contentRoot, "WineApp.staticwebassets.endpoints.json");
+    var manifestContent = File.Exists(manifestPath)
+        ? File.ReadAllText(manifestPath)
+        : "NOT FOUND";
     return Results.Ok(new
     {
         contentRoot,
-        webRoot,
-        allAppFiles
+        webRoot = env.WebRootPath,
+        manifestExists = File.Exists(manifestPath),
+        manifestContent
     });
 });
 
