@@ -27,7 +27,7 @@ Business logic and cross-cutting concerns live in `Services/`. **Blazor pages in
 
 **Domain services**:
 - `IReportService` / `ReportService` — aggregates wine ratings into `WineReportRow` view models for the Reports page
-- `IClassificationService` / `ClassificationService` — medal/classification logic
+- `IClassificationService` / `ClassificationService` — medal/classification logic; reads thresholds from the `Event` passed to each call via `GetThreshold(classification, eventConfig)`; never uses hardcoded values
 - `IScoreAggregationService` / `ScoreAggregationService` — recalculates event results
 - `IWineNumberService` / `WineNumberService` — assigns sequential wine numbers after payment
 - `ITrophyService` / `TrophyService` — determines trophy winners (best Norwegian, best Nordic)
@@ -49,10 +49,10 @@ Business logic and cross-cutting concerns live in `Services/`. **Blazor pages in
 - `WineProducers.razor` — producer management (Admin: full CRUD + linked accounts; WineProducer: own profile)
 - `Judges.razor` — Admin-only judge management (add/remove Judge role via `UserManager`)
 - `Reports.razor` — aggregated wine score report using `IReportService`
-- `Events.razor` — event management (Admin only)
-- `EventDetails.razor` — event overview, flight and result detail
+- `Events.razor` — event management (Admin only); form includes medal thresholds with default-value hints and gate values with range constraints
+- `EventDetails.razor` — event overview, flight and result detail; thresholds tab shows active medal thresholds and gate values
 - `FlightManagement.razor` — manage judge flights via `IFlightService`
-- `JudgeRating.razor` — tablet-optimised blind rating UI for judges; auto-saves
+- `JudgeRating.razor` — tablet-optimised blind rating UI for judges; auto-saves; score-range labels and gate-value warnings are dynamically read from the active event's gate values (`activeEvent.AppearanceGateValue`, `NoseGateValue`, `TasteGateValue`)
 - `ResultsReport.razor` — per-event results with recalculation
 - `TrophyReports.razor` — trophy winners; Admin can recalculate
 - `OutlierManagement.razor` — detect and manage outlier judge scores
@@ -155,7 +155,13 @@ public string WineId { get; set; } = MongoDB.Bson.ObjectId.GenerateNewId().ToStr
 - **WineRating**: judges rate wines on `Appearance` (0-3.0), `Nose` (0-4.0), `Taste` (0-13.0) as `decimal`; stores `JudgeId` (judge's `DisplayName`) and `WineId`
 - **WineProducer**: has a `UserId` (string) linking to the corresponding `ApplicationUser`
 - **WineResult**: computed result per wine per event (aggregated from ratings)
-- **Event**: has `EventId`, `Name`, `IsActive`; only one active event at a time
+- **Event**: has `EventId`, `Name`, `IsActive`; only one active event at a time. Also holds all configurable thresholds and gate values:
+  - `GoldThreshold`, `SilverThreshold`, `BronzeThreshold`, `SpecialMeritThreshold` (defaults 17.0 / 15.5 / 14.0 / 12.0)
+  - `AdjustedGoldThreshold`, `AdjustedSilverThreshold`, `AdjustedBronzeThreshold`, `AdjustedSpecialMeritThreshold` (alternative set, defaults 15.0 / 14.0 / 13.0 / 11.5)
+  - `UseAdjustedThresholds` (bool) — when true, `ClassificationService` uses the adjusted set
+  - `AppearanceGateValue`, `NoseGateValue`, `TasteGateValue` (defaults 1.8 / 1.8 / 5.8; minimum 0.1 enforced by `[Range]`)
+  - `OutlierThreshold` (default 4.0)
+  - All threshold fields carry `[Range]` and `[DisplayName]` attributes
 - **Flight**: groups wines for a judge session; managed by `IFlightService`
 
 ### View Models (in `Models/`)

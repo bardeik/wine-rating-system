@@ -35,6 +35,21 @@ After registration, wines are not visible to judges until payment is confirmed. 
 #### Events
 An Admin creates and manages competitions (events). Only one event can be active at a time. All judging and results are scoped to the active event.
 
+Each event carries its own fully configurable classification thresholds and gate values:
+
+| Setting | Default | Description |
+|---|---|---|
+| Gold threshold | 17.0 | Minimum total score for Gull |
+| Silver threshold | 15.5 | Minimum total score for Sølv |
+| Bronze threshold | 14.0 | Minimum total score for Bronse |
+| Special Merit threshold | 12.0 | Minimum total score for Særlig |
+| Appearance gate value | 1.8 | Minimum avg appearance score (0.1–3.0) |
+| Nose gate value | 1.8 | Minimum avg nose score (0.1–4.0) |
+| Taste gate value | 5.8 | Minimum avg taste score (0.1–13.0) |
+| Outlier threshold | 4.0 | Score spread above which a wine is flagged |
+
+All values are validated with `[Range]` attributes; gate values require a minimum of 0.1. Default values are shown as help text in the Admin form.
+
 #### Flight Management
 Wines are distributed into judge flights by an Admin via **Flight Management**. Each flight groups a set of wines to be tasted in a single session by one or more judges.
 
@@ -46,8 +61,10 @@ Judges rate wines on a tablet-optimised screen (**Judge Rating**). Scores are en
 
 Total score = A + B + C (max 20.0). Comments can be added per wine. Scores auto-save as the judge moves between wines.
 
+The score range labels and gate-value warnings (yellow border + text when a score is below the gate threshold) are dynamically read from the active event's configured gate values.
+
 #### Classification & Results
-`IClassificationService` maps total scores to medals:
+`IClassificationService` maps total scores to medals using **per-event configurable thresholds** stored on the `Event` document. Admins set thresholds in the event form; `ClassificationService.GetThreshold()` reads the active threshold set from the event config.
 
 | Classification | Norwegian |
 |---|---|
