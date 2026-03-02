@@ -317,43 +317,43 @@
                 <div class="row mb-4">
                     <div class="col-md-4 mb-3">
                         <label class="score-label">A - Utseende</label>
-                        <span class="score-range">0.0 - 3.0</span>
+                        <span class="score-range">0,0 – 3,0 | Gate-verdi: @activeEvent!.AppearanceGateValue.ToString("F1")</span>
                         <DecimalInput
                                Value="@currentRating.Appearance"
                                ValueChanged="@(v => { currentRating.Appearance = v; CalculateTotal(); })"
-                               Class="@($"rating-input {(currentRating.Appearance < 1.8m ? "border-warning" : "")}")"
+                               Class="@($"rating-input {(currentRating.Appearance < activeEvent!.AppearanceGateValue ? "border-warning" : "")}")"
                                />
-                        @if (currentRating.Appearance < 1.8m && currentRating.Appearance > 0)
+                        @if (currentRating.Appearance < activeEvent!.AppearanceGateValue && currentRating.Appearance > 0)
                         {
-                            <small class="text-warning">⚠️ Under gate-verdi (1.8)</small>
+                            <small class="text-warning">⚠️ Under gate-verdi (@activeEvent.AppearanceGateValue.ToString("F1"))</small>
                         }
                     </div>
 
                     <div class="col-md-4 mb-3">
                         <label class="score-label">B - Nese</label>
-                        <span class="score-range">0.0 - 4.0</span>
+                        <span class="score-range">0,0 – 4,0 | Gate-verdi: @activeEvent!.NoseGateValue.ToString("F1")</span>
                         <DecimalInput
                                Value="@currentRating.Nose"
                                ValueChanged="@(v => { currentRating.Nose = v; CalculateTotal(); })"
-                               Class="@($"rating-input {(currentRating.Nose < 1.8m ? "border-warning" : "")}")"
+                               Class="@($"rating-input {(currentRating.Nose < activeEvent!.NoseGateValue ? "border-warning" : "")}")"
                                />
-                        @if (currentRating.Nose < 1.8m && currentRating.Nose > 0)
+                        @if (currentRating.Nose < activeEvent!.NoseGateValue && currentRating.Nose > 0)
                         {
-                            <small class="text-warning">⚠️ Under gate-verdi (1.8)</small>
+                            <small class="text-warning">⚠️ Under gate-verdi (@activeEvent.NoseGateValue.ToString("F1"))</small>
                         }
                     </div>
 
                     <div class="col-md-4 mb-3">
                         <label class="score-label">C - Smak</label>
-                        <span class="score-range">0.0 - 13.0</span>
+                        <span class="score-range">0,0 – 13,0 | Gate-verdi: @activeEvent!.TasteGateValue.ToString("F1")</span>
                         <DecimalInput
                                Value="@currentRating.Taste"
                                ValueChanged="@(v => { currentRating.Taste = v; CalculateTotal(); })"
-                               Class="@($"rating-input {(currentRating.Taste < 5.8m ? "border-warning" : "")}")"
+                               Class="@($"rating-input {(currentRating.Taste < activeEvent!.TasteGateValue ? "border-warning" : "")}")"
                                />
-                        @if (currentRating.Taste < 5.8m && currentRating.Taste > 0)
+                        @if (currentRating.Taste < activeEvent!.TasteGateValue && currentRating.Taste > 0)
                         {
-                            <small class="text-warning">⚠️ Under gate-verdi (5.8)</small>
+                            <small class="text-warning">⚠️ Under gate-verdi (@activeEvent.TasteGateValue.ToString("F1"))</small>
                         }
                     </div>
                 </div>
