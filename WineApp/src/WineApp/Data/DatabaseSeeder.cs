@@ -15,19 +15,39 @@ public class DatabaseSeeder
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var logger = services.GetRequiredService<ILogger<DatabaseSeeder>>();
 
+        logger.LogInformation("DatabaseSeeder: starting (environment={Environment})", env.EnvironmentName);
+
         // Always seed roles (safe in all environments)
-        await SeedRolesAsync(roleManager);
+        try
+        {
+            await SeedRolesAsync(roleManager);
+            logger.LogInformation("DatabaseSeeder: roles seeded.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "DatabaseSeeder: role seeding failed — will still attempt admin seeding.");
+        }
 
         // Seed a production admin from environment variables when running outside
         // Development. Set ADMIN_EMAIL and ADMIN_PASSWORD as Fly.io secrets (or
         // any environment variable) before the first deploy.
         // Nothing happens if either variable is missing or the user already exists.
-        await SeedProductionAdminAsync(userManager, logger);
+        try
+        {
+            await SeedProductionAdminAsync(userManager, logger);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "DatabaseSeeder: production admin seeding threw an unexpected exception.");
+        }
 
         // Sample data with well-known passwords must never run in Production.
         // Set ASPNETCORE_ENVIRONMENT=Production (or any non-Development value) to skip.
         if (!env.IsDevelopment())
+        {
+            logger.LogInformation("DatabaseSeeder: non-Development environment — skipping sample data.");
             return;
+        }
 
         // Seed admin and viewer users (Development only — use ADMIN_EMAIL/ADMIN_PASSWORD
         // secrets for Production via SeedProductionAdminAsync above)
@@ -38,6 +58,8 @@ public class DatabaseSeeder
 
         // Seed event with producers, wines and ratings
         await SeedEventDataAsync(services, userManager);
+
+        logger.LogInformation("DatabaseSeeder: sample data seeding complete.");
     }
 
     private static async Task SeedRolesAsync(RoleManager<MongoIdentityRole<Guid>> roleManager)
