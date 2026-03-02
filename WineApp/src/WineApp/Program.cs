@@ -142,6 +142,10 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapBlazorHub();
+// MapStaticAssets is required in .NET 9+ to serve the Blazor framework files
+// (_framework/blazor.server.js etc.) which are published with a fingerprint
+// manifest that UseStaticFiles alone cannot read.
+app.MapStaticAssets();
 app.MapFallbackToPage("/_Host");
 app.MapDownloadEndpoints();
 
