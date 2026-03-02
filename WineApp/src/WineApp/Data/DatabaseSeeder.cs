@@ -13,6 +13,7 @@ public class DatabaseSeeder
         var env = services.GetRequiredService<IWebHostEnvironment>();
         var roleManager = services.GetRequiredService<RoleManager<MongoIdentityRole<Guid>>>();
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        var logger = services.GetRequiredService<ILogger<DatabaseSeeder>>();
 
         // Always seed roles (safe in all environments)
         await SeedRolesAsync(roleManager);
@@ -21,7 +22,7 @@ public class DatabaseSeeder
         // Development. Set ADMIN_EMAIL and ADMIN_PASSWORD as Fly.io secrets (or
         // any environment variable) before the first deploy.
         // Nothing happens if either variable is missing or the user already exists.
-        await SeedProductionAdminAsync(userManager);
+        await SeedProductionAdminAsync(userManager, logger);
 
         // Sample data with well-known passwords must never run in Production.
         // Set ASPNETCORE_ENVIRONMENT=Production (or any non-Development value) to skip.
@@ -53,16 +54,22 @@ public class DatabaseSeeder
     /// Safe to call in Production — skips silently if either variable is absent or the
     /// account already exists.
     /// </summary>
-    private static async Task SeedProductionAdminAsync(UserManager<ApplicationUser> userManager)
+    private static async Task SeedProductionAdminAsync(UserManager<ApplicationUser> userManager, ILogger<DatabaseSeeder> logger)
     {
         var email = Environment.GetEnvironmentVariable("ADMIN_EMAIL");
         var password = Environment.GetEnvironmentVariable("ADMIN_PASSWORD");
 
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            logger.LogWarning("SeedProductionAdminAsync: ADMIN_EMAIL or ADMIN_PASSWORD is not set — skipping.");
             return;
+        }
 
         if (await userManager.FindByEmailAsync(email) is not null)
+        {
+            logger.LogInformation("SeedProductionAdminAsync: user {Email} already exists — skipping.", email);
             return;
+        }
 
         var admin = new ApplicationUser
         {
@@ -77,6 +84,12 @@ public class DatabaseSeeder
         {
             await userManager.AddToRoleAsync(admin, "Admin");
             await userManager.AddToRoleAsync(admin, "Viewer");
+            logger.LogInformation("SeedProductionAdminAsync: admin user {Email} created successfully.", email);
+        }
+        else
+        {
+            var errors = string.Join("; ", result.Errors.Select(e => $"{e.Code}: {e.Description}"));
+            logger.LogError("SeedProductionAdminAsync: failed to create admin user {Email}. Errors: {Errors}", email, errors);
         }
     }
 
