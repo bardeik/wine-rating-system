@@ -167,7 +167,7 @@ else
                 
                 <div class="row">
                     <div class="col-md-6">
-                        <h6 class="mt-3">Primære medaljegranser</h6>
+                        <h6 class="mt-3">Medaljegrenser</h6>
                         <table class="table table-striped">
                             <tr>
                                 <td><span class="badge" style="background-color: gold; color: black;">🥇 Gull</span></td>
@@ -196,39 +196,7 @@ else
                     </div>
 
                     <div class="col-md-6">
-                        <h6 class="mt-3">Nedjusterte grenser (hvis ingen gull)</h6>
-                        <table class="table table-striped">
-                            <tr>
-                                <td><span class="badge" style="background-color: gold; color: black;">🥇 Gull</span></td>
-                                <td>≥ @eventItem.AdjustedGoldThreshold.ToString("F1") poeng</td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge" style="background-color: silver; color: black;">🥈 Sølv</span></td>
-                                <td>≥ @eventItem.AdjustedSilverThreshold.ToString("F1") poeng</td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge" style="background-color: #CD7F32; color: white;">🥉 Bronse</span></td>
-                                <td>≥ @eventItem.AdjustedBronzeThreshold.ToString("F1") poeng</td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge bg-info">⭐ Særlig</span></td>
-                                <td>≥ @eventItem.AdjustedSpecialMeritThreshold.ToString("F1") poeng</td>
-                            </tr>
-                        </table>
-
-                        <div class="alert @(eventItem.UseAdjustedThresholds ? "alert-warning" : "alert-success") mt-3">
-                            <strong>Status:</strong> 
-                            @if (eventItem.UseAdjustedThresholds)
-                            {
-                                <span>⚠️ Nedjusterte grenser er aktivert</span>
-                            }
-                            else
-                            {
-                                <span>✅ Bruker primære grenser</span>
-                            }
-                        </div>
-
-                        <h6 class="mt-4">Avviksdeteksjon</h6>
+                        <h6 class="mt-3">Avviksdeteksjon</h6>
                         <table class="table table-sm">
                             <tr>
                                 <td><strong>Avviksterskel:</strong></td>

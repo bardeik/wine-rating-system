@@ -161,4 +161,128 @@ public class ClassificationServiceTests
     {
         _sut.ShouldUseAdjustedThresholds([]).ShouldBeTrue();
     }
+
+    // ── Endrede grenseverdier (admin-konfigurasjon) ────────────────
+
+    [Fact]
+    public void ClassifyWine_RaisedGoldThreshold_PreviousGoldScoreDropsToSilver()
+    {
+        // Score 17.0 er Gull med standardgrense (17.0), men blir Sølv når grensen heves til 18.0
+        var eventConfig = DefaultEvent();
+        eventConfig.GoldThreshold = 18.0m;
+
+        var result = _sut.ClassifyWine(17.0m, 2.0m, 2.5m, 12.5m, isDefective: false, meetsGateValues: true, eventConfig);
+
+        result.ShouldBe(Classification.Silver);
+    }
+
+    [Fact]
+    public void ClassifyWine_LoweredGoldThreshold_PreviousSilverScoreBecomesGold()
+    {
+        // Score 15.5 er Sølv med standardgrense (17.0), men blir Gull når grensen senkes til 15.0
+        var eventConfig = DefaultEvent();
+        eventConfig.GoldThreshold = 15.0m;
+
+        var result = _sut.ClassifyWine(15.5m, 2.0m, 2.0m, 11.5m, isDefective: false, meetsGateValues: true, eventConfig);
+
+        result.ShouldBe(Classification.Gold);
+    }
+
+    [Fact]
+    public void ClassifyWine_LoweredBronzeThreshold_PreviousSpecialMeritScoreBecomeBronze()
+    {
+        // Score 12.5 er Særlig med standardgrense (14.0), men blir Bronse når grensen senkes til 12.0
+        var eventConfig = DefaultEvent();
+        eventConfig.BronzeThreshold = 12.0m;
+
+        var result = _sut.ClassifyWine(12.5m, 2.0m, 2.0m, 8.5m, isDefective: false, meetsGateValues: true, eventConfig);
+
+        result.ShouldBe(Classification.Bronze);
+    }
+
+    [Fact]
+    public void ClassifyWine_RaisedSpecialMeritThreshold_PreviousSpecialMeritBecomesAcceptable()
+    {
+        // Score 12.0 er Særlig med standardgrense (12.0), men blir Akseptabel når grensen heves til 13.0
+        var eventConfig = DefaultEvent();
+        eventConfig.SpecialMeritThreshold = 13.0m;
+
+        var result = _sut.ClassifyWine(12.0m, 1.9m, 2.0m, 8.1m, isDefective: false, meetsGateValues: true, eventConfig);
+
+        result.ShouldBe(Classification.Acceptable);
+    }
+
+    [Fact]
+    public void ClassifyWine_LoweredAppearanceGateValue_PreviouslyRejectedWineNowApproved()
+    {
+        // Appearance 1.5 < standardgate 1.8 → ikke godkjent. Gate senkes til 1.4 → godkjent (Bronse)
+        var eventConfig = DefaultEvent();
+        eventConfig.AppearanceGateValue = 1.4m;
+        eventConfig.BronzeThreshold = 14.0m;
+
+        var result = _sut.ClassifyWine(14.0m, 1.5m, 2.0m, 10.5m, isDefective: false, meetsGateValues: true, eventConfig);
+
+        result.ShouldBe(Classification.Bronze);
+    }
+
+    [Fact]
+    public void ClassifyWine_RaisedTasteGateValue_PreviouslyApprovedWineNowRejected()
+    {
+        // meetsGateValues=false simulerer at hevet gate-verdi fører til underkjenning
+        var eventConfig = DefaultEvent();
+        eventConfig.TasteGateValue = 9.0m;
+
+        var result = _sut.ClassifyWine(14.0m, 2.0m, 2.0m, 8.0m, isDefective: false, meetsGateValues: false, eventConfig);
+
+        result.ShouldBe(Classification.NotApproved);
+    }
+
+    [Fact]
+    public void ClassifyWine_CustomAdjustedThresholds_UsesNewAdjustedValues()
+    {
+        // Nedjustert Gull settes til 14.0 (lavere enn standard 15.0); score 14.5 skal gi Gull
+        var eventConfig = DefaultEvent();
+        eventConfig.UseAdjustedThresholds = true;
+        eventConfig.AdjustedGoldThreshold = 14.0m;
+
+        var result = _sut.ClassifyWine(14.5m, 2.0m, 2.0m, 10.5m, isDefective: false, meetsGateValues: true, eventConfig);
+
+        result.ShouldBe(Classification.Gold);
+    }
+
+    [Theory]
+    [InlineData(16.0, 18.0, Classification.Silver)]   // hevet Gull gir Sølv
+    [InlineData(16.0, 15.5, Classification.Gold)]     // senket Gull gir Gull
+    [InlineData(13.5, 14.0, Classification.SpecialMerit)] // score under Bronse gir Særlig
+    [InlineData(13.5, 13.0, Classification.Gold)]     // senket Gull under scoren gir Gull
+    public void ClassifyWine_VariousCustomGoldThresholds_ReturnsExpectedClassification(
+        double score, double goldThreshold, string expected)
+    {
+        var eventConfig = DefaultEvent();
+        eventConfig.GoldThreshold = (decimal)goldThreshold;
+
+        var result = _sut.ClassifyWine((decimal)score, 2.0m, 2.5m, (decimal)score - 4.5m,
+            isDefective: false, meetsGateValues: true, eventConfig);
+
+        result.ShouldBe(expected);
+    }
+
+    [Fact]
+    public void GetThreshold_AfterAdminChangesGoldThreshold_ReturnsNewValue()
+    {
+        var eventConfig = DefaultEvent();
+        eventConfig.GoldThreshold = 18.5m;
+
+        _sut.GetThreshold(Classification.Gold, eventConfig).ShouldBe(18.5m);
+    }
+
+    [Fact]
+    public void GetThreshold_AfterAdminChangesAdjustedSilverThreshold_ReturnsNewValueWhenAdjustedMode()
+    {
+        var eventConfig = DefaultEvent();
+        eventConfig.UseAdjustedThresholds = true;
+        eventConfig.AdjustedSilverThreshold = 13.0m;
+
+        _sut.GetThreshold(Classification.Silver, eventConfig).ShouldBe(13.0m);
+    }
 }

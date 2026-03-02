@@ -301,6 +301,151 @@ public class ScoreAggregationServiceTests
         _wineResultRepo.Verify(r => r.AddWineResultAsync(It.IsAny<WineResult>()), Times.Once);
     }
 
+    // ── Endrede grenseverdier end-to-end ─────────────────────────
+
+    [Fact]
+    public void CalculateWineResult_CustomRaisedGoldThreshold_WineThatWasGoldBecomeSilver()
+    {
+        // Score 17.5 → Gull med standard. Admin hever Gull til 18.0 → skal bli Sølv.
+        var eventConfig = DefaultEvent();
+        eventConfig.GoldThreshold = 18.0m;
+
+        var ratings = new List<WineRating>
+        {
+            new() { WineId = "wine-1", JudgeId = "judge-1", Appearance = 2.5m, Nose = 3.5m, Taste = 11.5m }, // 17.5
+            new() { WineId = "wine-1", JudgeId = "judge-2", Appearance = 2.5m, Nose = 3.5m, Taste = 11.5m }  // 17.5
+        };
+
+        var result = CreateSut().CalculateWineResult("wine-1", eventConfig, ratings);
+
+        result.TotalScore.ShouldBe(17.5m);
+        result.Classification.ShouldBe(Classification.Silver);
+    }
+
+    [Fact]
+    public void CalculateWineResult_CustomLoweredGoldThreshold_WineThatWasSilverBecomesGold()
+    {
+        // Score 15.5 → Sølv med standard. Admin senker Gull til 15.0 → skal bli Gull.
+        var eventConfig = DefaultEvent();
+        eventConfig.GoldThreshold = 15.0m;
+
+        var ratings = new List<WineRating>
+        {
+            new() { WineId = "wine-1", JudgeId = "judge-1", Appearance = 2.0m, Nose = 2.0m, Taste = 11.5m }, // 15.5
+            new() { WineId = "wine-1", JudgeId = "judge-2", Appearance = 2.0m, Nose = 2.0m, Taste = 11.5m }  // 15.5
+        };
+
+        var result = CreateSut().CalculateWineResult("wine-1", eventConfig, ratings);
+
+        result.TotalScore.ShouldBe(15.5m);
+        result.Classification.ShouldBe(Classification.Gold);
+    }
+
+    [Fact]
+    public void CalculateWineResult_CustomRaisedAppearanceGateValue_WineFailsGate()
+    {
+        // Appearance avg = 1.6; standard gate 1.8 → underkjent. Admin hever til 1.7 → fortsatt underkjent.
+        var eventConfig = DefaultEvent();
+        eventConfig.AppearanceGateValue = 1.7m;
+
+        var ratings = new List<WineRating>
+        {
+            new() { WineId = "wine-1", JudgeId = "judge-1", Appearance = 1.6m, Nose = 3.5m, Taste = 11.5m },
+            new() { WineId = "wine-1", JudgeId = "judge-2", Appearance = 1.6m, Nose = 3.5m, Taste = 11.5m }
+        };
+
+        var result = CreateSut().CalculateWineResult("wine-1", eventConfig, ratings);
+
+        result.MeetsGateValues.ShouldBeFalse();
+        result.Classification.ShouldBe(Classification.NotApproved);
+    }
+
+    [Fact]
+    public void CalculateWineResult_CustomLoweredAppearanceGateValue_PreviouslyFailingWineNowPasses()
+    {
+        // Appearance avg = 1.6; admin senker gate til 1.5 → passerer, score 15.1 → Bronse (15.1 < Sølv 15.5)
+        var eventConfig = DefaultEvent();
+        eventConfig.AppearanceGateValue = 1.5m;
+
+        var ratings = new List<WineRating>
+        {
+            new() { WineId = "wine-1", JudgeId = "judge-1", Appearance = 1.6m, Nose = 3.5m, Taste = 10m }, // 15.1
+            new() { WineId = "wine-1", JudgeId = "judge-2", Appearance = 1.6m, Nose = 3.5m, Taste = 10m }  // 15.1
+        };
+
+        var result = CreateSut().CalculateWineResult("wine-1", eventConfig, ratings);
+
+        result.MeetsGateValues.ShouldBeTrue();
+        result.Classification.ShouldBe(Classification.Bronze);
+    }
+
+    [Fact]
+    public void CalculateWineResult_CustomAdjustedThresholdsEnabled_UsesAdjustedValues()
+    {
+        // Score 15.5 → Sølv med ordinære standardverdier.
+        // Admin aktiverer nedjustert modus med AdjustedGold = 15.0 → skal bli Gull.
+        var eventConfig = DefaultEvent();
+        eventConfig.UseAdjustedThresholds = true;
+        eventConfig.AdjustedGoldThreshold = 15.0m;
+
+        var ratings = new List<WineRating>
+        {
+            new() { WineId = "wine-1", JudgeId = "judge-1", Appearance = 2.0m, Nose = 2.0m, Taste = 11.5m }, // 15.5
+            new() { WineId = "wine-1", JudgeId = "judge-2", Appearance = 2.0m, Nose = 2.0m, Taste = 11.5m }  // 15.5
+        };
+
+        var result = CreateSut().CalculateWineResult("wine-1", eventConfig, ratings);
+
+        result.TotalScore.ShouldBe(15.5m);
+        result.Classification.ShouldBe(Classification.Gold);
+    }
+
+    [Fact]
+    public void CalculateWineResult_CustomOutlierThreshold_HigherThresholdSuppressesOutlierFlag()
+    {
+        // Spread = 6.0; standard terskel 4.0 → utliggerflagg. Admin hever til 7.0 → ingen flagg.
+        var eventConfig = DefaultEvent();
+        eventConfig.OutlierThreshold = 7.0m;
+
+        var ratings = new List<WineRating>
+        {
+            new() { WineId = "wine-1", JudgeId = "judge-1", Appearance = 2.5m, Nose = 3.5m, Taste = 10m },  // 16
+            new() { WineId = "wine-1", JudgeId = "judge-2", Appearance = 1.5m, Nose = 2.5m, Taste = 6m }    // 10
+        };
+
+        var result = CreateSut().CalculateWineResult("wine-1", eventConfig, ratings);
+
+        result.Spread.ShouldBe(6.0m);
+        result.IsOutlier.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task RecalculateEventResultsAsync_WithCustomThresholds_ClassifiesCorrectly()
+    {
+        // Admin har hevet Gull til 18.0; score 17.5 skal gi Sølv i databasen
+        var eventConfig = DefaultEvent();
+        eventConfig.GoldThreshold = 18.0m;
+
+        _eventRepo.Setup(r => r.GetEventByIdAsync("event-1")).ReturnsAsync(eventConfig);
+
+        var wine = new Wine { WineId = "wine-1", EventId = "event-1" };
+        _wineRepo.Setup(r => r.GetAllWinesAsync()).ReturnsAsync([wine]);
+
+        var ratings = new List<WineRating>
+        {
+            new() { WineId = "wine-1", JudgeId = "judge-1", Appearance = 2.5m, Nose = 3.5m, Taste = 11.5m }, // 17.5
+            new() { WineId = "wine-1", JudgeId = "judge-2", Appearance = 2.5m, Nose = 3.5m, Taste = 11.5m }  // 17.5
+        };
+        _wineRatingRepo.Setup(r => r.GetAllWineRatingsAsync()).ReturnsAsync(ratings);
+        _wineResultRepo.Setup(r => r.GetWineResultByWineIdAsync("wine-1")).ReturnsAsync((WineResult?)null);
+        _wineResultRepo.Setup(r => r.AddWineResultAsync(It.IsAny<WineResult>())).Returns(Task.CompletedTask);
+
+        var results = await CreateSut().RecalculateEventResultsAsync("event-1");
+
+        results[0].TotalScore.ShouldBe(17.5m);
+        results[0].Classification.ShouldBe(Classification.Silver);
+    }
+
     [Fact]
     public async Task RecalculateEventResultsAsync_ExistingResult_UpdatesInsteadOfAdding()
     {

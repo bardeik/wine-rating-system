@@ -88,39 +88,39 @@ public class Event
     [Range(0, 20, ErrorMessage = "Særlig utmerkelse grense må være mellom 0 og 20")]
     public decimal SpecialMeritThreshold { get; set; } = 12.0m;
 
-    [DisplayName("Nedjustert gullgrense")]
-    [Range(0, 20, ErrorMessage = "Nedjustert gullgrense må være mellom 0 og 20")]
+    [DisplayName("Alternativ gullgrense")]
+    [Range(0, 20, ErrorMessage = "Alternativ gullgrense må være mellom 0 og 20")]
     public decimal AdjustedGoldThreshold { get; set; } = 15.0m;
 
-    [DisplayName("Nedjustert sølvgrense")]
-    [Range(0, 20, ErrorMessage = "Nedjustert sølvgrense må være mellom 0 og 20")]
+    [DisplayName("Alternativ sølvgrense")]
+    [Range(0, 20, ErrorMessage = "Alternativ sølvgrense må være mellom 0 og 20")]
     public decimal AdjustedSilverThreshold { get; set; } = 14.0m;
 
-    [DisplayName("Nedjustert bronsegrense")]
-    [Range(0, 20, ErrorMessage = "Nedjustert bronsegrense må være mellom 0 og 20")]
+    [DisplayName("Alternativ bronsegrense")]
+    [Range(0, 20, ErrorMessage = "Alternativ bronsegrense må være mellom 0 og 20")]
     public decimal AdjustedBronzeThreshold { get; set; } = 13.0m;
 
-    [DisplayName("Nedjustert særlig utmerkelse grense")]
-    [Range(0, 20, ErrorMessage = "Nedjustert særlig utmerkelse grense må være mellom 0 og 20")]
+    [DisplayName("Alternativ særlig utmerkelse grense")]
+    [Range(0, 20, ErrorMessage = "Alternativ særlig utmerkelse grense må være mellom 0 og 20")]
     public decimal AdjustedSpecialMeritThreshold { get; set; } = 11.5m;
 
     [DisplayName("Gate-verdi utseende")]
-    [Range(0, 3, ErrorMessage = "Gate-verdi utseende må være mellom 0 og 3")]
+    [Range(0.1, 3, ErrorMessage = "Gate-verdi utseende må være mellom 0,1 og 3,0")]
     public decimal AppearanceGateValue { get; set; } = 1.8m;
 
     [DisplayName("Gate-verdi nese")]
-    [Range(0, 4, ErrorMessage = "Gate-verdi nese må være mellom 0 og 4")]
+    [Range(0.1, 4, ErrorMessage = "Gate-verdi nese må være mellom 0,1 og 4,0")]
     public decimal NoseGateValue { get; set; } = 1.8m;
 
     [DisplayName("Gate-verdi smak")]
-    [Range(0, 13, ErrorMessage = "Gate-verdi smak må være mellom 0 og 13")]
+    [Range(0.1, 13, ErrorMessage = "Gate-verdi smak må være mellom 0,1 og 13,0")]
     public decimal TasteGateValue { get; set; } = 5.8m;
 
     [DisplayName("Avviksterskel")]
     [Range(0, 20, ErrorMessage = "Avviksterskel må være mellom 0 og 20")]
     public decimal OutlierThreshold { get; set; } = 4.0m;
 
-    [DisplayName("Bruk nedjusterte grenser")]
+    [DisplayName("Bruk alternative grenser")]
     public bool UseAdjustedThresholds { get; set; }
 
     [DisplayName("Aktiv")]
