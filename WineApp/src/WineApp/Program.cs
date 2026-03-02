@@ -134,26 +134,22 @@ app.Use(async (context, next) =>
 // routing traffic to it. Must respond before authentication middleware runs.
 app.MapGet("/health", () => Results.Ok("healthy"));
 
-// Temporary diagnostics endpoint — verifies static files are present in the
-// Docker image at runtime. Remove once the deployment is confirmed working.
+// Temporary diagnostics endpoint — remove once deployment is confirmed working.
 app.MapGet("/debug/files", (IWebHostEnvironment env) =>
 {
-    var webRoot = env.WebRootPath;
-    var contentRoot = env.ContentRootPath;
-    var blazorJs = Path.Combine(webRoot ?? "", "_framework", "blazor.server.js");
-    var siteJs = Path.Combine(webRoot ?? "", "js", "site.js");
+    var webRoot = env.WebRootPath ?? "";
+    var contentRoot = env.ContentRootPath ?? "";
+    var allAppFiles = Directory.Exists("/app")
+        ? Directory.GetFiles("/app", "*", SearchOption.AllDirectories)
+                   .Select(f => f.Replace("/app", ""))
+                   .OrderBy(f => f)
+                   .ToArray()
+        : Array.Empty<string>();
     return Results.Ok(new
     {
         contentRoot,
         webRoot,
-        blazorJsExists = File.Exists(blazorJs),
-        siteJsExists = File.Exists(siteJs),
-        wwwrootExists = Directory.Exists(webRoot ?? ""),
-        wwwrootFiles = Directory.Exists(webRoot ?? "")
-            ? Directory.GetFiles(webRoot!, "*", SearchOption.AllDirectories)
-                       .Select(f => f.Replace(webRoot!, ""))
-                       .ToArray()
-            : Array.Empty<string>()
+        allAppFiles
     });
 });
 
