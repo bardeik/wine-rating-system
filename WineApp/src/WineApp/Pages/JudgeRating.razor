@@ -6,6 +6,7 @@
 @inject IWineEventService EventSvc
 @inject CurrentUserState CurrentUser
 @inject IJSRuntime JS
+@inject TimeProvider TimeProvider
 @using WineApp.Services
 
 <PageTitle>Dommerbedømming</PageTitle>
@@ -535,7 +536,7 @@
             {
                 WineId = currentWine.WineId,
                 JudgeId = judgeId,
-                RatingDate = DateTime.UtcNow
+                RatingDate = TimeProvider.GetUtcNow().UtcDateTime
             };
             
             previousRating = null;

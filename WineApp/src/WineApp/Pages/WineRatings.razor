@@ -4,6 +4,7 @@
 @inject IWineCatalogService WineCatalog
 @inject UserManager<ApplicationUser> UserManager
 @inject CurrentUserState CurrentUser
+@inject TimeProvider TimeProvider
 
 <PageTitle>Vurderinger</PageTitle>
 
@@ -156,6 +157,7 @@
 
         if (currentUser is not null)
             newRating.JudgeId = currentUser.DisplayName ?? currentUser.UserName ?? string.Empty;
+        newRating.RatingDate = TimeProvider.GetUtcNow().UtcDateTime;
         }
         catch (Exception ex)
         {
@@ -188,7 +190,7 @@
     private async Task AddNewWineRating()
     {
         await WineJudging.AddWineRatingAsync(newRating);
-        newRating = new WineRating();
+        newRating = new WineRating { RatingDate = TimeProvider.GetUtcNow().UtcDateTime };
         if (currentUser is not null)
             newRating.JudgeId = currentUser.DisplayName ?? currentUser.UserName ?? string.Empty;
         await LoadWineRatings();

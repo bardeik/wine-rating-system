@@ -44,5 +44,5 @@ public class WineRating
     public string WineId { get; set; } = string.Empty;
 
     [DisplayName("Vurderingsdato")]
-    public DateTime RatingDate { get; set; } = DateTime.UtcNow;
+    public DateTime RatingDate { get; set; }
 }

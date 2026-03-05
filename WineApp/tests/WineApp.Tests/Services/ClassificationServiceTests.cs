@@ -123,11 +123,10 @@ public class ClassificationServiceTests
     }
 
     [Fact]
-    public void GetThreshold_UnknownClassification_ReturnsZero()
+    public void GetThreshold_UnknownClassification_ThrowsArgumentOutOfRangeException()
     {
-        var result = _sut.GetThreshold("UnknownClassification", DefaultEvent());
-
-        result.ShouldBe(0);
+        Should.Throw<ArgumentOutOfRangeException>(() =>
+            _sut.GetThreshold("UnknownClassification", DefaultEvent()));
     }
 
     // ── ShouldUseAdjustedThresholds ───────────────────────────────

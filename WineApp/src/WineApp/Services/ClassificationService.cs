@@ -53,7 +53,7 @@ public class ClassificationService : IClassificationService
             Classification.Silver => useAdjusted ? eventConfig.AdjustedSilverThreshold : eventConfig.SilverThreshold,
             Classification.Bronze => useAdjusted ? eventConfig.AdjustedBronzeThreshold : eventConfig.BronzeThreshold,
             Classification.SpecialMerit => useAdjusted ? eventConfig.AdjustedSpecialMeritThreshold : eventConfig.SpecialMeritThreshold,
-            _ => 0
+            _ => throw new ArgumentOutOfRangeException(nameof(classification), classification, "Unknown classification")
         };
     }
 }

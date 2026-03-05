@@ -2,7 +2,7 @@
 @attribute [Authorize(Roles = "Admin")]
 @inject IWineCatalogService WineCatalog
 @inject IWineEventService EventSvc
-@inject IPaymentRepository PaymentRepository
+@inject IPaymentService PaymentSvc
 @inject IWineNumberService WineNumberService
 @using WineApp.Services
 

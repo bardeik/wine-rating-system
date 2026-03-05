@@ -60,6 +60,7 @@ builder.Services.AddScoped<IWineRepository, WineRepository>();
 builder.Services.AddScoped<IEventRepository, EventRepository>();
 builder.Services.AddScoped<IWineResultRepository, WineResultRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IFlightRepository, FlightRepository>();
 
 // Register business logic services - Scoped for the same reason; services that

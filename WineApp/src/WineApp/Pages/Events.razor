@@ -6,6 +6,7 @@
 @inject IWineNumberService WineNumberService
 @inject IScoreAggregationService ScoreAggregationService
 @inject NavigationManager Navigation
+@inject TimeProvider TimeProvider
 @using WineApp.Services
 
 <PageTitle>Arrangementshåndtering</PageTitle>
@@ -299,7 +300,7 @@ else
 
     private async Task ShowAddForm()
     {
-        currentEvent = new Event();
+        currentEvent = new Event { CreatedDate = TimeProvider.GetUtcNow().UtcDateTime };
         isEditing = false;
         showForm = true;
     }
@@ -336,7 +337,8 @@ else
             AdjustedSpecialMeritThreshold = evt.AdjustedSpecialMeritThreshold,
             UseAdjustedThresholds = evt.UseAdjustedThresholds,
             DeliveryAddressNorway = evt.DeliveryAddressNorway,
-            ImporterInfoNordic = evt.ImporterInfoNordic
+            ImporterInfoNordic = evt.ImporterInfoNordic,
+            CreatedDate = evt.CreatedDate
         };
         isEditing = true;
         showForm = true;

@@ -96,11 +96,11 @@ public class OutlierDetectionService : IOutlierDetectionService
 
     private decimal CalculateVariance(List<decimal> values)
     {
-        if (!values.Any())
+        if (values.Count < 2)
             return 0;
 
         var avg = values.Average();
         var sumOfSquares = values.Sum(v => (v - avg) * (v - avg));
-        return sumOfSquares / values.Count;
+        return sumOfSquares / (values.Count - 1);
     }
 }

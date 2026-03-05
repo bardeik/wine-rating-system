@@ -1,0 +1,554 @@
+plan_id: "20260305-da-improvements"
+objective: >
+  Implement targeted, safe improvements identified by Devil's Advocate analysis.
+  Focus on changes that can be made without requiring database migrations or
+  MongoDB transaction infrastructure. Issues covered: ISS-001, ISS-004, ISS-007,
+  ISS-008, ISS-009, ISS-011, ISS-012.
+
+tasks:
+  # ── WAVE 1 ── Pure logic fixes with no inter-task dependencies ─────────────
+
+  - id: "T001"
+    title: "ISS-007 — ClassificationService.GetThreshold: throw on unknown classification"
+    agent: "gem-implementer"
+    wave: 1
+    status: "pending"
+    issue: "ISS-007"
+    files_to_create: []
+    files_to_modify:
+      - "WineApp/src/WineApp/Services/ClassificationService.cs"
+    dependencies: []
+    description: >
+      The default arm of the switch expression in ClassificationService.GetThreshold
+      currently returns 0, which silently causes every wine to be classified as
+      Acceptable regardless of its score when an unrecognised classification string
+      is passed.  Replace the silent default with an ArgumentOutOfRangeException so
+      callers cannot pass invalid values without immediate feedback.
+
+      Change in ClassificationService.cs, method GetThreshold:
+        BEFORE:  _ => 0
+        AFTER:   _ => throw new ArgumentOutOfRangeException(nameof(classification),
+                          classification, "Unknown classification value.")
+    acceptance_criteria:
+      - "GetThreshold no longer has a `_ => 0` arm in the switch expression."
+      - "Passing an unknown classification string throws ArgumentOutOfRangeException."
+      - "All four known constants (Gold, Silver, Bronze, SpecialMerit) still resolve correctly."
+      - "Existing ClassificationServiceTests still pass."
+
+  - id: "T002"
+    title: "ISS-008 — Remove DateTime.UtcNow defaults from WineRating.RatingDate and Event.CreatedDate"
+    agent: "gem-implementer"
+    wave: 1
+    status: "pending"
+    issue: "ISS-008"
+    files_to_create: []
+    files_to_modify:
+      - "WineApp/src/WineApp/Models/WineRating.cs"
+      - "WineApp/src/WineApp/Models/Event.cs"
+      - "WineApp/src/WineApp/Pages/JudgeRating.razor"
+      - "WineApp/src/WineApp/Pages/Events.razor"
+      - "WineApp/src/WineApp/Data/DatabaseSeeder.cs"
+    dependencies: []
+    description: >
+      WineRating.RatingDate and Event.CreatedDate both carry `= DateTime.UtcNow`
+      as property initialisers, which bypasses the TimeProvider abstraction and
+      makes those timestamps untestable.
+
+      Step 1 – Models: Remove the default initialisers so the properties default
+      to `DateTime.MinValue` (the CLR default for DateTime), making it obvious
+      when a caller has forgotten to supply the timestamp.
+
+        WineRating.cs:
+          BEFORE:  public DateTime RatingDate { get; set; } = DateTime.UtcNow;
+          AFTER:   public DateTime RatingDate { get; set; }
+
+        Event.cs:
+          BEFORE:  public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+          AFTER:   public DateTime CreatedDate { get; set; }
+
+      Step 2 – Call sites: ensure every place that creates a WineRating or Event
+      instance explicitly sets the timestamp.  Audit the following files and add
+      the missing assignments using the TimeProvider already injected into each
+      service/page:
+
+        • JudgeRating.razor: the SaveRating / auto-save methods construct a
+          WineRating object.  Set `RatingDate = _timeProvider.GetUtcNow().UtcDateTime`
+          (inject TimeProvider via @inject TimeProvider TimeProvider if not already
+          present).
+        • Events.razor: the SaveEvent / CreateEvent handler constructs an Event.
+          Set `CreatedDate = TimeProvider.GetUtcNow().UtcDateTime`.
+        • DatabaseSeeder.cs: the seed data already uses explicit `RatingDate =
+          DateTime.UtcNow` — this is acceptable in seeder code only (no production
+          clock injection required).  Leave these unchanged to avoid disrupting the
+          seeder, but add a comment noting the intentional exception.
+
+      Step 3 – Verify no other production code (i.e., outside DatabaseSeeder.cs)
+      instantiates WineRating or Event without supplying a timestamp.
+    acceptance_criteria:
+      - "WineRating.RatingDate has no default initialiser in the model."
+      - "Event.CreatedDate has no default initialiser in the model."
+      - "JudgeRating.razor sets RatingDate via TimeProvider, not DateTime.UtcNow."
+      - "Events.razor sets CreatedDate via TimeProvider, not DateTime.UtcNow."
+      - "DatabaseSeeder.cs call sites retain DateTime.UtcNow with a clarifying comment."
+      - "No production file outside DatabaseSeeder.cs uses DateTime.UtcNow to set these fields."
+      - "dotnet build succeeds with zero errors."
+
+  - id: "T003"
+    title: "ISS-009 — OutlierDetectionService.CalculateVariance: use sample variance (N-1)"
+    agent: "gem-implementer"
+    wave: 1
+    status: "pending"
+    issue: "ISS-009"
+    files_to_create: []
+    files_to_modify:
+      - "WineApp/src/WineApp/Services/OutlierDetectionService.cs"
+      - "WineApp/tests/WineApp.Tests/Services/OutlierDetectionServiceTests.cs"
+    dependencies: []
+    description: >
+      CalculateVariance divides by `values.Count` (population variance, N),
+      which systematically underestimates spread for small judge panels.
+      The service also has no guard for a single-element list, which would
+      produce a mathematically undefined sample variance.
+
+      Changes to OutlierDetectionService.cs, private method CalculateVariance:
+        • Add guard: if values.Count < 2, return 0m.
+        • Change divisor from `values.Count` to `values.Count - 1`.
+
+        BEFORE:
+          private decimal CalculateVariance(List<decimal> values)
+          {
+              if (!values.Any())
+                  return 0;
+              var avg = values.Average();
+              var sumOfSquares = values.Sum(v => (v - avg) * (v - avg));
+              return sumOfSquares / values.Count;
+          }
+
+        AFTER:
+          private decimal CalculateVariance(List<decimal> values)
+          {
+              if (values.Count < 2)
+                  return 0;
+              var avg = values.Average();
+              var sumOfSquares = values.Sum(v => (v - avg) * (v - avg));
+              return sumOfSquares / (values.Count - 1);
+          }
+
+      Also update OutlierDetectionServiceTests.cs to add/update tests that
+      verify the N-1 calculation and the single-element guard.
+    acceptance_criteria:
+      - "CalculateVariance uses `values.Count - 1` as the divisor."
+      - "CalculateVariance returns 0 when the input list has fewer than 2 elements."
+      - "Unit tests assert the corrected variance value for a known input (e.g., [10, 12, 14] → variance 4.0 not 2.67)."
+      - "Unit tests assert single-element input returns 0."
+      - "All existing OutlierDetectionServiceTests still pass."
+
+  - id: "T004"
+    title: "ISS-011 — TrophyService: return null winner when RequiresLottery is true; update TrophyReports.razor"
+    agent: "gem-implementer"
+    wave: 1
+    status: "pending"
+    issue: "ISS-011"
+    files_to_create: []
+    files_to_modify:
+      - "WineApp/src/WineApp/Services/TrophyService.cs"
+      - "WineApp/src/WineApp/Pages/TrophyReports.razor"
+      - "WineApp/tests/WineApp.Tests/Services/TrophyServiceTests.cs"
+    dependencies: []
+    description: >
+      GetAaretsVinbondeAsync currently calls `.First()` even when
+      `RequiresLottery == true`, returning an arbitrary winner that the UI
+      then presents as definitive.  This misleads admins into thinking the
+      title has been awarded when it actually requires an offline lottery.
+
+      Changes to TrophyService.cs, method GetAaretsVinbondeAsync:
+
+        After the `RequiresLottery` flag is set and the WineResult records are
+        persisted, return `(null, finalCandidates.First().result)` so the
+        caller receives a non-null result (carrying the lottery flag and
+        highest-single-score info) but a null wine, signalling that no single
+        winner can be presented yet.
+
+        BEFORE (inside the `finalCandidates.Count > 1` branch):
+          return (finalCandidates.First().wine, finalCandidates.First().result);
+
+        AFTER:
+          // Cannot declare a single winner — lottery required.
+          // Return the first result (carrying RequiresLottery=true) with a null
+          // wine so callers can render the lottery-required state.
+          return (null, finalCandidates.First().result);
+
+      Changes to TrophyReports.razor, Årets Vinbonde card:
+
+        The existing template already renders a lottery warning block when
+        `aaretsVinbonde.result.RequiresLottery` is true, but only inside the
+        winner-detail section guarded by `wine != null`.  Add a new dedicated
+        branch:
+
+          @if (aaretsVinbonde.wine == null && aaretsVinbonde.result != null
+               && aaretsVinbonde.result.RequiresLottery)
+          {
+              <div class="text-center text-warning py-4">
+                  <div class="display-1 mb-2">🎲</div>
+                  <h5 class="text-warning">Loddtrekning påkrevd</h5>
+                  <p class="mb-1">Høyeste enkeltscore: @aaretsVinbonde.result.HighestSingleScore.ToString("F1")</p>
+                  <small class="text-muted">Gjennomfør loddtrekning for å kåre Årets Vinbonde.</small>
+              </div>
+          }
+          else if (aaretsVinbonde.wine != null && aaretsVinbonde.result != null)
+          {
+              ... existing winner detail markup ...
+          }
+          else
+          {
+              ... existing "no winner found" markup ...
+          }
+
+      Add/update TrophyServiceTests.cs to cover the new lottery-return case.
+    acceptance_criteria:
+      - "GetAaretsVinbondeAsync returns (null, result) — not (wine, result) — when the result has RequiresLottery=true."
+      - "TrophyReports.razor renders a 'Loddtrekning påkrevd' block when wine is null and result.RequiresLottery is true."
+      - "The existing winner-detail block is unchanged and still renders when wine is non-null."
+      - "Unit test asserts that the returned tuple has wine==null and result.RequiresLottery==true when a full tie exists."
+      - "Existing TrophyServiceTests still pass."
+
+  # ── WAVE 2 ── New PaymentService + wiring ──────────────────────────────────
+
+  - id: "T005"
+    title: "ISS-004 — Create IPaymentService interface"
+    agent: "gem-implementer"
+    wave: 2
+    status: "pending"
+    issue: "ISS-004"
+    files_to_create:
+      - "WineApp/src/WineApp/Services/IPaymentService.cs"
+    files_to_modify: []
+    dependencies: []
+    description: >
+      PaymentManagement.razor currently injects IPaymentRepository directly,
+      violating the architecture rule that pages inject services not
+      repositories.  The first step is to define an IPaymentService interface
+      that mirrors every method that PaymentManagement.razor calls on the
+      repository, plus any helpers needed.
+
+      Create WineApp/src/WineApp/Services/IPaymentService.cs with the
+      following contract (file-scoped namespace, nullables enabled):
+
+        using WineApp.Models;
+
+        namespace WineApp.Services;
+
+        public interface IPaymentService
+        {
+            Task<List<Payment>> GetAllPaymentsAsync();
+            Task<Payment?> GetPaymentByIdAsync(string id);
+            Task<List<Payment>> GetPaymentsByProducerIdAsync(string producerId);
+            Task<List<Payment>> GetPaymentsByEventIdAsync(string eventId);
+            Task<List<Payment>> GetUnpaidPaymentsAsync();
+            Task<List<Payment>> GetPaymentsWithoutReceiptAsync();
+            Task AddPaymentAsync(Payment payment);
+            Task UpdatePaymentAsync(Payment payment);
+            Task DeletePaymentAsync(string id);
+        }
+    acceptance_criteria:
+      - "File WineApp/src/WineApp/Services/IPaymentService.cs exists."
+      - "Interface is in namespace WineApp.Services."
+      - "All nine method signatures match the IPaymentRepository interface exactly."
+      - "No implementation code is present in the interface file."
+      - "dotnet build succeeds with zero errors."
+
+  - id: "T006"
+    title: "ISS-004 — Implement PaymentService wrapping IPaymentRepository"
+    agent: "gem-implementer"
+    wave: 2
+    status: "pending"
+    issue: "ISS-004"
+    files_to_create:
+      - "WineApp/src/WineApp/Services/PaymentService.cs"
+    files_to_modify: []
+    dependencies:
+      - "T005"
+    description: >
+      Create the concrete PaymentService that implements IPaymentService by
+      delegating every call to the injected IPaymentRepository.
+
+      Create WineApp/src/WineApp/Services/PaymentService.cs:
+
+        using WineApp.Data;
+        using WineApp.Models;
+
+        namespace WineApp.Services;
+
+        public class PaymentService : IPaymentService
+        {
+            private readonly IPaymentRepository _paymentRepository;
+
+            public PaymentService(IPaymentRepository paymentRepository)
+            {
+                _paymentRepository = paymentRepository;
+            }
+
+            public Task<List<Payment>> GetAllPaymentsAsync()
+                => _paymentRepository.GetAllPaymentsAsync();
+
+            public Task<Payment?> GetPaymentByIdAsync(string id)
+                => _paymentRepository.GetPaymentByIdAsync(id);
+
+            public Task<List<Payment>> GetPaymentsByProducerIdAsync(string producerId)
+                => _paymentRepository.GetPaymentsByProducerIdAsync(producerId);
+
+            public Task<List<Payment>> GetPaymentsByEventIdAsync(string eventId)
+                => _paymentRepository.GetPaymentsByEventIdAsync(eventId);
+
+            public Task<List<Payment>> GetUnpaidPaymentsAsync()
+                => _paymentRepository.GetUnpaidPaymentsAsync();
+
+            public Task<List<Payment>> GetPaymentsWithoutReceiptAsync()
+                => _paymentRepository.GetPaymentsWithoutReceiptAsync();
+
+            public Task AddPaymentAsync(Payment payment)
+                => _paymentRepository.AddPaymentAsync(payment);
+
+            public Task UpdatePaymentAsync(Payment payment)
+                => _paymentRepository.UpdatePaymentAsync(payment);
+
+            public Task DeletePaymentAsync(string id)
+                => _paymentRepository.DeletePaymentAsync(id);
+        }
+    acceptance_criteria:
+      - "File WineApp/src/WineApp/Services/PaymentService.cs exists."
+      - "PaymentService implements IPaymentService."
+      - "Constructor accepts IPaymentRepository (not the concrete class)."
+      - "Every method delegates directly to _paymentRepository with no added logic."
+      - "dotnet build succeeds with zero errors."
+
+  - id: "T007"
+    title: "ISS-004 — Register PaymentService in Program.cs and update PaymentManagement.razor"
+    agent: "gem-implementer"
+    wave: 2
+    status: "pending"
+    issue: "ISS-004"
+    files_to_create: []
+    files_to_modify:
+      - "WineApp/src/WineApp/Program.cs"
+      - "WineApp/src/WineApp/Pages/PaymentManagement.razor"
+    dependencies:
+      - "T005"
+      - "T006"
+    description: >
+      Wire up the new service and fix the architectural violation in the page.
+
+      Change 1 — Program.cs (after the existing IFlightRepository registration,
+      before or near the other service registrations around line 67):
+        Add: builder.Services.AddScoped<IPaymentService, PaymentService>();
+
+      Change 2 — PaymentManagement.razor:
+        • Remove: @inject IPaymentRepository PaymentRepository
+        • Add:    @inject IPaymentService PaymentService
+        • Remove the @using WineApp.Data directive if it is only present to
+          resolve IPaymentRepository (keep it if used for other Data types).
+        • Replace every reference to `PaymentRepository` in @code with
+          `PaymentService`.  The method signatures are identical so only the
+          variable name changes.
+    acceptance_criteria:
+      - "Program.cs contains `builder.Services.AddScoped<IPaymentService, PaymentService>()`."
+      - "PaymentManagement.razor injects IPaymentService, not IPaymentRepository."
+      - "No reference to IPaymentRepository remains in PaymentManagement.razor."
+      - "All payment operations (load, confirm, update) work through PaymentService."
+      - "dotnet build succeeds with zero errors."
+
+  # ── WAVE 3 ── CurrentUserState refresh capability ──────────────────────────
+
+  - id: "T008"
+    title: "ISS-001 — Add ForceRefreshAsync() to CurrentUserState and call it after role changes"
+    agent: "gem-implementer"
+    wave: 3
+    status: "pending"
+    issue: "ISS-001"
+    files_to_create: []
+    files_to_modify:
+      - "WineApp/src/WineApp/Services/CurrentUserState.cs"
+      - "WineApp/src/WineApp/Pages/Judges.razor"
+    dependencies: []
+    description: >
+      CurrentUserState uses a `_initialized` flag to avoid re-reading the auth
+      state on every render.  This is correct for normal page navigation, but
+      means that if an admin promotes or demotes a user on Judges.razor the
+      calling circuit's CurrentUserState never picks up the change.
+
+      Change 1 — CurrentUserState.cs:
+        Add a public ForceRefreshAsync() method that resets _initialized and
+        then calls the existing initialisation logic by awaiting
+        EnsureInitializedAsync():
+
+          /// <summary>
+          /// Forces the state to re-read from the authentication provider on
+          /// the next access — or immediately if called directly.
+          /// Use after role changes affecting the current user.
+          /// </summary>
+          public async Task ForceRefreshAsync()
+          {
+              _initialized = false;
+              await EnsureInitializedAsync();
+          }
+
+      Change 2 — Judges.razor:
+        After the AddJudge or RemoveJudgeRole operations succeed, add a call
+        to await CurrentUser.ForceRefreshAsync() so the current admin circuit
+        reflects any self-role changes immediately.  Also inject CurrentUserState
+        if it is not already injected on the page:
+          @inject CurrentUserState CurrentUser
+
+        In the AddJudge and RemoveJudgeRole handlers, after the UserManager call
+        and the list reload, add:
+          await CurrentUser.ForceRefreshAsync();
+    acceptance_criteria:
+      - "CurrentUserState has a public async Task ForceRefreshAsync() method."
+      - "ForceRefreshAsync resets _initialized to false before calling EnsureInitializedAsync."
+      - "Judges.razor injects CurrentUserState."
+      - "Judges.razor calls CurrentUser.ForceRefreshAsync() after every successful AddJudge and RemoveJudgeRole operation."
+      - "dotnet build succeeds with zero errors."
+
+  # ── WAVE 4 ── New test files ────────────────────────────────────────────────
+
+  - id: "T009"
+    title: "ISS-012 — Add CurrentUserStateTests.cs"
+    agent: "gem-implementer"
+    wave: 4
+    status: "pending"
+    issue: "ISS-012"
+    files_to_create:
+      - "WineApp/tests/WineApp.Tests/Services/CurrentUserStateTests.cs"
+    files_to_modify: []
+    dependencies:
+      - "T008"
+    description: >
+      CurrentUserState has no unit tests.  Add CurrentUserStateTests.cs under
+      WineApp/tests/WineApp.Tests/Services/ covering the key behaviours.
+
+      Test class: CurrentUserStateTests
+      SUT factory: creates a CurrentUserState with a mocked
+        AuthenticationStateProvider.
+
+      Required test cases:
+
+        1. EnsureInitializedAsync_Unauthenticated_AllPropertiesDefault
+           Mock returns ClaimsPrincipal.Empty.
+           Assert: IsAuthenticated==false, UserId=="", IsAdmin==false,
+                   IsJudge==false, IsWineProducer==false, IsViewer==false.
+
+        2. EnsureInitializedAsync_AdminUser_IsAdminTrue
+           Mock returns a ClaimsPrincipal with NameIdentifier "user-1",
+           Name "admin@test.com", and role claim "Admin".
+           Assert: IsAuthenticated==true, UserId=="user-1",
+                   IsAdmin==true, IsJudge==false.
+
+        3. EnsureInitializedAsync_Idempotent_DoesNotReloadOnSecondCall
+           Mock setup with Verifiable; call EnsureInitializedAsync twice.
+           Assert: GetAuthenticationStateAsync was called exactly once.
+
+        4. ForceRefreshAsync_ResetsAndReloads
+           Call EnsureInitializedAsync once (caches state), then change the
+           mock to return a different ClaimsPrincipal, then call
+           ForceRefreshAsync.
+           Assert: properties reflect the new principal (proving re-read
+           occurred), and GetAuthenticationStateAsync was called exactly twice.
+
+      Use Mock<AuthenticationStateProvider> with
+        .Setup(p => p.GetAuthenticationStateAsync())
+        .ReturnsAsync(new AuthenticationState(principal)).
+
+      GlobalUsings already covers xUnit, Moq, Shouldly, and the main project
+      namespaces; add `using Microsoft.AspNetCore.Components.Authorization;`
+      locally in the test file.
+    acceptance_criteria:
+      - "File WineApp/tests/WineApp.Tests/Services/CurrentUserStateTests.cs exists."
+      - "All four test cases are present and named as specified."
+      - "No MongoDB or Blazor component infrastructure is required to run the tests."
+      - "`dotnet test` runs the new tests successfully (all pass)."
+
+  - id: "T010"
+    title: "ISS-012 — Add ReportServiceTests.cs covering basic aggregation"
+    agent: "gem-implementer"
+    wave: 4
+    status: "pending"
+    issue: "ISS-012"
+    files_to_create:
+      - "WineApp/tests/WineApp.Tests/Services/ReportServiceTests.cs"
+    files_to_modify: []
+    dependencies: []
+    description: >
+      ReportService has no unit tests.  Add ReportServiceTests.cs under
+      WineApp/tests/WineApp.Tests/Services/ covering the aggregation logic.
+
+      Test class: ReportServiceTests
+      SUT factory: creates a ReportService with mocked IWineRepository,
+        IWineRatingRepository, IWineProducerRepository.
+
+      Required test cases:
+
+        1. GetWineReportRowsAsync_NoRatings_ReturnsSingleRowWithZeroAverages
+           One wine, no ratings, one producer.
+           Assert: result has 1 row; AvgAppearance==0, AvgNose==0,
+                   AvgTaste==0, Total==0, RatingCount==0.
+
+        2. GetWineReportRowsAsync_WithRatings_CalculatesCorrectAverages
+           One wine with two ratings:
+             Rating 1: Appearance=2.0, Nose=3.0, Taste=10.0
+             Rating 2: Appearance=2.4, Nose=3.4, Taste=11.0
+           Assert: AvgAppearance==2.2, AvgNose==3.2, AvgTaste==10.5,
+                   Total==15.9 (within 0.01 tolerance), RatingCount==2.
+
+        3. GetWineReportRowsAsync_MultipleWines_OrderedByTotalDescending
+           Two wines: WineA has higher total than WineB.
+           Assert: result[0].Name == WineA.Name.
+
+        4. GetWineReportRowsAsync_ProducerNameResolved
+           One wine whose WineProducerId matches a producer with
+           WineyardName "Gård AS".
+           Assert: result[0].ProducerName == "Gård AS".
+
+        5. GetWineReportRowsAsync_UnknownProducer_ReturnsDash
+           One wine whose WineProducerId does not match any producer.
+           Assert: result[0].ProducerName == "–".
+
+      Use standard Moq patterns: `_wineRepo.Setup(r => r.GetAllWinesAsync()).ReturnsAsync(...)`.
+      GlobalUsings covers xUnit, Moq, Shouldly, and the main project namespaces.
+    acceptance_criteria:
+      - "File WineApp/tests/WineApp.Tests/Services/ReportServiceTests.cs exists."
+      - "All five test cases are present."
+      - "Average calculations use exact decimal arithmetic to avoid floating-point surprises."
+      - "No MongoDB or Blazor component infrastructure is required to run the tests."
+      - "`dotnet test` runs the new tests successfully (all pass)."
+
+contracts:
+  - producer_task: "T005"
+    consumer_task: "T006"
+    artifact: "IPaymentService interface (WineApp/src/WineApp/Services/IPaymentService.cs)"
+    description: >
+      T006 (PaymentService implementation) depends on the IPaymentService
+      interface file created by T005.  T006 must not start until T005 is
+      complete and the interface compiles cleanly.
+
+  - producer_task: "T005"
+    consumer_task: "T007"
+    artifact: "IPaymentService interface"
+    description: >
+      T007 (Program.cs registration + PaymentManagement.razor update) references
+      IPaymentService by name; the interface must exist before T007 modifies the
+      page and DI setup.
+
+  - producer_task: "T006"
+    consumer_task: "T007"
+    artifact: "PaymentService class (WineApp/src/WineApp/Services/PaymentService.cs)"
+    description: >
+      T007 registers `builder.Services.AddScoped<IPaymentService, PaymentService>()`;
+      the concrete class must exist before Program.cs can reference it.
+
+  - producer_task: "T008"
+    consumer_task: "T009"
+    artifact: "ForceRefreshAsync() method on CurrentUserState"
+    description: >
+      T009 (CurrentUserStateTests) contains a test case (ForceRefreshAsync_ResetsAndReloads)
+      that directly invokes ForceRefreshAsync.  That method must be present before
+      the test file can compile.

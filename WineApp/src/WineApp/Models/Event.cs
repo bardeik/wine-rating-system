@@ -127,5 +127,5 @@ public class Event
     public bool IsActive { get; set; } = true;
 
     [DisplayName("Opprettet")]
-    public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedDate { get; set; }
 }

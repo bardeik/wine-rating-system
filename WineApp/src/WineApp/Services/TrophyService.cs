@@ -45,6 +45,8 @@ public class TrophyService : ITrophyService
                     candidate.result.RequiresLottery = true;
                     await _wineResultRepository.UpdateWineResultAsync(candidate.result);
                 }
+                // Cannot determine a winner algorithmically — lottery required
+                return (null, finalCandidates.First().result);
             }
 
             return (finalCandidates.First().wine, finalCandidates.First().result);

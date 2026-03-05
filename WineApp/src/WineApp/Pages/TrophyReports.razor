@@ -104,6 +104,16 @@ else
                             }
                         </dl>
                     }
+                    else if (aaretsVinbonde.result?.RequiresLottery == true)
+                    {
+                        <div class="text-center py-4">
+                            <div class="display-1 mb-2">🎲</div>
+                            <div class="alert alert-warning">
+                                <strong>Loddtrekning påkrevd!</strong><br />
+                                <small>Jevnbyrdige viner — vinner avgjøres ved loddtrekning.</small>
+                            </div>
+                        </div>
+                    }
                     else
                     {
                         <div class="text-center text-muted py-4">
