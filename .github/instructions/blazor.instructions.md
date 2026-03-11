@@ -41,37 +41,33 @@ applyTo: '**/*.razor, **/*.razor.cs, **/*.razor.css'
 
 ## Caching Strategies
 
-- Implement in-memory caching for frequently used data, especially for Blazor Server apps. Use IMemoryCache for lightweight caching solutions.
-- For Blazor WebAssembly, utilize localStorage or sessionStorage to cache application state between user sessions.
+- Implement in-memory caching for frequently used data. Use `IMemoryCache` for lightweight caching solutions in Blazor Server apps.
 - Consider Distributed Cache strategies (like Redis or SQL Server Cache) for larger applications that need shared state across multiple users or clients.
-- Cache API calls by storing responses to avoid redundant calls when data is unlikely to change, thus improving the user experience.
+- Cache service calls by storing responses in component-level fields to avoid redundant database calls during a single page lifecycle.
 
-## State Management Libraries
+## State Management
 
 - Use Blazor's built-in Cascading Parameters and EventCallbacks for basic state sharing across components.
-- Implement advanced state management solutions using libraries like Fluxor or BlazorState when the application grows in complexity.
-- For client-side state persistence in Blazor WebAssembly, consider using Blazored.LocalStorage or Blazored.SessionStorage to maintain state between page reloads.
 - For server-side Blazor, use Scoped Services and the StateContainer pattern to manage state within user sessions while minimizing re-renders.
+- Inject `CurrentUserState` (scoped service) to access the resolved identity for the current Blazor circuit; always call `await EnsureInitializedAsync()` in `OnInitializedAsync`.
 
-## API Design and Integration
+## Service Integration
 
-- Use HttpClient or other appropriate services to communicate with external APIs or your own backend.
-- Implement error handling for API calls using try-catch and provide proper user feedback in the UI.
+- This is a Blazor Server application with **no REST API**. The `Controllers/` folder is intentionally empty.
+- Blazor pages communicate with the data layer exclusively through injected services — never inject repositories directly into pages.
+- Use `@inject IMyService MyService` in Razor components to obtain service instances via the DI container.
+- Implement error handling for service calls using try-catch and provide proper user feedback via the `StatusAlert` shared component.
 
-## Testing and Debugging in Visual Studio
+## Testing and Debugging
 
-- All unit testing and integration testing should be done in Visual Studio Enterprise.
-- Test Blazor components and services using xUnit, NUnit, or MSTest.
-- Use Moq or NSubstitute for mocking dependencies during tests.
-- Debug Blazor UI issues using browser developer tools and Visual Studio's debugging tools for backend and server-side issues.
-- For performance profiling and optimization, rely on Visual Studio's diagnostics tools.
+- Run unit tests with `dotnet test` from the command line or any IDE.
+- Test Blazor services using xUnit; use Moq for mocking repository dependencies and Shouldly for readable assertions.
+- Use `FrozenTimeProvider` (defined in `WineApp.Tests`) to pin the clock in time-sensitive tests.
+- Debug Blazor UI issues using browser developer tools and your IDE's debugger for server-side issues.
 
 ## Security and Authentication
 
-- Implement Authentication and Authorization in the Blazor app where necessary using ASP.NET Identity or JWT tokens for API authentication.
-- Use HTTPS for all web communication and ensure proper CORS policies are implemented.
-
-## API Documentation and Swagger
-
-- Use Swagger/OpenAPI for API documentation for your backend API services.
-- Ensure XML documentation for models and API methods for enhancing Swagger documentation.
+- Implement Authentication and Authorization using ASP.NET Core Identity backed by MongoDB.
+- Use HTTPS for all web communication. In production, TLS is terminated at the reverse proxy (Fly.io); `UseHttpsRedirection` is omitted inside the app to avoid redirect loops.
+- Protect Blazor pages with `@attribute [Authorize]` or `@attribute [Authorize(Roles = "Admin,Judge")]`.
+- Apply security headers (X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy) via middleware in `Program.cs`.
