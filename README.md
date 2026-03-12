@@ -50,6 +50,8 @@ Each event carries its own fully configurable classification thresholds and gate
 
 All values are validated with `[Range]` attributes; gate values require a minimum of 0.1. Default values are shown as help text in the Admin form.
 
+Events also store logistical details: registration start/end dates, payment deadline, delivery deadline, a fee per wine, and banking information (bank name, account number, IBAN, BIC, organisation number) used in payment receipts. Delivery address (Norway) and importer info (Nordic) are also stored per event.
+
 #### Flight Management
 Wines are distributed into judge flights by an Admin via **Flight Management**. Each flight groups a set of wines to be tasted in a single session by one or more judges.
 
@@ -106,6 +108,7 @@ A public-facing page (**Public Results**) shows final results without requiring 
 | Authentication | ASP.NET Core Identity + AspNetCore.Identity.MongoDbCore 7.0.0 |
 | Styling | Bootstrap (CSS) |
 | PDF generation | [QuestPDF](https://www.questpdf.com/) |
+| CSV export | [CsvHelper](https://joshclose.github.io/CsvHelper/) 33.x |
 | Unit tests | xUnit 2.x + Moq 4.x + Shouldly 4.x |
 
 ### Project Layout
@@ -166,18 +169,34 @@ Blazor pages inject **facade services** or **domain services** — never reposit
 | `IWineNumberService` | Sequential wine number assignment |
 | `IWineValidationService` | Wine registration business rules |
 | `IFlightService` | Flight management |
-| `IExportService` | Data export |
+| `IPaymentService` | Payment record CRUD |
+| `IExportService` | Data export (CSV) |
 | `IPdfService` | PDF generation |
 | `CurrentUserState` | Scoped; holds resolved identity for the current Blazor circuit |
 
 ### Clock Abstraction
 Services never call `DateTime.Now` or `DateTime.UtcNow` directly. `TimeProvider` is injected and registered as a singleton (`TimeProvider.System`). Tests use `FrozenTimeProvider` to pin time deterministically.
 
+### Shared Components (`Shared/`)
+Reusable Razor components used across pages:
+
+| Component | Description |
+|---|---|
+| `LoadingContainer.razor` | Wraps page content; shows spinner when `IsLoading=true`, error alert when `Error` is non-empty |
+| `StatusAlert.razor` | Dismissable Bootstrap alert; `Message`, `CssClass` (default `"alert-info"`), `OnDismiss` callback |
+| `DecimalInput.razor` | Decimal input accepting both `,` and `.` as separators; displays with `,` (Norwegian convention) |
+| `MainLayout.razor` | Responsive layout with hamburger sidebar for mobile |
+| `NavMenu.razor` | Role-based navigation sidebar |
+| `LoginDisplay.razor` | Shows current username and logout/login button |
+| `RedirectToLogin.razor` | Redirects unauthenticated users to `/Account/Login` |
+| `RedirectToHome.razor` | Redirects to home with `accessDenied=true` |
+
 ### Authentication
 - Identity is backed by MongoDB via `AspNetCore.Identity.MongoDbCore`.
 - User model: `ApplicationUser : MongoIdentityUser<Guid>` (adds `DisplayName`).
 - Cookie auth with 8-hour sliding expiration.
 - All Blazor pages are protected with `@attribute [Authorize]` (or role-specific variants). Unauthenticated requests are redirected to `/Account/Login`.
+- Authenticated users can change their own password at `/account/change-password` (`ChangePassword.razor`).
 
 ### Seeded Accounts (first run only)
 
