@@ -162,5 +162,6 @@ app.MapRazorPages();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 app.MapDownloadEndpoints();
+app.MapMobileApiEndpoints();
 
 app.Run();

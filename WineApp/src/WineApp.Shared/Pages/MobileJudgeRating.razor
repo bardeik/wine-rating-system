@@ -1,0 +1,349 @@
+@page "/judge/rating"
+@using WineApp.Shared.Dtos
+@using WineApp.Shared.MobileServices
+@inject IMobileRatingService RatingService
+@inject IMobileFlightService FlightService
+@inject IMobileEventService EventService
+
+<PageTitle>Vurdering</PageTitle>
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center align-items-center" style="min-height: 60vh;">
+        <div class="text-center">
+            <div class="spinner-border text-danger" role="status"></div>
+            <p class="mt-2">Laster viner...</p>
+        </div>
+    </div>
+}
+else if (loadError is not null)
+{
+    <div class="alert alert-danger m-3" role="alert">
+        <strong>Feil:</strong> @loadError
+    </div>
+}
+else if (wines.Count == 0)
+{
+    <div class="alert alert-info m-3" role="alert">
+        Ingen viner er tilordnet din flight ennå.
+    </div>
+}
+else
+{
+    <div class="container-fluid px-3 pb-5">
+        <!-- Progress header -->
+        <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
+            <span class="text-muted small">Vin @(currentIndex + 1) av @wines.Count</span>
+            <div class="progress flex-grow-1 mx-3" style="height: 8px;">
+                <div class="progress-bar bg-danger"
+                     role="progressbar"
+                     style="width: @(((currentIndex + 1) * 100) / wines.Count)%"
+                     aria-valuenow="@(currentIndex + 1)"
+                     aria-valuemin="0"
+                     aria-valuemax="@wines.Count">
+                </div>
+            </div>
+            <span class="badge bg-danger">@(ratedCount)/@wines.Count</span>
+        </div>
+
+        <!-- Wine info -->
+        <div class="card mt-3 border-0 bg-light">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">
+                    @if (currentWine.WineNumber.HasValue)
+                    {
+                        <span class="badge bg-secondary me-2">#@currentWine.WineNumber</span>
+                    }
+                    @currentWine.RatingName
+                </h5>
+                <p class="card-text text-muted mb-1">
+                    @currentWine.Name — @currentWine.Vintage
+                </p>
+                <p class="card-text small">
+                    <span class="badge bg-outline-secondary border">@currentWine.Category</span>
+                    <span class="badge bg-outline-secondary border ms-1">@currentWine.Group</span>
+                    <span class="ms-2">@currentWine.AlcoholPercentage% alc.</span>
+                </p>
+            </div>
+        </div>
+
+        @if (saveError is not null)
+        {
+            <div class="alert alert-warning mt-2 py-2" role="alert">@saveError</div>
+        }
+        @if (savedOk)
+        {
+            <div class="alert alert-success mt-2 py-2" role="alert">✓ Lagret</div>
+        }
+
+        <!-- Rating form -->
+        <div class="mt-3">
+            <!-- Appearance -->
+            <div class="mb-4">
+                <label class="form-label fw-semibold d-flex justify-content-between">
+                    <span>Utseende (A)</span>
+                    <span>
+                        <span class="text-danger fw-bold fs-5">@currentRating.Appearance</span>
+                        <span class="text-muted"> / 3.0</span>
+                    </span>
+                </label>
+                @if (activeEvent is not null && currentRating.Appearance < activeEvent.AppearanceGateValue && currentRating.Appearance > 0)
+                {
+                    <div class="alert alert-warning py-1 px-2 small mb-1">
+                        ⚠️ Under gate-verdi (@activeEvent.AppearanceGateValue)
+                    </div>
+                }
+                <input type="range"
+                       class="form-range"
+                       min="0" max="3" step="0.1"
+                       value="@currentRating.Appearance"
+                       @oninput="e => currentRating.Appearance = ParseDecimal(e.Value)" />
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>0</span><span>1.5</span><span>3.0</span>
+                </div>
+            </div>
+
+            <!-- Nose -->
+            <div class="mb-4">
+                <label class="form-label fw-semibold d-flex justify-content-between">
+                    <span>Nese (B)</span>
+                    <span>
+                        <span class="text-danger fw-bold fs-5">@currentRating.Nose</span>
+                        <span class="text-muted"> / 4.0</span>
+                    </span>
+                </label>
+                @if (activeEvent is not null && currentRating.Nose < activeEvent.NoseGateValue && currentRating.Nose > 0)
+                {
+                    <div class="alert alert-warning py-1 px-2 small mb-1">
+                        ⚠️ Under gate-verdi (@activeEvent.NoseGateValue)
+                    </div>
+                }
+                <input type="range"
+                       class="form-range"
+                       min="0" max="4" step="0.1"
+                       value="@currentRating.Nose"
+                       @oninput="e => currentRating.Nose = ParseDecimal(e.Value)" />
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>0</span><span>2.0</span><span>4.0</span>
+                </div>
+            </div>
+
+            <!-- Taste -->
+            <div class="mb-4">
+                <label class="form-label fw-semibold d-flex justify-content-between">
+                    <span>Smak (C)</span>
+                    <span>
+                        <span class="text-danger fw-bold fs-5">@currentRating.Taste</span>
+                        <span class="text-muted"> / 13.0</span>
+                    </span>
+                </label>
+                @if (activeEvent is not null && currentRating.Taste < activeEvent.TasteGateValue && currentRating.Taste > 0)
+                {
+                    <div class="alert alert-warning py-1 px-2 small mb-1">
+                        ⚠️ Under gate-verdi (@activeEvent.TasteGateValue)
+                    </div>
+                }
+                <input type="range"
+                       class="form-range"
+                       min="0" max="13" step="0.1"
+                       value="@currentRating.Taste"
+                       @oninput="e => currentRating.Taste = ParseDecimal(e.Value)" />
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>0</span><span>6.5</span><span>13.0</span>
+                </div>
+            </div>
+
+            <!-- Total -->
+            <div class="alert alert-secondary py-2 text-center mb-3">
+                <strong>Total: </strong>
+                <span class="fs-4 fw-bold text-danger">@currentRating.Total</span>
+                <span class="text-muted"> / 20.0</span>
+            </div>
+
+            <!-- Comment -->
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Kommentar</label>
+                <textarea class="form-control"
+                          rows="3"
+                          maxlength="1000"
+                          placeholder="Valgfri smaksnotat..."
+                          @bind="currentRating.Comment"></textarea>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="d-grid gap-2 mt-3">
+            <button class="btn btn-danger btn-lg py-3"
+                    @onclick="SaveAndContinueAsync"
+                    disabled="@isSaving">
+                @if (isSaving)
+                {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                }
+                @if (currentIndex < wines.Count - 1)
+                {
+                    <span>Lagre og neste ›</span>
+                }
+                else
+                {
+                    <span>Lagre og fullfør ✓</span>
+                }
+            </button>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary flex-grow-1 py-2"
+                        @onclick="NavigatePreviousAsync"
+                        disabled="@(currentIndex == 0 || isSaving)">
+                    ‹ Forrige
+                </button>
+                <button class="btn btn-outline-secondary flex-grow-1 py-2"
+                        @onclick="() => NavigateTo(currentIndex + 1)"
+                        disabled="@(currentIndex >= wines.Count - 1 || isSaving)">
+                    Hopp over ›
+                </button>
+            </div>
+        </div>
+
+        <!-- Wine index list -->
+        <div class="mt-4">
+            <p class="text-muted small mb-2">Alle viner i din flight:</p>
+            <div class="d-flex flex-wrap gap-2">
+                @for (int i = 0; i < wines.Count; i++)
+                {
+                    var idx = i;
+                    var wine = wines[idx];
+                    var hasRating = ratings.ContainsKey(wine.WineId);
+                    <button class="btn btn-sm @(idx == currentIndex ? "btn-danger" : hasRating ? "btn-success" : "btn-outline-secondary")"
+                            style="min-width: 48px; min-height: 48px;"
+                            @onclick="() => NavigateTo(idx)">
+                        @(wine.WineNumber.HasValue ? wine.WineNumber.ToString() : (idx + 1).ToString())
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private bool isSaving;
+    private string? loadError;
+    private string? saveError;
+    private bool savedOk;
+
+    private IList<WineDto> wines = [];
+    private EventDto? activeEvent;
+    private Dictionary<string, WineRatingDto> ratings = new();
+
+    private int currentIndex;
+    private WineDto currentWine = new();
+    private WineRatingDto currentRating = new();
+
+    private int ratedCount => ratings.Count;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var winesTask = FlightService.GetMyFlightWinesAsync();
+            var eventTask = EventService.GetActiveEventAsync();
+            await Task.WhenAll(winesTask, eventTask);
+
+            wines = await winesTask;
+            activeEvent = await eventTask;
+
+            var allRatings = await RatingService.GetMyRatingsAsync();
+            ratings = allRatings.ToDictionary(r => r.WineId);
+
+            if (wines.Count > 0)
+                NavigateTo(0);
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Kunne ikke laste viner: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void NavigateTo(int index)
+    {
+        if (index < 0 || index >= wines.Count)
+            return;
+
+        currentIndex = index;
+        currentWine = wines[index];
+        savedOk = false;
+        saveError = null;
+
+        currentRating = ratings.TryGetValue(currentWine.WineId, out var existing)
+            ? new WineRatingDto
+            {
+                WineRatingId = existing.WineRatingId,
+                WineId = existing.WineId,
+                JudgeId = existing.JudgeId,
+                Appearance = existing.Appearance,
+                Nose = existing.Nose,
+                Taste = existing.Taste,
+                Comment = existing.Comment
+            }
+            : new WineRatingDto { WineId = currentWine.WineId };
+    }
+
+    private async Task SaveAndContinueAsync()
+    {
+        await SaveCurrentAsync();
+        if (saveError is null && currentIndex < wines.Count - 1)
+            NavigateTo(currentIndex + 1);
+    }
+
+    private async Task NavigatePreviousAsync()
+    {
+        await SaveCurrentAsync();
+        if (currentIndex > 0)
+            NavigateTo(currentIndex - 1);
+    }
+
+    private async Task SaveCurrentAsync()
+    {
+        if (currentRating.Appearance == 0 && currentRating.Nose == 0 && currentRating.Taste == 0)
+            return;
+
+        isSaving = true;
+        savedOk = false;
+        saveError = null;
+
+        try
+        {
+            var ok = await RatingService.SaveRatingAsync(currentRating);
+            if (ok)
+            {
+                ratings[currentRating.WineId] = currentRating;
+                savedOk = true;
+            }
+            else
+            {
+                saveError = "Lagring feilet. Prøv igjen.";
+            }
+        }
+        catch (Exception ex)
+        {
+            saveError = $"Feil ved lagring: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private static decimal ParseDecimal(object? value)
+    {
+        if (value is null) return 0m;
+        return decimal.TryParse(value.ToString(),
+            System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out var result) ? result : 0m;
+    }
+}

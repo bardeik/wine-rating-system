@@ -19,6 +19,12 @@ public class WineRepository : IWineRepository
     public async Task<IList<Wine>> GetAllWinesFromProducerAsync(string producerId) =>
         await _collection.Find(w => w.WineProducerId == producerId).ToListAsync();
 
+    public async Task<IList<Wine>> GetWinesByIdsAsync(IEnumerable<string> wineIds)
+    {
+        var ids = wineIds.ToList();
+        return await _collection.Find(w => ids.Contains(w.WineId)).ToListAsync();
+    }
+
     public async Task<string> AddWineAsync(Wine wine)
     {
         await _collection.InsertOneAsync(wine);
