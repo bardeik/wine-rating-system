@@ -1,7 +1,17 @@
 # Wine Rating System - AI Coding Instructions
 
+## Repository Scope and Maintenance
+- This is the single authoritative `copilot-instructions.md` for the repository.
+- Keep instruction guidance here at the repository root to avoid drift between duplicate copies.
+- Only add a nested `copilot-instructions.md` in the future if a subproject becomes genuinely independent and needs materially different guidance.
+
 ## Project Overview
 A Norwegian wine judging system built on .NET 10 with Blazor Server UI. Judges can rate wines on Appearance, Nose, and Taste metrics. The system uses MongoDB for persistence and ASP.NET Core Identity for authentication and role-based access.
+
+## Requirements Source of Truth
+- Product requirements, judging rules, and business constraints live in `.github/requirements.md`.
+- Consult `.github/requirements.md` for feature work, workflow decisions, and validation rules.
+- If a high-level summary in this file conflicts with `.github/requirements.md`, follow `.github/requirements.md` for product behaviour and the current codebase for implementation details.
 
 
 
