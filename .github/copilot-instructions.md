@@ -3,6 +3,8 @@
 ## Project Overview
 A Norwegian wine judging system built on .NET 10 with Blazor Server UI. Judges can rate wines on Appearance, Nose, and Taste metrics. The system uses MongoDB for persistence and ASP.NET Core Identity for authentication and role-based access.
 
+
+
 ## Architecture
 
 ### Backend: ASP.NET Core on .NET 10

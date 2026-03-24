@@ -4,7 +4,7 @@
 
 ## Omfang
 
-**In scope**
+### In scope
 
 - Selvbetjent påmelding av viner med nødvendig metadata og korrekt gruppering (**Gruppe, Klasse, Kategori**) samt **Land** for nordiske gjester.
 - Betalingsoppfølging og automatisk **kvittering/bekreftelse** med tildelte **unike vinnumre** (anonymisering).
@@ -13,7 +13,7 @@
 - Automatikk for gjennomsnitt, totalsum, **klassifiseringsgrenser**, **minimum delpoeng (gate‑verdier)**, **avviksvarsling (> 4,0 poeng spredning)** og **nedjustering av medaljegrenser** dersom ingen Gull oppnås.
 - Generering av resultatlister, deltakeres resultatsedler, dommerskjemaer, og diplomer/pokal‑tildelinger basert på reglene.
 
-**Out of scope (første versjon)**
+### Out of scope (første versjon)
 
 - Netthandel/innløsning av betaling (start med manuell avstemming via bankfelter i skjema og kvittering).
 - Kjemiske analyser/integrasjoner (ikke påkrevd).
@@ -196,7 +196,7 @@ erDiagram
 
 ## Algoritmer (pseudokode)
 
-**Aggregering per vin**
+### Aggregering per vin
 
 ```python
 avgA = mean(scores.a_appearance)
@@ -214,14 +214,14 @@ else:
     classification = classify(sumAvg, thresholds)  # Gull/Sølv/Bronse/Særlig/Akseptabel
 ```
 
-**Avvikskontroll (per vin)**
+### Avvikskontroll (per vin)
 
 ```python
 spredning = max(s.total for s in scores) - min(s.total for s in scores)
 outlierFlag = spredning > 4.0
 ```
 
-**Tie‑break**
+### Tie‑break
 
 ```python
 # blant kandidater med lik sumAvg
