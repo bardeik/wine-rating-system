@@ -32,6 +32,13 @@
     <ProjectReference Include="..\WineApp.Shared\WineApp.Shared.csproj" />
   </ItemGroup>
 
+  <!-- App settings embedded into the binary so MauiProgram.cs can read them at runtime. -->
+  <!-- appsettings.Production.json is gitignored: copy from appsettings.Production.example.json -->
+  <!-- and fill in the real server URL before a production build.                             -->
+  <ItemGroup>
+    <EmbeddedResource Include="appsettings.json" />
+  </ItemGroup>
+
   <!-- App icon and splash resources -->
   <ItemGroup>
     <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#8B0000" />

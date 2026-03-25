@@ -1,4 +1,6 @@
 using Microsoft.Extensions.Logging;
+using System.Reflection;
+using System.Text.Json;
 using WineApp.Mobile.Services;
 using WineApp.Shared.MobileServices;
 
@@ -24,14 +26,11 @@ public static class MauiProgram
         builder.Logging.AddDebug();
 #endif
 
-        // App configuration — update BaseUrl to point to your deployed server.
-        // Development (iOS Simulator): use "http://localhost:5000" or "https://localhost:5001"
-        // Development (Android Emulator): use "http://10.0.2.2:5000" (emulator loopback to host)
-        // Production: use the full HTTPS URL of your deployed server (e.g. https://your-app.fly.dev)
-        builder.Services.AddSingleton(new AppConfig
-        {
-            BaseUrl = "https://localhost:5001"
-        });
+        // Load AppConfig.BaseUrl from the embedded appsettings.json (committed, dev defaults).
+        // For production builds, replace or overlay appsettings.json before compiling — see
+        // appsettings.Production.example.json for the expected format.
+        var appConfig = LoadAppConfig();
+        builder.Services.AddSingleton(appConfig);
 
         // Token store backed by platform SecureStorage
         builder.Services.AddSingleton<TokenStore>();
@@ -72,5 +71,42 @@ public static class MauiProgram
         });
 
         return builder.Build();
+    }
+
+    /// <summary>
+    /// Reads <see cref="AppConfig"/> from the embedded <c>appsettings.json</c> resource.
+    /// Falls back to the class defaults (localhost) if the resource cannot be found or parsed,
+    /// so development builds without a settings file still work.
+    /// </summary>
+    private static AppConfig LoadAppConfig()
+    {
+        var config = new AppConfig();
+        var assembly = Assembly.GetExecutingAssembly();
+
+        // Resource name follows the pattern: {DefaultNamespace}.{RelativeFilePath}
+        // The file "appsettings.json" at the project root becomes "WineApp.Mobile.appsettings.json".
+        const string resourceName = "WineApp.Mobile.appsettings.json";
+
+        using var stream = assembly.GetManifestResourceStream(resourceName);
+        if (stream is null)
+            return config;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(stream);
+            if (doc.RootElement.TryGetProperty("AppConfig", out var section) &&
+                section.TryGetProperty("BaseUrl", out var baseUrlProp))
+            {
+                var baseUrl = baseUrlProp.GetString();
+                if (!string.IsNullOrWhiteSpace(baseUrl))
+                    config.BaseUrl = baseUrl;
+            }
+        }
+        catch (JsonException)
+        {
+            // Malformed appsettings.json — fall back to class defaults rather than crashing.
+        }
+
+        return config;
     }
 }

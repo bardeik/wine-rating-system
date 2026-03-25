@@ -19,9 +19,17 @@ builder.Services.AddSingleton<WineMongoDbContext>();
 // Clock abstraction — lets tests substitute a frozen clock
 builder.Services.AddSingleton(TimeProvider.System);
 
-// MongoDB Identity
-var mongoConnectionString = builder.Configuration.GetConnectionString("MongoDB") ?? "mongodb://localhost:27017";
-var mongoDatabaseName = builder.Configuration["MongoDbSettings:DatabaseName"] ?? "wineapp";
+// MongoDB Identity — values come from appsettings.json (local) or environment variables
+// (production). Use ConnectionStrings__MongoDB / MongoDbSettings__DatabaseName env vars
+// in production (e.g. via `fly secrets set` or your secrets manager).
+var mongoConnectionString = builder.Configuration.GetConnectionString("MongoDB")
+    ?? throw new InvalidOperationException(
+           "ConnectionStrings:MongoDB is not configured. " +
+           "Add it to appsettings.json or set the ConnectionStrings__MongoDB environment variable.");
+var mongoDatabaseName = builder.Configuration["MongoDbSettings:DatabaseName"]
+    ?? throw new InvalidOperationException(
+           "MongoDbSettings:DatabaseName is not configured. " +
+           "Add it to appsettings.json or set the MongoDbSettings__DatabaseName environment variable.");
 
 builder.Services.AddIdentity<ApplicationUser, MongoIdentityRole<Guid>>(options =>
 {
