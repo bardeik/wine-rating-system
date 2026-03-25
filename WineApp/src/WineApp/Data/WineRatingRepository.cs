@@ -16,12 +16,6 @@ public class WineRatingRepository : IWineRatingRepository
     public async Task<WineRating?> GetWineRatingByIdAsync(string id) =>
         await _collection.Find(r => r.WineRatingId == id).FirstOrDefaultAsync();
 
-    public async Task<IList<WineRating>> GetRatingsByJudgeAsync(string judgeId) =>
-        await _collection.Find(r => r.JudgeId == judgeId).ToListAsync();
-
-    public async Task<WineRating?> GetRatingByWineAndJudgeAsync(string wineId, string judgeId) =>
-        await _collection.Find(r => r.WineId == wineId && r.JudgeId == judgeId).FirstOrDefaultAsync();
-
     public async Task<string> AddWineRatingAsync(WineRating wineRating)
     {
         await _collection.InsertOneAsync(wineRating);

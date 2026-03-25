@@ -16,8 +16,6 @@ public class WineJudgingService : IWineJudgingService
 
     public Task<IList<WineRating>> GetAllWineRatingsAsync() => _wineRatingRepository.GetAllWineRatingsAsync();
     public Task<WineRating?> GetWineRatingByIdAsync(string id) => _wineRatingRepository.GetWineRatingByIdAsync(id);
-    public Task<IList<WineRating>> GetRatingsByJudgeAsync(string judgeId) => _wineRatingRepository.GetRatingsByJudgeAsync(judgeId);
-    public Task<WineRating?> GetRatingByWineAndJudgeAsync(string wineId, string judgeId) => _wineRatingRepository.GetRatingByWineAndJudgeAsync(wineId, judgeId);
     public Task AddWineRatingAsync(WineRating rating) => _wineRatingRepository.AddWineRatingAsync(rating);
     public Task UpdateWineRatingAsync(WineRating rating) => _wineRatingRepository.UpdateWineRatingAsync(rating);
     public Task DeleteWineRatingAsync(string id) => _wineRatingRepository.DeleteWineRatingAsync(id);
