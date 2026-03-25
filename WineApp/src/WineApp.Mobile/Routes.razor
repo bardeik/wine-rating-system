@@ -1,9 +1,0 @@
-<Router AppAssembly="@typeof(Routes).Assembly"
-        AdditionalAssemblies="@(new[] { typeof(WineApp.Shared.Pages.MobileJudgeRating).Assembly })">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(WineApp.Shared.Shared.MobileLayout)" />
-    </Found>
-    <NotFound>
-        <p>Siden ble ikke funnet.</p>
-    </NotFound>
-</Router>

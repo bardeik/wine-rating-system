@@ -17,14 +17,8 @@ public class WineMongoDbContext
 
     public WineMongoDbContext(IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("MongoDB")
-            ?? throw new InvalidOperationException(
-                   "ConnectionStrings:MongoDB is not configured. " +
-                   "Add it to appsettings.json or set the ConnectionStrings__MongoDB environment variable.");
-        var databaseName = configuration["MongoDbSettings:DatabaseName"]
-            ?? throw new InvalidOperationException(
-                   "MongoDbSettings:DatabaseName is not configured. " +
-                   "Add it to appsettings.json or set the MongoDbSettings__DatabaseName environment variable.");
+        var connectionString = configuration.GetConnectionString("MongoDB") ?? "mongodb://localhost:27017";
+        var databaseName = configuration["MongoDbSettings:DatabaseName"] ?? "wineapp";
         var client = new MongoClient(connectionString);
         _database = client.GetDatabase(databaseName);
     }
