@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using WineApp.Data;
 using WineApp.Models;
 using WineApp.Services;
+using static WineApp.Extensions.MobileApiMappings;
 
 namespace WineApp.Extensions;
 
@@ -261,10 +262,6 @@ public static class MobileApiExtensions
         return app;
     }
 
-    // -------------------------------------------------------------------------
-    // Token helpers
-    // -------------------------------------------------------------------------
-
     private static string CreateToken(IDataProtectionProvider dpProvider, string userId, DateTime expiry)
     {
         var protector = dpProvider.CreateProtector(ProtectorPurpose);
@@ -324,69 +321,8 @@ public static class MobileApiExtensions
         }
     }
 
-    private static string Base64UrlEncode(byte[] input)
-    {
-        return Convert.ToBase64String(input)
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
-    }
-
-    private static byte[] Base64UrlDecode(string input)
-    {
-        var padded = input.Replace('-', '+').Replace('_', '/');
-        switch (padded.Length % 4)
-        {
-            case 2: padded += "=="; break;
-            case 3: padded += "="; break;
-        }
-        return Convert.FromBase64String(padded);
-    }
-
     // -------------------------------------------------------------------------
-    // Mapping helpers
-    // -------------------------------------------------------------------------
-
-    private static WineResponse MapWine(Wine wine) => new(
-        WineId: wine.WineId,
-        WineNumber: wine.WineNumber,
-        Name: wine.Name,
-        RatingName: wine.RatingName,
-        Vintage: wine.Vintage,
-        AlcoholPercentage: wine.AlcoholPercentage,
-        Country: wine.Country,
-        Group: wine.Group.ToString(),
-        Class: wine.Class.ToString(),
-        Category: wine.Category.ToString(),
-        WineProducerId: wine.WineProducerId,
-        EventId: wine.EventId,
-        IsPaid: wine.IsPaid);
-
-    private static RatingResponse MapRating(WineRating r) => new(
-        WineRatingId: r.WineRatingId,
-        Appearance: r.Appearance,
-        Nose: r.Nose,
-        Taste: r.Taste,
-        Comment: r.Comment,
-        JudgeId: r.JudgeId,
-        WineId: r.WineId,
-        Total: r.Total);
-
-    private static EventResponse MapEvent(Event e) => new(
-        EventId: e.EventId,
-        Name: e.Name,
-        Year: e.Year,
-        GoldThreshold: e.UseAdjustedThresholds ? e.AdjustedGoldThreshold : e.GoldThreshold,
-        SilverThreshold: e.UseAdjustedThresholds ? e.AdjustedSilverThreshold : e.SilverThreshold,
-        BronzeThreshold: e.UseAdjustedThresholds ? e.AdjustedBronzeThreshold : e.BronzeThreshold,
-        SpecialMeritThreshold: e.UseAdjustedThresholds ? e.AdjustedSpecialMeritThreshold : e.SpecialMeritThreshold,
-        AppearanceGateValue: e.AppearanceGateValue,
-        NoseGateValue: e.NoseGateValue,
-        TasteGateValue: e.TasteGateValue,
-        IsActive: e.IsActive);
-
-    // -------------------------------------------------------------------------
-    // Request / response record types (server-side only, match WineApp.Shared.Dtos)
+    // Request-only record types (not shared with the response side)
     // -------------------------------------------------------------------------
 
     private sealed record LoginRequest(string Email, string Password);
@@ -403,21 +339,6 @@ public static class MobileApiExtensions
         string DisplayName,
         IList<string> Roles);
 
-    private sealed record WineResponse(
-        string WineId,
-        int? WineNumber,
-        string Name,
-        string RatingName,
-        int Vintage,
-        decimal AlcoholPercentage,
-        string Country,
-        string Group,
-        string Class,
-        string Category,
-        string WineProducerId,
-        string? EventId,
-        bool IsPaid);
-
     private sealed record RatingRequest(
         string? WineRatingId,
         decimal Appearance,
@@ -425,27 +346,4 @@ public static class MobileApiExtensions
         decimal Taste,
         string? Comment,
         string WineId);
-
-    private sealed record RatingResponse(
-        string WineRatingId,
-        decimal Appearance,
-        decimal Nose,
-        decimal Taste,
-        string Comment,
-        string JudgeId,
-        string WineId,
-        decimal Total);
-
-    private sealed record EventResponse(
-        string EventId,
-        string Name,
-        int Year,
-        decimal GoldThreshold,
-        decimal SilverThreshold,
-        decimal BronzeThreshold,
-        decimal SpecialMeritThreshold,
-        decimal AppearanceGateValue,
-        decimal NoseGateValue,
-        decimal TasteGateValue,
-        bool IsActive);
 }
