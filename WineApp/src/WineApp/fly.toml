@@ -11,6 +11,9 @@ primary_region = 'ams'
 
 [env]
   ASPNETCORE_ENVIRONMENT = 'Production'
+  # Internal HTTP port — must match ASPNETCORE_URLS in the Dockerfile and
+  # the internal_port value in [http_service] below.
+  ASPNETCORE_URLS = 'http://+:8080'
 
 [http_service]
   internal_port = 8080

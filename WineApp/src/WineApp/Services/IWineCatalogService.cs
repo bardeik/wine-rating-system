@@ -6,6 +6,7 @@ public interface IWineCatalogService
 {
     Task<IList<Wine>> GetAllWinesAsync();
     Task<Wine?> GetWineByIdAsync(string id);
+    Task<IList<Wine>> GetWinesByIdsAsync(IEnumerable<string> wineIds);
     Task AddWineAsync(Wine wine);
     Task UpdateWineAsync(Wine wine);
     Task DeleteWineAsync(string id);

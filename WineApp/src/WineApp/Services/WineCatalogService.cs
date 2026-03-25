@@ -16,6 +16,7 @@ public class WineCatalogService : IWineCatalogService
 
     public Task<IList<Wine>> GetAllWinesAsync() => _wineRepository.GetAllWinesAsync();
     public Task<Wine?> GetWineByIdAsync(string id) => _wineRepository.GetWineByIdAsync(id);
+    public Task<IList<Wine>> GetWinesByIdsAsync(IEnumerable<string> wineIds) => _wineRepository.GetWinesByIdsAsync(wineIds);
     public Task AddWineAsync(Wine wine) => _wineRepository.AddWineAsync(wine);
     public Task UpdateWineAsync(Wine wine) => _wineRepository.UpdateWineAsync(wine);
     public Task DeleteWineAsync(string id) => _wineRepository.DeleteWineAsync(id);
