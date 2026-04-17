@@ -135,23 +135,6 @@ app.Use(async (context, next) =>
 // routing traffic to it. Must respond before authentication middleware runs.
 app.MapGet("/health", () => Results.Ok("healthy"));
 
-// Temporary diagnostics endpoint — remove once deployment is confirmed working.
-app.MapGet("/debug/files", (IWebHostEnvironment env) =>
-{
-    var contentRoot = env.ContentRootPath ?? "";
-    var manifestPath = Path.Combine(contentRoot, "WineApp.staticwebassets.endpoints.json");
-    var manifestContent = File.Exists(manifestPath)
-        ? File.ReadAllText(manifestPath)
-        : "NOT FOUND";
-    return Results.Ok(new
-    {
-        contentRoot,
-        webRoot = env.WebRootPath,
-        manifestExists = File.Exists(manifestPath),
-        manifestContent
-    });
-});
-
 app.UseStaticFiles();
 app.UseRouting();
 
