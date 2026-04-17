@@ -51,6 +51,8 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     options.Cookie.SameSite = SameSiteMode.Strict;
     options.Cookie.Name = "__Host-WineApp.Auth";
+    options.Cookie.Path = "/";
+    options.Cookie.Domain = null;
     options.Cookie.IsEssential = true;
 });
 
@@ -116,7 +118,7 @@ if (!app.Environment.IsDevelopment())
 var forwardedOptions = new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
-    ForwardLimit = 1,
+    ForwardLimit = Math.Max(1, builder.Configuration.GetValue("ForwardedHeaders:ForwardLimit", 1)),
     RequireHeaderSymmetry = true
 };
 var trustAllForwardedProxies = builder.Configuration.GetValue<bool>("ForwardedHeaders:TrustAllProxies");
