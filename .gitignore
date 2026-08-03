@@ -428,3 +428,5 @@ appsettings.*.Local.json
 *.msix
 *.msm
 *.msp
+
+.fake
