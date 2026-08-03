@@ -11,6 +11,7 @@ primary_region = 'ams'
 
 [env]
   ASPNETCORE_ENVIRONMENT = 'Production'
+  DataProtection__KeysPath = '/data/protection-keys'
   ForwardedHeaders__TrustAllProxies = 'true'
 
 [http_service]
@@ -42,3 +43,8 @@ primary_region = 'ams'
 [[vm]]
   size = 'shared-cpu-1x'
   memory = '512mb'
+
+[[mounts]]
+  source = 'data'
+  destination = '/data'
+  initial_size = '1gb'

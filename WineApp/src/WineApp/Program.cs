@@ -1,4 +1,5 @@
 ﻿using AspNetCore.Identity.MongoDbCore.Models;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using MongoDB.Bson;
@@ -12,6 +13,21 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+
+var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
+if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+{
+    var keysDirectory = new DirectoryInfo(dataProtectionKeysPath);
+    if (!keysDirectory.Exists)
+    {
+        keysDirectory.Create();
+    }
+
+    builder.Services
+        .AddDataProtection()
+        .PersistKeysToFileSystem(keysDirectory)
+        .SetApplicationName("WineApp");
+}
 
 // MongoDB context (domain collections)
 builder.Services.AddSingleton<WineMongoDbContext>();
