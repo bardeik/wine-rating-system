@@ -120,6 +120,13 @@ var forwardedOptions = new ForwardedHeadersOptions
     ForwardLimit = Math.Max(1, builder.Configuration.GetValue("ForwardedHeaders:ForwardLimit", 1)),
     RequireHeaderSymmetry = true
 };
+var trustAllForwardedProxies = builder.Configuration.GetValue<bool>("ForwardedHeaders:TrustAllProxies");
+if (trustAllForwardedProxies)
+{
+    // Required on Fly.io where proxy source IPs are dynamic and cannot be allow-listed reliably.
+    forwardedOptions.KnownIPNetworks.Clear();
+    forwardedOptions.KnownProxies.Clear();
+}
 app.UseForwardedHeaders(forwardedOptions);
 
 // Security headers
