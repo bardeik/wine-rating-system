@@ -50,6 +50,10 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.Name = "__Host-WineApp.Auth";
+    options.Cookie.Path = "/";
+    options.Cookie.Domain = null;
+    options.Cookie.IsEssential = true;
 });
 
 // Register repositories - Scoped so each Blazor Server circuit (user session) gets
@@ -113,11 +117,17 @@ if (!app.Environment.IsDevelopment())
 // and would cause a redirect loop (the app only ever receives plain HTTP internally).
 var forwardedOptions = new ForwardedHeadersOptions
 {
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    ForwardLimit = Math.Max(1, builder.Configuration.GetValue("ForwardedHeaders:ForwardLimit", 1)),
+    RequireHeaderSymmetry = true
 };
-// Clear the default loopback-only restrictions so Fly.io's edge proxy is trusted
-forwardedOptions.KnownIPNetworks.Clear();
-forwardedOptions.KnownProxies.Clear();
+var trustAllForwardedProxies = builder.Configuration.GetValue<bool>("ForwardedHeaders:TrustAllProxies");
+if (trustAllForwardedProxies)
+{
+    // Explicit opt-in: trust all upstream proxies (required on Fly.io where proxy IPs vary).
+    forwardedOptions.KnownIPNetworks.Clear();
+    forwardedOptions.KnownProxies.Clear();
+}
 app.UseForwardedHeaders(forwardedOptions);
 
 // Security headers

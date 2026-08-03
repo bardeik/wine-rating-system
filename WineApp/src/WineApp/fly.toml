@@ -11,6 +11,7 @@ primary_region = 'ams'
 
 [env]
   ASPNETCORE_ENVIRONMENT = 'Production'
+  ForwardedHeaders__TrustAllProxies = 'true'
 
 [http_service]
   internal_port = 8080
