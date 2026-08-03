@@ -1,6 +1,7 @@
 using AspNetCore.Identity.MongoDbCore.Models;
 using Microsoft.AspNetCore.Identity;
 using MongoDB.Bson;
+using System.Security.Cryptography;
 using WineApp.Models;
 using WineApp.Services;
 
@@ -49,15 +50,17 @@ public class DatabaseSeeder
             return;
         }
 
+        var developmentSeedPassword = ResolveDevelopmentSeedPassword(logger);
+
         // Seed admin and viewer users (Development only — use ADMIN_EMAIL/ADMIN_PASSWORD
         // secrets for Production via SeedProductionAdminAsync above)
-        await SeedAdminAndViewerUsersAsync(userManager);
+        await SeedAdminAndViewerUsersAsync(userManager, developmentSeedPassword);
 
         // Seed judges
-        await SeedJudgesAsync(userManager);
+        await SeedJudgesAsync(userManager, developmentSeedPassword);
 
         // Seed event with producers, wines and ratings
-        await SeedEventDataAsync(services, userManager);
+        await SeedEventDataAsync(services, userManager, developmentSeedPassword);
 
         logger.LogInformation("DatabaseSeeder: sample data seeding complete.");
     }
@@ -115,7 +118,7 @@ public class DatabaseSeeder
         }
     }
 
-    private static async Task SeedAdminAndViewerUsersAsync(UserManager<ApplicationUser> userManager)
+    private static async Task SeedAdminAndViewerUsersAsync(UserManager<ApplicationUser> userManager, string developmentSeedPassword)
     {
         if (await userManager.FindByEmailAsync("admin@wineapp.com") is null)
         {
@@ -126,7 +129,7 @@ public class DatabaseSeeder
                 DisplayName = "Administrator",
                 EmailConfirmed = true
             };
-            var result = await userManager.CreateAsync(admin, "Admin123!");
+            var result = await userManager.CreateAsync(admin, developmentSeedPassword);
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(admin, "Admin");
@@ -143,13 +146,13 @@ public class DatabaseSeeder
                 DisplayName = "Gjest",
                 EmailConfirmed = true
             };
-            var result = await userManager.CreateAsync(viewer, "Viewer123!");
+            var result = await userManager.CreateAsync(viewer, developmentSeedPassword);
             if (result.Succeeded)
                 await userManager.AddToRoleAsync(viewer, "Viewer");
         }
     }
 
-    private static async Task SeedJudgesAsync(UserManager<ApplicationUser> userManager)
+    private static async Task SeedJudgesAsync(UserManager<ApplicationUser> userManager, string developmentSeedPassword)
     {
         var judgeUsers = await userManager.GetUsersInRoleAsync("Judge");
         if (judgeUsers.Count == 0)
@@ -164,7 +167,7 @@ public class DatabaseSeeder
                     DisplayName = name,
                     EmailConfirmed = true
                 };
-                var result = await userManager.CreateAsync(judgeUser, "Judge123!");
+                var result = await userManager.CreateAsync(judgeUser, developmentSeedPassword);
                 if (result.Succeeded)
                 {
                     await userManager.AddToRoleAsync(judgeUser, "Judge");
@@ -174,7 +177,7 @@ public class DatabaseSeeder
         }
     }
 
-    private static async Task SeedEventDataAsync(IServiceProvider services, UserManager<ApplicationUser> userManager)
+    private static async Task SeedEventDataAsync(IServiceProvider services, UserManager<ApplicationUser> userManager, string developmentSeedPassword)
     {
         var wineProducerRepo = services.GetRequiredService<IWineProducerRepository>();
         var wineRepo = services.GetRequiredService<IWineRepository>();
@@ -228,7 +231,8 @@ public class DatabaseSeeder
                 wineRepo,
                 wineRatingRepo,
                 wineNumberService,
-                defaultEvent);
+                defaultEvent,
+                developmentSeedPassword);
         }
     }
 
@@ -238,7 +242,8 @@ public class DatabaseSeeder
         IWineRepository wineRepo,
         IWineRatingRepository wineRatingRepo,
         IWineNumberService wineNumberService,
-        Event defaultEvent)
+        Event defaultEvent,
+        string developmentSeedPassword)
     {
         if ((await wineProducerRepo.GetAllWineProducersAsync()).Count > 0)
             return;
@@ -253,7 +258,7 @@ public class DatabaseSeeder
                 DisplayName = displayName,
                 EmailConfirmed = true
             };
-            var r = await userManager.CreateAsync(u, "Producer123!");
+            var r = await userManager.CreateAsync(u, developmentSeedPassword);
             if (!r.Succeeded) return null;
             await userManager.AddToRoleAsync(u, "WineProducer");
             await userManager.AddToRoleAsync(u, "Viewer");
@@ -288,6 +293,20 @@ public class DatabaseSeeder
             // Seed ratings
             await SeedRatingsAsync(wineRatingRepo, wines);
         }
+    }
+
+    private static string ResolveDevelopmentSeedPassword(ILogger<DatabaseSeeder> logger)
+    {
+        var configured = Environment.GetEnvironmentVariable("DEV_SEED_PASSWORD");
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            return configured;
+        }
+
+        var randomSuffix = Convert.ToHexString(RandomNumberGenerator.GetBytes(8));
+        var generated = $"Dev!{randomSuffix}a1";
+        logger.LogWarning("DatabaseSeeder: DEV_SEED_PASSWORD not set; using generated in-memory dev seed password for this startup.");
+        return generated;
     }
 
     private static List<WineProducer> CreateProducers(

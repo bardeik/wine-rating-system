@@ -3,12 +3,15 @@ using System.Text;
 using CsvHelper;
 using CsvHelper.Configuration;
 using CsvHelper.Configuration.Attributes;
+using CsvHelper.TypeConversion;
 using WineApp.Models;
 
 namespace WineApp.Services;
 
 public class ExportService : IExportService
 {
+    private static readonly CsvFormulaSafeStringConverter CsvStringConverter = new();
+
     private static readonly CsvConfiguration CsvConfig = new(CultureInfo.InvariantCulture)
     {
         Delimiter = ";",
@@ -221,8 +224,37 @@ public class ExportService : IExportService
     {
         using var sw = new StringWriter();
         using var csv = new CsvWriter(sw, config ?? CsvConfig);
+        csv.Context.TypeConverterCache.AddConverter<string>(CsvStringConverter);
         csv.WriteRecords(records);
         return sw.ToString();
+    }
+}
+
+internal sealed class CsvFormulaSafeStringConverter : DefaultTypeConverter
+{
+    private static readonly char[] FormulaPrefixes = ['=', '+', '-', '@'];
+
+    public override string ConvertToString(object? value, IWriterRow row, MemberMapData memberMapData)
+    {
+        var raw = value?.ToString() ?? string.Empty;
+        if (raw.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        // Guard spreadsheet exports against formula execution when opened in Excel-compatible tools.
+        return NeedsEscaping(raw) ? $"'{raw}" : raw;
+    }
+
+    private static bool NeedsEscaping(string value)
+    {
+        if (value.Length == 0)
+        {
+            return false;
+        }
+
+        var first = value[0];
+        return FormulaPrefixes.Contains(first) || first == '\t' || first == '\r' || first == '\n';
     }
 }
 

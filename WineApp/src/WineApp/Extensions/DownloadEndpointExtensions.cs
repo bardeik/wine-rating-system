@@ -1,5 +1,6 @@
 using WineApp.Data;
 using WineApp.Services;
+using System.Text;
 
 namespace WineApp.Extensions;
 
@@ -29,7 +30,7 @@ public static class DownloadEndpointExtensions
 
             var csv = exportService.ExportResultsToCSV(results, wines, producers);
             var bytes = exportService.GetCSVBytes(csv);
-            var fileName = $"Resultater_{evt.Name}_{DateTime.Now:yyyyMMdd}.csv";
+            var fileName = $"Resultater_{ToSafeFileSegment(evt.Name)}_{DateTime.Now:yyyyMMdd}.csv";
 
             return Results.File(bytes, "text/csv", fileName);
         }).RequireAuthorization(policy => policy.RequireRole("Admin", "Viewer"));
@@ -52,7 +53,7 @@ public static class DownloadEndpointExtensions
 
             var csv = exportService.ExportTrophiesToCSV(aaretsVinbonde, bestNorwegian, bestNordic, producers);
             var bytes = exportService.GetCSVBytes(csv);
-            var fileName = $"Pokaler_{evt.Name}_{DateTime.Now:yyyyMMdd}.csv";
+            var fileName = $"Pokaler_{ToSafeFileSegment(evt.Name)}_{DateTime.Now:yyyyMMdd}.csv";
 
             return Results.File(bytes, "text/csv", fileName);
         }).RequireAuthorization(policy => policy.RequireRole("Admin", "Viewer"));
@@ -84,7 +85,7 @@ public static class DownloadEndpointExtensions
 
             var csv = exportService.ExportEventData(evt, wines, ratings, results, producers);
             var bytes = exportService.GetCSVBytes(csv);
-            var fileName = $"Arkiv_{evt.Name}_{evt.Year}.csv";
+            var fileName = $"Arkiv_{ToSafeFileSegment(evt.Name)}_{evt.Year}.csv";
 
             return Results.File(bytes, "text/csv", fileName);
         }).RequireAuthorization(policy => policy.RequireRole("Admin"));
@@ -105,7 +106,7 @@ public static class DownloadEndpointExtensions
 
             var csv = exportService.ExportFlightList(flights, wines);
             var bytes = exportService.GetCSVBytes(csv);
-            var fileName = $"Flights_{evt.Name}_{DateTime.Now:yyyyMMdd}.csv";
+            var fileName = $"Flights_{ToSafeFileSegment(evt.Name)}_{DateTime.Now:yyyyMMdd}.csv";
 
             return Results.File(bytes, "text/csv", fileName);
         }).RequireAuthorization(policy => policy.RequireRole("Admin"));
@@ -127,11 +128,44 @@ public static class DownloadEndpointExtensions
             var producers = (await producerRepo.GetAllWineProducersAsync()).ToList();
 
             var pdf = pdfService.GenerateTrophyReport(evt, aaretsVinbonde, bestNorwegian, bestNordic, producers);
-            var fileName = $"Pokaler_{evt.Name}_{DateTime.Now:yyyyMMdd}.pdf";
+            var fileName = $"Pokaler_{ToSafeFileSegment(evt.Name)}_{DateTime.Now:yyyyMMdd}.pdf";
 
             return Results.File(pdf, "application/pdf", fileName);
         }).RequireAuthorization(policy => policy.RequireRole("Admin", "Viewer"));
 
         return app;
+    }
+
+    private static string ToSafeFileSegment(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "fil";
+        }
+
+        var cleaned = value.Trim();
+        var builder = new StringBuilder(cleaned.Length);
+
+        foreach (var ch in cleaned)
+        {
+            if (char.IsLetterOrDigit(ch) || ch == '-' || ch == '_')
+            {
+                builder.Append(ch);
+                continue;
+            }
+
+            if (char.IsWhiteSpace(ch) || ch == '.' || ch == ',')
+            {
+                builder.Append('_');
+            }
+        }
+
+        var safe = builder.ToString().Trim('_');
+        if (safe.Length == 0)
+        {
+            return "fil";
+        }
+
+        return safe.Length > 80 ? safe[..80] : safe;
     }
 }

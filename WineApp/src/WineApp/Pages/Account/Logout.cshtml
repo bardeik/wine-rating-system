@@ -1,2 +1,14 @@
 @page
 @model WineApp.Pages.Account.LogoutModel
+
+<form id="logout-form" method="post">
+	@Html.AntiForgeryToken()
+	<input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+	<noscript>
+		<button type="submit">Logg ut</button>
+	</noscript>
+</form>
+
+<script>
+	document.getElementById('logout-form')?.submit();
+</script>
