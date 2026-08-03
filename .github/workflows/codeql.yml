@@ -1,0 +1,50 @@
+name: CodeQL Analysis
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron: '0 3 * * 1' # Weekly on Monday at 03:00 UTC
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  analyze:
+    name: Analyze C#
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+          # Exclude generated/framework JS files from analysis
+          config: |
+            paths-ignore:
+              - WineApp/src/WineApp/.docker-assets
+              - WineApp/src/WineApp/wwwroot/js
+              - '**/*.min.js'
+
+      - name: Build
+        working-directory: WineApp
+        run: dotnet build src/WineApp/WineApp.csproj --configuration Release
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:csharp'
