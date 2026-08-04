@@ -92,7 +92,7 @@ public class DatabaseSeeder
 
         if (await userManager.FindByEmailAsync(email) is not null)
         {
-            logger.LogInformation("SeedProductionAdminAsync: user {Email} already exists — skipping.", email);
+            logger.LogInformation("SeedProductionAdminAsync: admin user already exists — skipping.");
             return;
         }
 
@@ -109,12 +109,12 @@ public class DatabaseSeeder
         {
             await userManager.AddToRoleAsync(admin, "Admin");
             await userManager.AddToRoleAsync(admin, "Viewer");
-            logger.LogInformation("SeedProductionAdminAsync: admin user {Email} created successfully.", email);
+            logger.LogInformation("SeedProductionAdminAsync: admin user created successfully.");
         }
         else
         {
             var errors = string.Join("; ", result.Errors.Select(e => $"{e.Code}: {e.Description}"));
-            logger.LogError("SeedProductionAdminAsync: failed to create admin user {Email}. Errors: {Errors}", email, errors);
+            logger.LogError("SeedProductionAdminAsync: failed to create admin user. Errors: {Errors}", errors);
         }
     }
 
