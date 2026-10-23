@@ -13,6 +13,14 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<SecurityAccess>();
+builder.Services.AddScoped<ISecurityMutationStore, SecurityMutationStore>();
+builder.Services.AddScoped<ISecurityAdministrationService, SecurityAdministrationService>();
+builder.Services.AddScoped<IAuditRetentionStore, AuditRetentionStore>();
+builder.Services.AddScoped<AuditRetentionService>();
+builder.Services.AddScoped<IAuditRetentionService>(services => services.GetRequiredService<AuditRetentionService>());
+builder.Services.AddHostedService<AuditRetentionWorker>();
 
 var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
 if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))

@@ -4,6 +4,8 @@
 @inject IWineCatalogService WineCatalog
 @inject IWineEventService EventSvc
 @inject NavigationManager Navigation
+@inject ISecurityAdministrationService SecurityAdmin
+@inject UserManager<ApplicationUser> UserManager
 @using WineApp.Services
 
 <PageTitle>Flight Management</PageTitle>
@@ -110,6 +112,18 @@ else
                                     </table>
                                 </div>
                                 <div class="card-footer">
+                                    <fieldset class="mb-2">
+                                        <legend class="fs-6">Tildelte dommere</legend>
+                                        @foreach (var judge in judges)
+                                        {
+                                            var judgeId = judge.Id.ToString();
+                                            <label class="d-block">
+                                                <input type="checkbox" checked="@flight.AssignedJudgeIds.Contains(judgeId)"
+                                                       @onchange="args => AssignJudge(flight, judgeId, args.Value is true)" />
+                                                @(judge.DisplayName ?? judge.UserName)
+                                            </label>
+                                        }
+                                    </fieldset>
                                     <button class="btn btn-sm btn-danger" @onclick="() => DeleteFlight(flight.FlightId)">
                                         🗑️ Slett
                                     </button>
@@ -138,6 +152,7 @@ else
     private string? loadError;
     private Event? activeEvent;
     private List<Flight> flights = new();
+    private IList<ApplicationUser> judges = new List<ApplicationUser>();
     private List<Wine> allWines = new();
     private Dictionary<string, List<Wine>> flightWines = new();
     
@@ -167,6 +182,7 @@ else
 
     private async Task LoadData()
     {
+        judges = await UserManager.GetUsersInRoleAsync("Judge");
         activeEvent = await EventSvc.GetActiveEventAsync();
         allWines = (await WineCatalog.GetAllWinesAsync()).ToList();
         
@@ -252,5 +268,21 @@ else
     {
         statusMessage = message;
         statusClass = cssClass;
+    }
+
+    private async Task AssignJudge(Flight flight, string judgeId, bool assigned)
+    {
+        try
+        {
+            var ids = flight.AssignedJudgeIds.ToHashSet();
+            if (assigned) ids.Add(judgeId); else ids.Remove(judgeId);
+            await SecurityAdmin.AssignJudgesAsync(flight.FlightId, ids);
+            await LoadData();
+            ShowStatus("Tildelingen er lagret.", "alert-success");
+        }
+        catch (Exception)
+        {
+            ShowStatus("Kunne ikke lagre tildelingen. Last siden pa nytt.", "alert-danger");
+        }
     }
 }

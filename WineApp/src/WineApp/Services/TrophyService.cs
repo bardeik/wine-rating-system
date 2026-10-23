@@ -7,17 +7,20 @@ public class TrophyService : ITrophyService
 {
     private readonly IWineRepository _wineRepository;
     private readonly IWineResultRepository _wineResultRepository;
+    private readonly SecurityAccess _access;
 
     public TrophyService(
         IWineRepository wineRepository,
-        IWineResultRepository wineResultRepository)
+        IWineResultRepository wineResultRepository, SecurityAccess access)
     {
         _wineRepository = wineRepository;
         _wineResultRepository = wineResultRepository;
+        _access = access;
     }
 
     public async Task<(Wine? wine, WineResult? result)> GetAaretsVinbondeAsync(string eventId)
     {
+        await _access.RequireResultsAsync(eventId);
         // Group A1, Vinbonde status, medal classification, highest score
         var allWines = await _wineRepository.GetAllWinesAsync();
         var wines = allWines.Where(w => w.EventId == eventId && w.Group == WineGroup.A1 && w.IsVinbonde);
@@ -43,7 +46,6 @@ public class TrophyService : ITrophyService
                 foreach (var candidate in finalCandidates)
                 {
                     candidate.result.RequiresLottery = true;
-                    await _wineResultRepository.UpdateWineResultAsync(candidate.result);
                 }
                 // Cannot determine a winner algorithmically — lottery required
                 return (null, finalCandidates.First().result);
@@ -57,6 +59,7 @@ public class TrophyService : ITrophyService
 
     public async Task<(Wine? wine, WineResult? result)> GetBestNorwegianWineAsync(string eventId)
     {
+        await _access.RequireResultsAsync(eventId);
         // Groups A1, B, C, D (Norwegian wines), medal classification, highest score
         WineGroup[] norwegianGroups = [WineGroup.A1, WineGroup.B, WineGroup.C, WineGroup.D];
         var allWines = await _wineRepository.GetAllWinesAsync();
@@ -67,6 +70,7 @@ public class TrophyService : ITrophyService
 
     public async Task<(Wine? wine, WineResult? result)> GetBestNordicWineAsync(string eventId)
     {
+        await _access.RequireResultsAsync(eventId);
         // Groups A1 and A2 (Norwegian + Nordic guests), medal classification, highest score
         WineGroup[] nordicGroups = [WineGroup.A1, WineGroup.A2];
         var allWines = await _wineRepository.GetAllWinesAsync();

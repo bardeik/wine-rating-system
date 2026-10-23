@@ -1,4 +1,6 @@
 @page "/results-report"
+@inject SecurityAccess Access
+@inject ILogger<ResultsReport> Logger
 @attribute [Authorize(Roles = "Admin,Viewer")]
 @inject IWineEventService EventSvc
 @inject IWineCatalogService WineCatalog
@@ -29,9 +31,11 @@ else
                 <p class="mb-0">Totalt @allResults.Count resultater</p>
             </div>
             <div class="col-md-4 text-end">
+                <AuthorizeView Roles="Admin">
                 <button class="btn btn-primary" @onclick="RecalculateAll">
                     🔄 Beregn alle resultater
                 </button>
+                </AuthorizeView>
             </div>
         </div>
     </div>
@@ -331,7 +335,8 @@ else
         }
         catch (Exception ex)
         {
-            loadError = $"Feil ved lasting av data: {ex.Message}";
+            Logger.LogWarning(ex, "Results report loading failed");
+            loadError = "Resultatene er ikke tilgjengelige.";
         }
         finally
         {
@@ -342,6 +347,7 @@ else
     private async Task LoadData()
     {
         activeEvent = await EventSvc.GetActiveEventAsync();
+        if (activeEvent != null) await Access.RequireResultsAsync(activeEvent.EventId);
         wines = (await WineCatalog.GetAllWinesAsync()).ToList();
         producers = (await WineCatalog.GetAllWineProducersAsync()).ToList();
 
@@ -366,7 +372,8 @@ else
         }
         catch (Exception ex)
         {
-            ShowStatus($"Feil ved beregning: {ex.Message}", "alert-danger");
+            Logger.LogError(ex, "Result calculation failed");
+            ShowStatus("Kunne ikke beregne resultater.", "alert-danger");
         }
     }
 

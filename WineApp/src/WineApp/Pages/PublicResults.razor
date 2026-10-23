@@ -3,6 +3,8 @@
 @inject IWineCatalogService WineCatalog
 @inject IWineJudgingService WineJudging
 @inject ITrophyService TrophyService
+@inject SecurityAccess Access
+@inject ILogger<PublicResults> Logger
 @using WineApp.Services
 
 <PageTitle>Resultater - @(activeEvent?.Name ?? "Norsk Vinskue")</PageTitle>
@@ -279,7 +281,8 @@ else
         }
         catch (Exception ex)
         {
-            loadError = $"Feil ved lasting av data: {ex.Message}";
+            Logger.LogError(ex, "Public results failed. Trace {TraceId}", System.Diagnostics.Activity.Current?.TraceId.ToString());
+            loadError = "Resultatene er ikke tilgjengelige akkurat na.";
         }
         finally
         {
@@ -290,6 +293,12 @@ else
     private async Task LoadData()
     {
         activeEvent = await EventSvc.GetActiveEventAsync();
+        if (activeEvent?.ResultsPublished != true)
+        {
+            activeEvent = null;
+            return;
+        }
+        await Access.RequireResultsAsync(activeEvent.EventId);
         wines = (await WineCatalog.GetAllWinesAsync()).ToList();
         producers = (await WineCatalog.GetAllWineProducersAsync()).ToList();
 

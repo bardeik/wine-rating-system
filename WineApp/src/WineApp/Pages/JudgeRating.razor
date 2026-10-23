@@ -5,6 +5,7 @@
 @inject IFlightService FlightService
 @inject IWineEventService EventSvc
 @inject CurrentUserState CurrentUser
+@inject ILogger<JudgeRating> Logger
 @inject IJSRuntime JS
 @inject TimeProvider TimeProvider
 @using WineApp.Services
@@ -445,6 +446,7 @@
     private string autoSaveStatus = string.Empty;
     private string autoSaveClass = string.Empty;
     private System.Threading.Timer? autoSaveTimer;
+    private readonly SemaphoreSlim saveLock = new(1, 1);
     private IList<WineRating> loadedRatings = new List<WineRating>();
     
     private ElementReference wineCardRef;
@@ -459,13 +461,14 @@
         try
         {
         await CurrentUser.EnsureInitializedAsync();
-        judgeId = CurrentUser.UserName;
+        judgeId = CurrentUser.UserId;
 
         await LoadData();
         }
         catch (Exception ex)
         {
-            loadError = $"Feil ved lasting av data: {ex.Message}";
+            Logger.LogWarning(ex, "Assigned-flight loading failed");
+            loadError = "Kunne ikke laste dine tildelte flights.";
         }
         finally
         {
@@ -505,6 +508,7 @@
 
     private async Task LoadWine(int index)
     {
+        autoSaveTimer?.Dispose();
         if (index < 0 || index >= currentFlightWines.Count) return;
 
         currentWine = currentFlightWines[index];
@@ -518,6 +522,8 @@
             currentRating = new WineRating
             {
                 WineRatingId = existingRating.WineRatingId,
+                FlightId = existingRating.FlightId,
+                SecurityRevision = existingRating.SecurityRevision,
                 WineId = existingRating.WineId,
                 JudgeId = judgeId,
                 Appearance = existingRating.Appearance,
@@ -535,6 +541,7 @@
             currentRating = new WineRating
             {
                 WineId = currentWine.WineId,
+                FlightId = selectedFlightId,
                 JudgeId = judgeId,
                 RatingDate = TimeProvider.GetUtcNow().UtcDateTime
             };
@@ -561,19 +568,20 @@
             InvokeAsync(async () =>
             {
                 await SaveCurrentRating(silent: true);
-                StateHasChanged();
+                await InvokeAsync(StateHasChanged);
             });
         }, null, TimeSpan.FromSeconds(2), Timeout.InfiniteTimeSpan);
     }
 
-    private async Task SaveCurrentRating(bool silent = false)
+    private async Task<bool> SaveCurrentRating(bool silent = false)
     {
-        if (currentWine == null) return;
+        if (currentWine == null) return false;
 
         // Don't persist an empty rating (all fields still at zero)
-        if (currentRating.Appearance == 0 && currentRating.Nose == 0 && currentRating.Taste == 0)
-            return;
+        if (silent && currentRating.Appearance == 0 && currentRating.Nose == 0 && currentRating.Taste == 0)
+            return true;
 
+        await saveLock.WaitAsync();
         try
         {
             if (hasExistingRating && !string.IsNullOrEmpty(currentRating.WineRatingId))
@@ -598,16 +606,23 @@
             {
                 ShowAutoSaveStatus("✓ Lagret", "bg-success text-white");
             }
+            return true;
         }
         catch (Exception ex)
         {
-            ShowAutoSaveStatus($"✗ Feil: {ex.Message}", "bg-danger text-white");
+            Logger.LogWarning(ex, "Score save rejected or failed");
+            ShowAutoSaveStatus("Kunne ikke lagre. Last siden pa nytt og kontroller tildelingen.", "bg-danger text-white");
+            return false;
+        }
+        finally
+        {
+            saveLock.Release();
         }
     }
 
     private async Task SaveAndNext()
     {
-        await SaveCurrentRating();
+        if (!await SaveCurrentRating()) return;
         
         if (currentWineIndex < currentFlightWines.Count)
         {
@@ -623,7 +638,7 @@
     {
         if (currentWineIndex > 1)
         {
-            await SaveCurrentRating();
+            if (!await SaveCurrentRating()) return;
             await LoadWine(currentWineIndex - 2);
         }
     }

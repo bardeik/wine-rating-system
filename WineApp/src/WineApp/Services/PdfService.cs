@@ -43,7 +43,7 @@ public class PdfService : IPdfService
                             .Bold()
                             .FontColor(Colors.Blue.Darken3);
 
-                        column.Item().Text("🏆 Pokalvinnere")
+                        column.Item().Text("Pokalvinnere")
                             .FontSize(18)
                             .SemiBold();
 
@@ -60,7 +60,7 @@ public class PdfService : IPdfService
                         // Årets Vinbonde
                         column.Item().PaddingBottom(15).Element(c => RenderTrophy(
                             c,
-                            "🏅 Årets Vinbonde",
+                            "Årets Vinbonde",
                             "Høyest score i Gruppe A1 med Vinbonde-status",
                             aaretsVinbonde,
                             producers,
@@ -69,7 +69,7 @@ public class PdfService : IPdfService
                         // Beste Norske Vin
                         column.Item().PaddingBottom(15).Element(c => RenderTrophy(
                             c,
-                            "🇳🇴 Vinskuets beste norske vin",
+                            "Vinskuets beste norske vin",
                             "Høyest score i gruppene A1, B, C, D",
                             bestNorwegian,
                             producers,
@@ -78,7 +78,7 @@ public class PdfService : IPdfService
                         // Beste Nordiske Vin
                         column.Item().Element(c => RenderTrophy(
                             c,
-                            "🌍 Vinskuets beste nordiske vin",
+                            "Vinskuets beste nordiske vin",
                             "Høyest score i gruppene A1 og A2",
                             bestNordic,
                             producers,
@@ -173,7 +173,7 @@ public class PdfService : IPdfService
                             .DefaultTextStyle(x => x.FontSize(10))
                             .Text(text =>
                             {
-                                text.Span("🎲 Loddtrekning påkrevd! ").Bold();
+                                text.Span("Loddtrekning påkrevd! ").Bold();
                                 text.Span($"Likt snitt med annen vin. Høyeste enkeltscore: {trophy.result.HighestSingleScore:F1}");
                             });
                     }

@@ -45,6 +45,22 @@
 - **Dommer:** ser kun anonymiserte viner på nettbrett/web, registrerer A/B/C‑poeng (én desimal) og kommentarer; ingen tilgang til produsentdata.
 - **Observatør/presse (lesevisning):** (senere) kun tilgang til publiserte resultatlister.
 
+### Avklarte tilgangsregler (2026-10-23)
+
+- Dommere kan bare se og bedømme flights som er tildelt deres uforanderlige bruker-ID.
+- Ved hver lagring kontrolleres tildeling, aktivt arrangement, flightens vinliste og registrert betaling.
+- Deltakere og andre ikke-administratorer har ikke tilgang til upubliserte resultater, pokaler eller resultateksporter.
+- Registrering og betalingskvitteringer er tilgjengelige uavhengig av resultatpublisering.
+- Administrator publiserer og avpubliserer eksplisitt. Eksisterende arrangementer regnes som upubliserte hvis publiseringsstatus mangler.
+- Revisjonshistorikk er bare tilgjengelig for Admin, ikke deltakere, dommere, observatører eller anonyme brukere.
+- Poengendringer, sletting, arrangementendringer, flightendringer og publisering skal ha aktør-ID og UTC-tidspunkt i revisjonshistorikken.
+- Lagring av en revidert post og tilhørende historikk skal være atomisk. Sletting bevarer historikken.
+- Revisjonshistorikk oppbevares i 24 kalendermåneder etter registrert sluttid for arrangementet. Nyere historikk oppbevares i minst 24 måneder fra opprettelse.
+- Admin kan registrere dokumentert tvistesperre med saksreferanse. Sperret historikk slettes ikke før Admin eksplisitt frigir sperren.
+- Automatisk opprydding skjer ved oppstart og daglig. Den fjerner bare utløpte revisjonsoppføringer, ikke konkurranse-, betalings- eller regnskapsdata.
+- Eksisterende arrangementer uten registrert sluttid beholdes inntil Admin bekrefter faktisk sluttid. Avsluttede arrangementer kan ikke reaktiveres ved vanlig redigering.
+- Sikkerhetskopier, gjenoppretting og eventuelle lovbestemte regnskapsfrister håndteres separat av driftsansvarlig; applikasjonen sletter ikke sikkerhetskopier.
+
 ## Arbeidsflyter
 
 ### 1) Påmelding og betaling

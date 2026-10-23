@@ -9,8 +9,8 @@
   <ItemGroup>
     <PackageReference Include="AspNetCore.Identity.MongoDbCore" Version="7.0.0" />
     <PackageReference Include="CsvHelper" Version="33.1.0" />
-    <PackageReference Include="MongoDB.Driver" Version="3.10.0" />
-    <PackageReference Include="QuestPDF" Version="2026.2.2" />
+    <PackageReference Include="MongoDB.Driver" Version="3.13.0" />
+    <PackageReference Include="QuestPDF" Version="2026.9.1" />
   </ItemGroup>
 
 </Project>

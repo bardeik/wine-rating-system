@@ -11,10 +11,10 @@ public class WineRatingRepository : IWineRatingRepository
         _collection = context.WineRatings;
 
     public async Task<IList<WineRating>> GetAllWineRatingsAsync() =>
-        await _collection.Find(_ => true).ToListAsync();
+        await _collection.Find(r => !r.IsDeleted).ToListAsync();
 
     public async Task<WineRating?> GetWineRatingByIdAsync(string id) =>
-        await _collection.Find(r => r.WineRatingId == id).FirstOrDefaultAsync();
+        await _collection.Find(r => r.WineRatingId == id && !r.IsDeleted).FirstOrDefaultAsync();
 
     public async Task<string> AddWineRatingAsync(WineRating wineRating)
     {

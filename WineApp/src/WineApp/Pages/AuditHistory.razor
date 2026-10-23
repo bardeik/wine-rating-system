@@ -1,0 +1,167 @@
+@page "/audit-history"
+@attribute [Authorize(Roles = "Admin")]
+@inject ISecurityAdministrationService SecurityAdmin
+@inject ILogger<AuditHistory> Logger
+@inject IAuditRetentionService Retention
+@inject TimeProvider Clock
+
+<PageTitle>Revisjonshistorikk</PageTitle>
+
+<LoadingContainer IsLoading="@isLoading" Error="@loadError">
+    <h3>Revisjonshistorikk</h3>
+    <StatusAlert Message="@statusMessage" CssClass="@statusClass" OnDismiss="() => statusMessage = string.Empty" />
+    <h4 class="fs-5">Oppbevaring: 24 kalendermaaneder etter avsluttet arrangement</h4>
+    <div class="table-responsive mb-3">
+        <table class="table table-sm align-middle">
+            <thead><tr><th>Arrangement</th><th>Sluttid (UTC)</th><th>Utlop (UTC)</th><th>Tvistesperre</th></tr></thead>
+            <tbody>
+                @foreach (var row in retentionRows)
+                {
+                    var endId = $"retention-end-{row.Event.EventId}";
+                    var holdId = $"retention-hold-{row.Event.EventId}";
+                    <tr @key="row.Event.EventId">
+                        <td>@row.Event.Name</td>
+                        <td>
+                            <label class="visually-hidden" for="@endId">Sluttid (UTC)</label>
+                            <input id="@endId" type="datetime-local" class="form-control form-control-sm"
+                                   @bind="row.EndUtc" @bind:format="yyyy-MM-ddTHH:mm" disabled="@isBusy"
+                                   max="@Clock.GetUtcNow().ToString("yyyy-MM-ddTHH:mm")" />
+                            <label class="d-block"><input type="checkbox" @bind="row.ConfirmEnd" disabled="@isBusy" /> Bekreft avslutning</label>
+                            <button class="btn btn-sm btn-outline-secondary" disabled="@(isBusy || !row.ConfirmEnd)"
+                                    @onclick="() => RunRetentionAction(() => Retention.RecordEventEndAsync(row.Event.EventId, DateTime.SpecifyKind(row.EndUtc, DateTimeKind.Utc)))">
+                                <span class="oi oi-check" aria-hidden="true"></span> Registrer slutt
+                            </button>
+                        </td>
+                        <td>@(row.Event.EndedAtUtc is { Year: <= 9997 } ended ? ended.AddMonths(AuditRetentionPolicy.RetentionMonths).ToString("yyyy-MM-dd HH:mm") : "Ikke registrert")</td>
+                        <td>
+                            <label class="visually-hidden" for="@holdId">Referanse til tvistesak</label>
+                            <input id="@holdId" class="form-control form-control-sm" maxlength="200" @bind="row.DisputeReference" disabled="@isBusy" />
+                            <button class="btn btn-sm btn-outline-warning" disabled="@(isBusy || string.IsNullOrWhiteSpace(row.DisputeReference))"
+                                    @onclick="() => RunRetentionAction(() => Retention.SetDisputeHoldAsync(row.Event.EventId, row.DisputeReference))">
+                                <span class="oi oi-lock-locked" aria-hidden="true"></span> Sett tvistesperre
+                            </button>
+                            @if (!string.IsNullOrWhiteSpace(row.Event.AuditDisputeReference))
+                            {
+                                <div class="text-warning">Aktiv: @row.Event.AuditDisputeReference</div>
+                                <label class="d-block"><input type="checkbox" @bind="row.ConfirmRelease" disabled="@isBusy" /> Bekreft frigivelse</label>
+                                <button class="btn btn-sm btn-outline-secondary" disabled="@(isBusy || !row.ConfirmRelease)"
+                                        @onclick="() => RunRetentionAction(() => Retention.SetDisputeHoldAsync(row.Event.EventId, null))">
+                                    <span class="oi oi-lock-unlocked" aria-hidden="true"></span> Frigi tvistesperre
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <label class="d-block"><input type="checkbox" @bind="confirmCleanup" disabled="@isBusy" /> Bekreft permanent sletting</label>
+    <button class="btn btn-outline-danger mb-3" disabled="@(isBusy || !confirmCleanup)" @onclick="Cleanup">
+        <span class="oi oi-trash" aria-hidden="true"></span> Slett foreldet historikk
+    </button>
+    <button class="btn btn-outline-secondary mb-3" @onclick="MigrateRatings" disabled="@isMigrating">
+        <span class="oi oi-person" aria-hidden="true"></span> Migrer eldre dommerreferanser
+    </button>
+    <div class="table-responsive">
+        <table class="table table-sm">
+            <thead><tr><th>Tid (UTC)</th><th>Bruker-ID</th><th>Handling</th><th>Objekt-ID</th><th>Endring</th></tr></thead>
+            <tbody>
+                @foreach (var entry in entries)
+                {
+                    <tr>
+                        <td>@entry.TimestampUtc.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td>@entry.ActorUserId</td><td>@entry.Action</td><td>@entry.TargetId</td>
+                        <td><details><summary>Detaljer</summary><pre>@entry.Before</pre><pre>@entry.After</pre></details></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</LoadingContainer>
+
+@code {
+    private bool isLoading = true;
+    private bool isMigrating;
+    private bool isBusy;
+    private bool confirmCleanup;
+    private List<RetentionRow> retentionRows = [];
+    private string? loadError;
+    private string statusMessage = string.Empty;
+    private string statusClass = "alert-info";
+    private List<SecurityAuditEntry> entries = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { await Reload(); }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Audit history loading failed");
+            loadError = "Kunne ikke laste revisjonshistorikken.";
+        }
+        finally { isLoading = false; }
+    }
+
+    private async Task MigrateRatings()
+    {
+        isMigrating = true;
+        try
+        {
+            var reviewIds = await SecurityAdmin.MigrateLegacyRatingsAsync();
+            statusMessage = reviewIds.Count == 0 ? "Migreringen er fullfort."
+                : $"Krever manuell kontroll: {string.Join(", ", reviewIds)}";
+            statusClass = reviewIds.Count == 0 ? "alert-success" : "alert-warning";
+            entries = await SecurityAdmin.GetRecentAuditAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Legacy rating migration failed");
+            statusMessage = "Migreringen kunne ikke fullfores. Kontroller loggen.";
+            statusClass = "alert-danger";
+        }
+        finally { isMigrating = false; }
+    }
+
+    private async Task Reload()
+    {
+        entries = await SecurityAdmin.GetRecentAuditAsync();
+        retentionRows = (await Retention.GetEventsAsync()).OrderByDescending(evt => evt.Year)
+            .Select(evt => new RetentionRow
+            {
+                Event = evt, EndUtc = evt.EndedAtUtc ?? Clock.GetUtcNow().UtcDateTime,
+                DisputeReference = evt.AuditDisputeReference ?? string.Empty
+            }).ToList();
+    }
+
+    private async Task RunRetentionAction(Func<Task> action)
+    {
+        if (isBusy) return;
+        isBusy = true;
+        try
+        {
+            await action();
+            await Reload();
+            confirmCleanup = false;
+            statusMessage = "Oppdatert.";
+            statusClass = "alert-success";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Audit retention action failed");
+            statusMessage = "Handlingen ble ikke fullfort. Kontroller dato, tvistereferanse eller om vedlikehold allerede er aktivt.";
+            statusClass = "alert-danger";
+        }
+        finally { isBusy = false; }
+    }
+
+    private Task Cleanup() => !confirmCleanup ? Task.CompletedTask
+        : RunRetentionAction(async () => { await Retention.RunCleanupAsync(); });
+
+    private sealed class RetentionRow
+    {
+        public required Event Event { get; init; }
+        public DateTime EndUtc { get; set; }
+        public string DisputeReference { get; set; } = string.Empty;
+        public bool ConfirmEnd { get; set; }
+        public bool ConfirmRelease { get; set; }
+    }
+}

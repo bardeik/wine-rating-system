@@ -7,6 +7,7 @@
 @inject IScoreAggregationService ScoreAggregationService
 @inject NavigationManager Navigation
 @inject TimeProvider TimeProvider
+@inject ISecurityAdministrationService SecurityAdmin
 @using WineApp.Services
 
 <PageTitle>Arrangementshåndtering</PageTitle>
@@ -81,6 +82,10 @@
                                 }
                                 <button class="btn btn-sm btn-outline-primary" @onclick="() => ExportEventData(evt.EventId)">
                                     📥 Eksporter
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => TogglePublication(evt)">
+                                    <span class="oi oi-eye" aria-hidden="true"></span>
+                                    @(evt.ResultsPublished ? "Avpubliser resultater" : "Publiser resultater")
                                 </button>
                             </td>
                         </tr>
@@ -268,6 +273,19 @@ else
 </LoadingContainer>
 
 @code {
+    private async Task TogglePublication(Event evt)
+    {
+        try
+        {
+            await SecurityAdmin.SetPublicationAsync(evt.EventId, !evt.ResultsPublished);
+            await LoadEvents();
+            ShowStatus("Publiseringsstatus er oppdatert.", "alert-success");
+        }
+        catch (Exception)
+        {
+            ShowStatus("Kunne ikke endre publiseringsstatus. Last siden pa nytt.", "alert-danger");
+        }
+    }
     private bool isLoading = true;
     private string? loadError;
     private List<Event> events = new();
@@ -310,6 +328,10 @@ else
         currentEvent = new Event
         {
             EventId = evt.EventId,
+            SecurityRevision = evt.SecurityRevision,
+            ResultsPublished = evt.ResultsPublished,
+            PublishedAtUtc = evt.PublishedAtUtc,
+            PublishedByUserId = evt.PublishedByUserId,
             Name = evt.Name,
             Year = evt.Year,
             RegistrationStartDate = evt.RegistrationStartDate,

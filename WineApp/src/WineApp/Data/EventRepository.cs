@@ -11,16 +11,16 @@ public class EventRepository : IEventRepository
         _events = context.Events;
 
     public async Task<List<Event>> GetAllEventsAsync() =>
-        await _events.Find(_ => true).ToListAsync();
+        await _events.Find(e => !e.IsDeleted).ToListAsync();
 
     public async Task<Event?> GetEventByIdAsync(string id) =>
-        await _events.Find(e => e.EventId == id).FirstOrDefaultAsync();
+        await _events.Find(e => e.EventId == id && !e.IsDeleted).FirstOrDefaultAsync();
 
     public async Task<Event?> GetActiveEventAsync() =>
-        await _events.Find(e => e.IsActive).FirstOrDefaultAsync();
+        await _events.Find(e => e.IsActive && !e.IsDeleted).FirstOrDefaultAsync();
 
     public async Task<Event?> GetEventByYearAsync(int year) =>
-        await _events.Find(e => e.Year == year).FirstOrDefaultAsync();
+        await _events.Find(e => e.Year == year && !e.IsDeleted).FirstOrDefaultAsync();
 
     public async Task AddEventAsync(Event eventItem) =>
         await _events.InsertOneAsync(eventItem);

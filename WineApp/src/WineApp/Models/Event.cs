@@ -5,8 +5,16 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace WineApp.Models;
 
+[BsonIgnoreExtraElements]
 public class Event
 {
+    public bool IsDeleted { get; set; }
+    public bool ResultsPublished { get; set; }
+    public DateTime? PublishedAtUtc { get; set; }
+    public string? PublishedByUserId { get; set; }
+    public int SecurityRevision { get; set; }
+    public DateTime? EndedAtUtc { get; set; }
+    public string? AuditDisputeReference { get; set; }
     [DisplayName("Arrangement Id")]
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]

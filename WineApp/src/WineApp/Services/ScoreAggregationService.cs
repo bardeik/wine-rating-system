@@ -11,6 +11,7 @@ public class ScoreAggregationService : IScoreAggregationService
     private readonly IWineResultRepository _wineResultRepository;
     private readonly IClassificationService _classificationService;
     private readonly TimeProvider _timeProvider;
+    private readonly SecurityAccess _access;
 
     public ScoreAggregationService(
         IWineRatingRepository wineRatingRepository,
@@ -18,7 +19,7 @@ public class ScoreAggregationService : IScoreAggregationService
         IEventRepository eventRepository,
         IWineResultRepository wineResultRepository,
         IClassificationService classificationService,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider, SecurityAccess access)
     {
         _wineRatingRepository = wineRatingRepository;
         _wineRepository = wineRepository;
@@ -26,6 +27,7 @@ public class ScoreAggregationService : IScoreAggregationService
         _wineResultRepository = wineResultRepository;
         _classificationService = classificationService;
         _timeProvider = timeProvider;
+        _access = access;
     }
 
     public WineResult CalculateWineResult(string wineId, Event eventConfig, List<WineRating> ratings)
@@ -96,6 +98,7 @@ public class ScoreAggregationService : IScoreAggregationService
 
     public async Task<List<WineResult>> RecalculateEventResultsAsync(string eventId)
     {
+        await _access.RequireAdminAsync();
         var eventConfig = await _eventRepository.GetEventByIdAsync(eventId);
         if (eventConfig == null)
             throw new InvalidOperationException($"Event {eventId} not found");

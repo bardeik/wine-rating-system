@@ -5,8 +5,12 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace WineApp.Models;
 
+[BsonIgnoreExtraElements]
 public class WineRating
 {
+    public string? FlightId { get; set; }
+    public int SecurityRevision { get; set; }
+    public bool IsDeleted { get; set; }
     [DisplayName("Vurdering Id")]
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]

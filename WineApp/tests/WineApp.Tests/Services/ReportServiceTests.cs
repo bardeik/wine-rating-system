@@ -7,7 +7,7 @@ public class ReportServiceTests
     private readonly Mock<IWineProducerRepository> _producerRepo = new();
 
     private ReportService CreateSut() =>
-        new(_wineRepo.Object, _ratingRepo.Object, _producerRepo.Object);
+        new(_wineRepo.Object, _ratingRepo.Object, _producerRepo.Object, SecurityTestIdentity.Admin());
 
     // -----------------------------------------------------------------------
     //  Tests

@@ -11,12 +11,12 @@ public class FlightRepository : IFlightRepository
         _collection = context.Flights;
 
     public async Task<List<Flight>> GetFlightsForEventAsync(string eventId) =>
-        await _collection.Find(f => f.EventId == eventId)
+        await _collection.Find(f => f.EventId == eventId && !f.IsDeleted)
                          .SortBy(f => f.FlightNumber)
                          .ToListAsync();
 
     public async Task<Flight?> GetFlightByIdAsync(string flightId) =>
-        await _collection.Find(f => f.FlightId == flightId).FirstOrDefaultAsync();
+        await _collection.Find(f => f.FlightId == flightId && !f.IsDeleted).FirstOrDefaultAsync();
 
     public async Task AddFlightAsync(Flight flight) =>
         await _collection.InsertOneAsync(flight);

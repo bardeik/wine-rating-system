@@ -1,0 +1,238 @@
+plan_id: "20261023-security-improvements"
+status: "implemented_pending_rollout_verification"
+objective: >
+  Address the application security review findings, update dependencies, and add
+  regression checks without weakening blind judging or exposing unpublished results.
+
+confirmed_decisions:
+  - "Judges may view and score only flights assigned to their immutable user ID."
+  - "Participants cannot see results before they are published."
+  - "Audit history is Admin-only; participants, judges, viewers, and anonymous users have no access."
+  - "Registration and payment receipts remain available before results are published."
+  - "Existing events default to unpublished until an Admin explicitly publishes them."
+
+decisions:
+  - id: "D001"
+    topic: "Audit-history retention"
+    status: "approved_and_implemented"
+    implementation_constraint: >
+      Retain audit history for 24 calendar months after the recorded event end,
+      with a minimum age of 24 months per entry. Documented unresolved dispute
+      holds prevent cleanup. Preserve domain/accounting data. Backup expiry and
+      safe restores require separate operator configuration.
+
+scope:
+  application: "WineApp/src/WineApp"
+  tests: "WineApp/tests/WineApp.Tests"
+  automation: ".github"
+  exclusions:
+    - "Legacy projects and unrelated refactoring."
+    - "Automatic package upgrades without compatibility verification."
+    - "Production infrastructure changes without a separate reviewed deployment step."
+
+review_baseline:
+  date: "2026-10-23"
+  known_nuget_vulnerabilities: "None reported for direct or transitive dependencies by public NuGet."
+  tests: "137 passed using dotnet test."
+  limitations:
+    - "Source review, not a live penetration test."
+    - "No container-image, production infrastructure, or Git-history secrets scan completed."
+    - "NuGet supply-chain configuration tool failed with an assembly-version mismatch."
+
+tasks:
+  - id: "SEC-001"
+    title: "Close identity leaks in reporting and legacy rating pages"
+    priority: "high"
+    status: "implemented"
+    dependencies: []
+    implementation:
+      - "Restrict /reports and legacy /wineratings management to Admin."
+      - "Keep judges on the anonymized assigned-flight workflow."
+      - "Update navigation consistently; enforce authorization on routes and service operations, not navigation alone."
+      - "Avoid returning wine names, producer details, or other judges' scores in judge-facing data."
+    acceptance_criteria:
+      - "A Judge cannot access identifying reports or the legacy management page by direct URL."
+      - "WineProducer, Viewer, and anonymous accounts cannot access Admin reports."
+      - "Admin retains management access; judge-facing views contain only permitted anonymized data."
+
+  - id: "SEC-002"
+    title: "Enforce assigned flights and score eligibility"
+    priority: "high"
+    status: "implemented_legacy_migration_not_required_pre_live"
+    dependencies: ["SEC-001"]
+    implementation:
+      - "Inspect existing flight assignment fields and reuse them where suitable."
+      - "Key assignments and new ratings by immutable Identity user ID, never display name or email."
+      - "Provide a reviewed migration for legacy judge references; reject ambiguous mappings and require Admin resolution."
+      - "Filter judge flight lists and reads by the authenticated user's assignments."
+      - "Recheck assignment, active event, wine membership, and confirmed payment on every score write."
+      - "Resolve the acting judge server-side and reject attempts to change another judge's rating."
+      - "Apply consistent authorization to create, update, delete, and autosave paths; keep Admin overrides explicit."
+    acceptance_criteria:
+      - "Judge A cannot read or score Judge B's unassigned flight, including by supplying valid IDs."
+      - "Unassigned flights, unpaid wines, inactive events, and mismatched wine/flight IDs are rejected."
+      - "Assignments revoked after a page loads prevent subsequent writes and autosaves."
+      - "Unassigned legacy flights are inaccessible to judges until an Admin assigns them."
+      - "Eligible assigned-flight submissions work and are attributed to the authenticated user."
+
+  - id: "SEC-003"
+    title: "Add Admin-only audit history"
+    priority: "medium"
+    status: "implemented_verification_accepted_by_user"
+    dependencies: ["SEC-002"]
+    implementation:
+      - "Add append-only audit records with acting user ID, UTC timestamp from TimeProvider, action, target, and before/after values."
+      - "Record score creation, edits, and deletion, plus publication changes and security-relevant Admin actions."
+      - "Preserve audit records after target deletion; do not fabricate historical records for pre-migration changes."
+      - "Choose and test reliable write consistency using supported MongoDB transactions or a durable equivalent."
+      - "Do not acknowledge a successful mutation while silently losing its audit record."
+      - "Enforce Admin-only access on audit pages, service reads, and any export endpoints."
+      - "Prevent audit editing and arbitrary deletion; allow policy-bound expiry only."
+      - "Minimize sensitive fields and exclude credentials, tokens, and connection strings from audit payloads."
+      - "Apply approved D001 retention with Admin-only end/hold controls and a daily audit-only sweep."
+    acceptance_criteria:
+      - "Each covered mutation has an attributable audit record with accurate previous and new values."
+      - "Deletion preserves history and audit-write failure cannot silently lose change attribution."
+      - "Participants, judges, viewers, and anonymous users cannot read history through pages, services, or exports."
+      - "Admin can inspect history and manage documented holds, but cannot edit entries or delete unexpired history."
+
+  - id: "SEC-004"
+    title: "Gate results behind explicit publication"
+    priority: "medium"
+    status: "implemented"
+    dependencies: ["SEC-003"]
+    implementation:
+      - "Add ResultsPublished with a false default plus publication timestamp and publishing Admin ID."
+      - "Provide explicit Admin publish and unpublish commands that create audit records."
+      - "Centralize publication authorization for all non-Admin result reads."
+      - "Cover public results, participant views, viewer reports, trophies, PDFs, and CSV/download endpoints."
+      - "Recheck publication on subsequent reads and exports; do not rely only on state cached at page initialization."
+      - "Ensure recalculation does not silently publish results or change publication status."
+      - "Preserve registration, payment receipts, and authorized judge access to their own scoring workflow."
+    acceptance_criteria:
+      - "Missing publication fields on existing events are treated as unpublished."
+      - "Participants, judges, viewers, and anonymous users cannot retrieve unreleased result data through any supported path."
+      - "Admin can preview unpublished results and explicitly publish or unpublish them."
+      - "After publication, only the intended public result fields become visible; audit history and private judge comments remain restricted."
+      - "Unpublishing blocks subsequent non-Admin reads and exports; already downloaded material cannot be recalled."
+
+  - id: "SEC-005"
+    title: "Remove internal exception details from public responses"
+    priority: "medium"
+    status: "implemented"
+    dependencies: []
+    implementation:
+      - "Replace public-facing ex.Message output with generic localized error messages."
+      - "Log exceptions server-side with a correlation identifier and without secrets."
+      - "Check anonymous pages and public/download error paths for equivalent disclosures."
+    acceptance_criteria:
+      - "A simulated database failure reveals no exception text, stack trace, connection string, or internal hostname to visitors."
+      - "Server-side diagnostics retain enough context to investigate the failure."
+
+  - id: "SEC-006"
+    title: "Upgrade application and test dependencies"
+    priority: "medium"
+    status: "implemented_verification_accepted_by_user"
+    dependencies: []
+    candidates_as_of_review:
+      - { package: "MongoDB.Driver", installed: "3.10.0", available: "3.13.0" }
+      - { package: "QuestPDF", installed: "2026.2.2", available: "2026.9.1" }
+      - { package: "Microsoft.NET.Test.Sdk", installed: "17.12.0", available: "18.11.0" }
+      - { package: "coverlet.collector", installed: "6.0.4", available: "10.1.0" }
+      - { package: "Moq", installed: "4.20.72", available: "4.21.0" }
+      - { package: "Shouldly", installed: "4.2.1", available: "4.3.0" }
+      - { package: "xunit.runner.visualstudio", installed: "2.8.2", available: "4.0.1" }
+    implementation:
+      - "Refresh stable-version and vulnerability queries immediately before upgrading."
+      - "Review release notes and compatibility; upgrade MongoDB.Driver and QuestPDF separately."
+      - "Update test tooling in a separate change, evaluating major versions individually."
+      - "Prefer parent-package upgrades over arbitrary direct pins of transitive dependencies."
+      - "Retest authentication, MongoDB serialization and CRUD, CSV exports, and PDF rendering."
+    acceptance_criteria:
+      - "Build and full test suite pass after each independently reviewable upgrade."
+      - "Direct and transitive vulnerability scans report no known vulnerabilities, or an explicit reviewed exception is documented."
+      - "Representative application workflows pass against a non-production MongoDB instance."
+
+  - id: "SEC-007"
+    title: "Add security regression tests and continuous scanning"
+    priority: "medium"
+    status: "configured_pending_github_admin_verification"
+    dependencies: ["SEC-001", "SEC-002", "SEC-003", "SEC-004", "SEC-005", "SEC-006"]
+    implementation:
+      - "Add focused tests alongside each implementation task; this final stage verifies cross-layer coverage."
+      - "Cover Admin, Judge, WineProducer, Viewer, and anonymous role combinations, including multi-role users."
+      - "Test direct routes, service calls, downloads, revoked assignments, and publication state transitions."
+      - "Add Dependabot configuration for NuGet and GitHub Actions without enabling automatic merging."
+      - "Verify hosted Dependabot alerts, dependency graph, security updates, and CodeQL settings with repository-admin access."
+      - "Verify a fresh CodeQL run; explicitly re-enable disabled workflows if necessary."
+      - "Add test automation and configure appropriate required PR checks through reviewed repository settings."
+      - "Document vulnerability reporting and remaining scanning limitations."
+    acceptance_criteria:
+      - "Removing an assignment, publication, or audit-access guard causes the corresponding security test to fail."
+      - "A test PR demonstrates working tests and CodeQL checks."
+      - "Dependabot configuration validates and GitHub accepts the configured update jobs."
+      - "Hosted security settings and required checks are verified, not inferred from local YAML alone."
+
+delivery:
+  sequence:
+    - "Close report and legacy rating access, then enforce assigned-flight reads and writes."
+    - "Add audit persistence and identity migration before enabling publication changes."
+    - "Implement publication gates and safe public error handling."
+    - "Deliver dependency upgrades independently from security behavior changes."
+    - "Complete integration tests, hosted scanning verification, and staged rollout."
+  rollout_gates:
+    - "Configure backup expiry and the safe restore process before first production use."
+    - "Verify hosted GitHub security checks and deploy through the agreed pre-live release process."
+  separate_follow_up:
+    - "Investigate partial-object wine replacement in the edit workflow; do not treat it as a confirmed exploit without reproduction."
+
+implementation_notes:
+  user_release_decisions_20261023:
+    - "User accepted live MongoDB verification as OK for proceeding with commit and push."
+    - "Existing-data backup, migration preparation, and historical-result publication are not required: the system is not yet live."
+    - "No claim of independently executed live-database tests is made; local verification is recorded below."
+  retention_follow_up: >
+    Approved D001 is implemented with explicit EndedAtUtc and a documented dispute
+    case reference, Admin-only retention controls, and startup/daily cleanup.
+    Cleanup removes only old SecurityAudit array entries, not domain documents or
+    payment/accounting data. Per-event locks serialize cleanup and hold/end changes;
+    uncertain failures retain the lock for operator review, without automatic expiry.
+    End dates and holds survive ordinary event edits. Backup expiry and isolated
+    restore reconciliation are operator responsibilities documented in SECURITY.md.
+  audit_consistency: >
+    SecurityMutationStore writes the entity and an appended SecurityAudit entry
+    in one MongoDB document operation using optimistic SecurityRevision checks.
+    Domain deletion is logical. No replica-set transaction dependency is introduced.
+    Existing history is preserved by appending until policy-bound expiry removes
+    eligible entries. A daily sweep and Admin-triggered cleanup honor dispute holds.
+    Monitor document growth against MongoDB's document-size limit; a full document
+    rejects subsequent writes rather than silently dropping audit history.
+  identity_migration: >
+    The Admin-only audit page provides explicit migration. A legacy judge reference
+    must match exactly one current Judge account and one assigned flight containing
+    its wine. Unresolved IDs are returned for manual review; historical audit events
+    are not fabricated. Back up and rehearse before running in production.
+  package_upgrades: >
+    MongoDB.Driver 3.13.0, QuestPDF 2026.9.1, Microsoft.NET.Test.Sdk 18.11.0,
+    coverlet.collector 10.1.0, Moq 4.21.0, Shouldly 4.3.0, and the Visual Studio
+    xUnit adapter 4.0.1 were installed and tested. xUnit remains on version 2.9.3.
+    PDF regression tests exposed unsupported decorative emoji under the new font
+    validation; PDF headings now use supported text without disabling validation.
+  hosted_checks_remaining:
+    - "Verify Dependabot jobs and alerts/security updates in GitHub repository settings."
+    - "Enable private vulnerability reporting and configure required PR checks."
+    - "Re-enable CodeQL if disabled for inactivity and verify a fresh hosted run."
+    - "Verify a PR runs Tests and Dependency Audit plus CodeQL Analysis."
+  environment_checks_remaining:
+    - "Configure backup expiry externally and verify the safe restore process before production use."
+  verification_completed:
+    - "Full Release test suite: 234 passed, zero failed or skipped, with coverage collection."
+    - "Retention follow-up adds 36 tests covering policy boundaries, holds, role checks, locks, storage filters, and worker startup."
+    - "Original 137 tests and all earlier security/output tests are retained."
+    - "Coverage collection succeeded with the upgraded coverage collector."
+    - "Added authorization, assignment, migration, publication, audit persistence, duplicate-score, PDF, and CSV tests."
+    - "Direct-package outdated query reports no available updates for application or tests."
+    - "Structured CI dependency-advisory gate executed locally and passed."
+    - "Browser verified anonymous redirects for audit history, reports, and legacy rating management."
+    - "Browser verified generic public-result failure with no database exception details."
+    - "Live-database verification accepted by the user for release; it was not independently performed in this local environment."

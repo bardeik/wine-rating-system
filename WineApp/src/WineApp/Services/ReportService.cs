@@ -8,19 +8,22 @@ public class ReportService : IReportService
     private readonly IWineRepository _wineRepository;
     private readonly IWineRatingRepository _wineRatingRepository;
     private readonly IWineProducerRepository _wineProducerRepository;
+    private readonly SecurityAccess _access;
 
     public ReportService(
         IWineRepository wineRepository,
         IWineRatingRepository wineRatingRepository,
-        IWineProducerRepository wineProducerRepository)
+        IWineProducerRepository wineProducerRepository, SecurityAccess access)
     {
         _wineRepository = wineRepository;
         _wineRatingRepository = wineRatingRepository;
         _wineProducerRepository = wineProducerRepository;
+        _access = access;
     }
 
     public async Task<List<WineReportRow>> GetWineReportRowsAsync()
     {
+        await _access.RequireAdminAsync();
         var wines     = await _wineRepository.GetAllWinesAsync();
         var ratings   = await _wineRatingRepository.GetAllWineRatingsAsync();
         var producers = await _wineProducerRepository.GetAllWineProducersAsync();

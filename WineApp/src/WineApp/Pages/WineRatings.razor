@@ -1,5 +1,5 @@
 @page "/wineratings"
-@attribute [Authorize(Roles = "Admin,Judge")]
+@attribute [Authorize(Roles = "Admin")]
 @inject IWineJudgingService WineJudging
 @inject IWineCatalogService WineCatalog
 @inject UserManager<ApplicationUser> UserManager
@@ -97,7 +97,7 @@
                         <option value="">-- Velg dommer --</option>
                         @foreach (var u in judgeUsers)
                         {
-                            <option value="@(u.DisplayName ?? u.UserName)">@(u.DisplayName ?? u.UserName)</option>
+                            <option value="@u.Id.ToString()">@(u.DisplayName ?? u.UserName)</option>
                         }
                     </InputSelect>
                 }
@@ -156,7 +156,7 @@
             currentUser = await UserManager.FindByIdAsync(CurrentUser.UserId);
 
         if (currentUser is not null)
-            newRating.JudgeId = currentUser.DisplayName ?? currentUser.UserName ?? string.Empty;
+            newRating.JudgeId = currentUser.Id.ToString();
         newRating.RatingDate = TimeProvider.GetUtcNow().UtcDateTime;
         }
         catch (Exception ex)
@@ -192,7 +192,7 @@
         await WineJudging.AddWineRatingAsync(newRating);
         newRating = new WineRating { RatingDate = TimeProvider.GetUtcNow().UtcDateTime };
         if (currentUser is not null)
-            newRating.JudgeId = currentUser.DisplayName ?? currentUser.UserName ?? string.Empty;
+            newRating.JudgeId = currentUser.Id.ToString();
         await LoadWineRatings();
     }
 

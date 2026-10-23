@@ -104,7 +104,7 @@ A public-facing page (**Public Results**) shows final results without requiring 
 |---|---|
 | Runtime | .NET 10 |
 | UI | Blazor Server |
-| Database | MongoDB (via MongoDB.Driver 3.6.0) |
+| Database | MongoDB (via MongoDB.Driver 3.13.0) |
 | Authentication | ASP.NET Core Identity + AspNetCore.Identity.MongoDbCore 7.0.0 |
 | Styling | Bootstrap (CSS) |
 | PDF generation | [QuestPDF](https://www.questpdf.com/) |
@@ -200,17 +200,11 @@ Reusable Razor components used across pages:
 
 ### Seeded Accounts (first run only)
 
-| Email | Password | Roles |
-|---|---|---|
-| admin@wineapp.com | Admin123! | Admin, Viewer |
-| viewer@wineapp.com | Viewer123! | Viewer |
-| hans@wineapp.com | Judge123! | Judge, Viewer |
-| petter@wineapp.com | Judge123! | Judge, Viewer |
-| frans@wineapp.com | Judge123! | Judge, Viewer |
-| ola@wineapp.com | Judge123! | Judge, Viewer |
-| oslo@wineapp.com | Producer123! | WineProducer, Viewer |
-| grimstad@wineapp.com | Producer123! | WineProducer, Viewer |
-| techwine@wineapp.com | Producer123! | WineProducer, Viewer |
+Development sample accounts use `DEV_SEED_PASSWORD` supplied outside source
+control. Without it, seeding generates an in-memory random password; there is
+no published default password. Sample accounts are not seeded in Production.
+Production Admin creation uses externally supplied `ADMIN_EMAIL` and
+`ADMIN_PASSWORD` on the first startup only.
 
 ---
 
@@ -241,6 +235,30 @@ dotnet test tests/WineApp.Tests/WineApp.Tests.csproj
 ```
 
 Tests are pure unit tests — no MongoDB or running Blazor server required. All repositories are mocked with Moq. Assertions use **Shouldly** (MIT licence).
+
+### Security Workflows
+
+Admins assign judges to flights on **Flight Management**. Unassigned flights
+are unavailable to judges. Judge identity is resolved server-side using the
+Identity user ID; only eligible paid wines in the active event can be scored.
+
+Admins explicitly publish or unpublish results on **Events**. Existing events
+default to unpublished. Participants and viewers cannot access unreleased
+results through reports or downloads; registration and payment receipts remain
+available.
+
+The Admin-only **Audit History** page shows recent audited changes and provides
+an explicit legacy judge-reference migration. Assign flights first, back up
+the database, and rehearse migration in staging. Ambiguous identities are not
+guessed and are reported for manual review. Admins record event end dates and
+documented dispute holds on the same page. A daily job removes audit entries
+older than 24 months after the recorded event end, unless a dispute hold applies;
+newer entries keep their own 24-month minimum. Legacy events without an end date
+are retained. Competition and accounting data are not deleted by audit cleanup.
+Backup expiry and safe restores require operator configuration outside this app.
+
+See [SECURITY.md](SECURITY.md) and the
+[implementation plan](docs/plan/20261023-security-improvements/plan.yaml).
 
 ---
 

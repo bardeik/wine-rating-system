@@ -1,4 +1,5 @@
 using MongoDB.Driver;
+using MongoDB.Bson;
 using WineApp.Models;
 
 namespace WineApp.Data;
@@ -43,4 +44,6 @@ public class WineMongoDbContext
 
     public IMongoCollection<Flight> Flights =>
         _database.GetCollection<Flight>(FlightsCollection);
+
+    public IMongoDatabase Database => _database;
 }

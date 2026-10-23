@@ -33,7 +33,8 @@ public static class DownloadEndpointExtensions
             var fileName = $"Resultater_{ToSafeFileSegment(evt.Name)}_{DateTime.Now:yyyyMMdd}.csv";
 
             return Results.File(bytes, "text/csv", fileName);
-        }).RequireAuthorization(policy => policy.RequireRole("Admin", "Viewer"));
+        }).RequireAuthorization(policy => policy.RequireRole("Admin", "Viewer"))
+            .AddEndpointFilter<DownloadSecurityFilter>();
 
         // Download trophy winners for an event
         app.MapGet("/api/download/trophies/{eventId}", async (
@@ -56,7 +57,8 @@ public static class DownloadEndpointExtensions
             var fileName = $"Pokaler_{ToSafeFileSegment(evt.Name)}_{DateTime.Now:yyyyMMdd}.csv";
 
             return Results.File(bytes, "text/csv", fileName);
-        }).RequireAuthorization(policy => policy.RequireRole("Admin", "Viewer"));
+        }).RequireAuthorization(policy => policy.RequireRole("Admin", "Viewer"))
+            .AddEndpointFilter<DownloadSecurityFilter>();
 
         // Download complete event archive (wines, ratings, results)
         app.MapGet("/api/download/event/{eventId}", async (
@@ -88,7 +90,8 @@ public static class DownloadEndpointExtensions
             var fileName = $"Arkiv_{ToSafeFileSegment(evt.Name)}_{evt.Year}.csv";
 
             return Results.File(bytes, "text/csv", fileName);
-        }).RequireAuthorization(policy => policy.RequireRole("Admin"));
+        }).RequireAuthorization(policy => policy.RequireRole("Admin"))
+            .AddEndpointFilter<DownloadSecurityFilter>();
 
         // Download flight list for an event
         app.MapGet("/api/download/flights/{eventId}", async (
@@ -109,7 +112,8 @@ public static class DownloadEndpointExtensions
             var fileName = $"Flights_{ToSafeFileSegment(evt.Name)}_{DateTime.Now:yyyyMMdd}.csv";
 
             return Results.File(bytes, "text/csv", fileName);
-        }).RequireAuthorization(policy => policy.RequireRole("Admin"));
+        }).RequireAuthorization(policy => policy.RequireRole("Admin"))
+            .AddEndpointFilter<DownloadSecurityFilter>();
 
         // Download trophy report as PDF
         app.MapGet("/api/download/trophy-pdf/{eventId}", async (
@@ -131,7 +135,8 @@ public static class DownloadEndpointExtensions
             var fileName = $"Pokaler_{ToSafeFileSegment(evt.Name)}_{DateTime.Now:yyyyMMdd}.pdf";
 
             return Results.File(pdf, "application/pdf", fileName);
-        }).RequireAuthorization(policy => policy.RequireRole("Admin", "Viewer"));
+        }).RequireAuthorization(policy => policy.RequireRole("Admin", "Viewer"))
+            .AddEndpointFilter<DownloadSecurityFilter>();
 
         return app;
     }

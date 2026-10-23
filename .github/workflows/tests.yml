@@ -1,0 +1,45 @@
+name: Tests and Dependency Audit
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests and Dependency Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Set up .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.x'
+      - name: Restore
+        run: dotnet restore WineApp/WineApp.sln --source https://api.nuget.org/v3/index.json
+      - name: Test
+        run: dotnet test WineApp/tests/WineApp.Tests/WineApp.Tests.csproj --configuration Release --no-restore
+      - name: Reject known vulnerable dependencies
+        shell: pwsh
+        run: |
+          $output = dotnet list WineApp/WineApp.sln package --vulnerable --include-transitive --format json --no-restore --source https://api.nuget.org/v3/index.json
+          if ($LASTEXITCODE -ne 0) { throw 'Dependency audit failed.' }
+          $report = ($output | Out-String) | ConvertFrom-Json
+          $vulnerable = @(
+            foreach ($project in $report.projects) {
+              foreach ($framework in $project.frameworks) {
+                @($framework.topLevelPackages) + @($framework.transitivePackages) |
+                  Where-Object { $_.vulnerabilities.Count -gt 0 }
+              }
+            }
+          )
+          if ($vulnerable.Count -gt 0) { throw 'Known vulnerable dependencies were found.' }

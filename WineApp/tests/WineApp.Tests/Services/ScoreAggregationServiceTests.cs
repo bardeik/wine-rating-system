@@ -19,7 +19,7 @@ public class ScoreAggregationServiceTests
         _eventRepo.Object,
         _wineResultRepo.Object,
         _classificationService,
-        timeProvider ?? TimeProvider.System);
+        timeProvider ?? TimeProvider.System, SecurityTestIdentity.Admin());
 
     private static Event DefaultEvent() => new()
     {

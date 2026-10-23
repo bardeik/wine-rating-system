@@ -48,15 +48,25 @@
                         <span class="oi oi-tablet" aria-hidden="true"></span> Dommerbedømming
                     </NavLink>
                 </div>
+            </Authorized>
+        </AuthorizeView>
+        <AuthorizeView Roles="Admin">
+            <Authorized>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="wineratings">
                         <span class="oi oi-star" aria-hidden="true"></span> Vurderinger
                     </NavLink>
                 </div>
-            </Authorized>
-        </AuthorizeView>
-        <AuthorizeView Roles="Admin">
-            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="reports">
+                        <span class="oi oi-bar-chart" aria-hidden="true"></span> Rapporter
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="audit-history">
+                        <span class="oi oi-lock-locked" aria-hidden="true"></span> Revisjonshistorikk
+                    </NavLink>
+                </div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="events">
                         <span class="oi oi-calendar" aria-hidden="true"></span> Arrangementer
@@ -86,11 +96,6 @@
         </AuthorizeView>
         <AuthorizeView Roles="Admin,Viewer">
             <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="reports">
-                        <span class="oi oi-bar-chart" aria-hidden="true"></span> Rapporter
-                    </NavLink>
-                </div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="results-report">
                         <span class="oi oi-spreadsheet" aria-hidden="true"></span> Resultatliste

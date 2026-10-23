@@ -6,8 +6,12 @@ namespace WineApp.Models;
 /// <summary>
 /// Represents a flight of wines for tasting
 /// </summary>
+[BsonIgnoreExtraElements]
 public class Flight
 {
+    public List<string> AssignedJudgeIds { get; set; } = [];
+    public int SecurityRevision { get; set; }
+    public bool IsDeleted { get; set; }
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     public string FlightId { get; set; } = ObjectId.GenerateNewId().ToString();

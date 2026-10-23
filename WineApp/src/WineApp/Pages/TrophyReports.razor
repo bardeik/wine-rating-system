@@ -1,4 +1,6 @@
 @page "/trophy-reports"
+@inject SecurityAccess Access
+@inject ILogger<TrophyReports> Logger
 @attribute [Authorize(Roles = "Admin,Viewer")]
 @inject IWineEventService EventSvc
 @inject ITrophyService TrophyService
@@ -29,6 +31,7 @@ else
     </div>
 
     <!-- Calculate Button -->
+    <AuthorizeView Roles="Admin">
     <div class="card mb-4">
         <div class="card-body">
             <button class="btn btn-primary btn-lg w-100" @onclick="CalculateTrophies">
@@ -42,6 +45,7 @@ else
             }
         </div>
     </div>
+    </AuthorizeView>
 
     <div class="row">
         <!-- Årets Vinbonde -->
@@ -321,7 +325,8 @@ else
         }
         catch (Exception ex)
         {
-            loadError = $"Feil ved lasting av data: {ex.Message}";
+            Logger.LogWarning(ex, "Trophy report loading failed");
+            loadError = "Resultatene er ikke tilgjengelige.";
         }
         finally
         {
@@ -332,16 +337,21 @@ else
     private async Task LoadData()
     {
         activeEvent = await EventSvc.GetActiveEventAsync();
+        if (activeEvent != null) await Access.RequireResultsAsync(activeEvent.EventId);
         
         if (activeEvent != null)
         {
             var allProducers = await WineCatalog.GetAllWineProducersAsync();
             producerNames = allProducers.ToDictionary(p => p.WineProducerId, p => p.WineyardName);
+            aaretsVinbonde = await TrophyService.GetAaretsVinbondeAsync(activeEvent.EventId);
+            bestNorwegian = await TrophyService.GetBestNorwegianWineAsync(activeEvent.EventId);
+            bestNordic = await TrophyService.GetBestNordicWineAsync(activeEvent.EventId);
         }
     }
 
     private async Task CalculateTrophies()
     {
+        await Access.RequireAdminAsync();
         if (activeEvent == null) return;
 
         try
@@ -361,7 +371,8 @@ else
         }
         catch (Exception ex)
         {
-            ShowStatus($"Feil ved beregning: {ex.Message}", "alert-danger");
+            Logger.LogError(ex, "Trophy calculation failed");
+            ShowStatus("Kunne ikke beregne pokalvinnere.", "alert-danger");
         }
     }
 

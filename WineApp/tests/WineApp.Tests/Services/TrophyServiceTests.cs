@@ -10,7 +10,7 @@ public class TrophyServiceTests
     private readonly Mock<IWineRepository> _wineRepo = new();
     private readonly Mock<IWineResultRepository> _wineResultRepo = new();
 
-    private TrophyService CreateSut() => new(_wineRepo.Object, _wineResultRepo.Object);
+    private TrophyService CreateSut() => new(_wineRepo.Object, _wineResultRepo.Object, SecurityTestIdentity.Admin());
 
     // ── ResolveTieBreaks ──────────────────────────────────────────
 

@@ -1,6 +1,7 @@
 name: CodeQL Analysis
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
@@ -19,22 +20,27 @@ jobs:
   analyze:
     name: Analyze C#
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
         with:
           dotnet-version: '10.x'
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370
         with:
           languages: csharp
           # Exclude generated/build artifact files from analysis
           config: |
+            queries:
+              - uses: security-extended
             paths-ignore:
               - WineApp/src/WineApp/.docker-assets
               - WineApp/src/WineApp/bin
@@ -47,6 +53,6 @@ jobs:
         run: dotnet build src/WineApp/WineApp.csproj --configuration Release
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370
         with:
           category: '/language:csharp'
