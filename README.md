@@ -248,11 +248,9 @@ Tests are pure unit tests — no MongoDB or running Blazor server required. All 
 
 PDF generation is powered by **[QuestPDF](https://www.questpdf.com/)**, an open-source .NET library licensed under the [QuestPDF Community License](https://www.questpdf.com/license/).
 
-
 ## Repository
 
 This project is hosted on [GitHub.com](https://github.com/bardeik/wine-rating-system).
-
 
 ---
 
