@@ -1,26 +1,23 @@
 using System.Globalization;
 using System.Text;
 using CsvHelper;
-using CsvHelper.Configuration;
-using CsvHelper.Configuration.Attributes;
-using CsvHelper.TypeConversion;
 using WineApp.Models;
 
 namespace WineApp.Services;
 
 public class ExportService : IExportService
 {
-    private static readonly CsvFormulaSafeStringConverter CsvStringConverter = new();
-
-    private static readonly CsvConfiguration CsvConfig = new(CultureInfo.InvariantCulture)
+    private static readonly CsvWriterOptions CsvConfig = new()
     {
-        Delimiter = ";",
+        Separator = ';',
+        FormatProvider = CultureInfo.InvariantCulture,
+        Injection = CsvInjection.Escape,
+        InjectionCharacters = "=+-@\t\r\n",
     };
 
-    private static readonly CsvConfiguration CsvConfigNoHeader = new(CultureInfo.InvariantCulture)
+    private static readonly CsvWriterOptions CsvConfigNoHeader = CsvConfig with
     {
-        Delimiter = ";",
-        HasHeaderRecord = false,
+        HasHeader = false,
     };
 
     private readonly TimeProvider _timeProvider;
@@ -220,122 +217,101 @@ public class ExportService : IExportService
         return result;
     }
 
-    private static string WriteRecords<T>(IEnumerable<T> records, CsvConfiguration? config = null)
+    private static string WriteRecords<T>(IEnumerable<T> records, CsvWriterOptions? config = null)
     {
         using var sw = new StringWriter();
-        using var csv = new CsvWriter(sw, config ?? CsvConfig);
-        csv.Context.TypeConverterCache.AddConverter<string>(CsvStringConverter);
+        using var csv = CsvWriter.Create(sw, config ?? CsvConfig);
         csv.WriteRecords(records);
+        csv.Flush();
         return sw.ToString();
-    }
-}
-
-internal sealed class CsvFormulaSafeStringConverter : DefaultTypeConverter
-{
-    private static readonly char[] FormulaPrefixes = ['=', '+', '-', '@'];
-
-    public override string ConvertToString(object? value, IWriterRow row, MemberMapData memberMapData)
-    {
-        var raw = value?.ToString() ?? string.Empty;
-        if (raw.Length == 0)
-        {
-            return string.Empty;
-        }
-
-        // Guard spreadsheet exports against formula execution when opened in Excel-compatible tools.
-        return NeedsEscaping(raw) ? $"'{raw}" : raw;
-    }
-
-    private static bool NeedsEscaping(string value)
-    {
-        if (value.Length == 0)
-        {
-            return false;
-        }
-
-        var first = value[0];
-        return FormulaPrefixes.Contains(first) || first == '\t' || first == '\r' || first == '\n';
     }
 }
 
 // ── Row record types ──────────────────────────────────────────────────────────
 
-file sealed record WineResultRow(
-    [property: Name("Vinnummer")] string WineNumber,
-    [property: Name("Vinnavn")] string WineName,
-    [property: Name("Produsent")] string Producer,
-    [property: Name("Gruppe")] string Group,
-    [property: Name("Klasse")] string Class,
-    [property: Name("Kategori")] string Category,
-    [property: Name("Total Score")] string TotalScore,
-    [property: Name("Utseende")] string Appearance,
-    [property: Name("Nese")] string Nose,
-    [property: Name("Smak")] string Taste,
-    [property: Name("Klassifisering")] string Classification,
-    [property: Name("Antall Vurderinger")] string NumberOfRatings,
-    [property: Name("Spread")] string Spread,
-    [property: Name("Defekt")] string IsDefective,
-    [property: Name("Outlier")] string IsOutlier,
-    [property: Name("Loddtrekning")] string RequiresLottery
+[CsvRecord]
+internal sealed partial record WineResultRow(
+    [property: CsvColumn("Vinnummer")] string WineNumber,
+    [property: CsvColumn("Vinnavn")] string WineName,
+    [property: CsvColumn("Produsent")] string Producer,
+    [property: CsvColumn("Gruppe")] string Group,
+    [property: CsvColumn("Klasse")] string Class,
+    [property: CsvColumn("Kategori")] string Category,
+    [property: CsvColumn("Total Score")] string TotalScore,
+    [property: CsvColumn("Utseende")] string Appearance,
+    [property: CsvColumn("Nese")] string Nose,
+    [property: CsvColumn("Smak")] string Taste,
+    [property: CsvColumn("Klassifisering")] string Classification,
+    [property: CsvColumn("Antall Vurderinger")] string NumberOfRatings,
+    [property: CsvColumn("Spread")] string Spread,
+    [property: CsvColumn("Defekt")] string IsDefective,
+    [property: CsvColumn("Outlier")] string IsOutlier,
+    [property: CsvColumn("Loddtrekning")] string RequiresLottery
 );
 
-file sealed record TrophyRow(
-    [property: Name("Pokal")] string Trophy,
-    [property: Name("Vinnummer")] string WineNumber,
-    [property: Name("Vinnavn")] string WineName,
-    [property: Name("Produsent")] string Producer,
-    [property: Name("Gruppe")] string Group,
-    [property: Name("Land")] string Country,
-    [property: Name("Årgang")] string Vintage,
-    [property: Name("Total Score")] string TotalScore,
-    [property: Name("Klassifisering")] string Classification,
-    [property: Name("Loddtrekning")] string RequiresLottery
+[CsvRecord]
+internal sealed partial record TrophyRow(
+    [property: CsvColumn("Pokal")] string Trophy,
+    [property: CsvColumn("Vinnummer")] string WineNumber,
+    [property: CsvColumn("Vinnavn")] string WineName,
+    [property: CsvColumn("Produsent")] string Producer,
+    [property: CsvColumn("Gruppe")] string Group,
+    [property: CsvColumn("Land")] string Country,
+    [property: CsvColumn("Årgang")] string Vintage,
+    [property: CsvColumn("Total Score")] string TotalScore,
+    [property: CsvColumn("Klassifisering")] string Classification,
+    [property: CsvColumn("Loddtrekning")] string RequiresLottery
 );
 
-file sealed record KeyValueRow(string Key, string Value);
+[CsvRecord]
+internal sealed partial record KeyValueRow(string Key, string Value);
 
-file sealed record EventWineRow(
-    [property: Name("Vinnummer")] string WineNumber,
-    [property: Name("Navn")] string Name,
-    [property: Name("Vurderingsnavn")] string RatingName,
-    [property: Name("Produsent")] string Producer,
-    [property: Name("Gruppe")] string Group,
-    [property: Name("Klasse")] string Class,
-    [property: Name("Kategori")] string Category,
-    [property: Name("Årgang")] string Vintage,
-    [property: Name("Alkohol%")] string AlcoholPercentage,
-    [property: Name("Land")] string Country,
-    [property: Name("Vinbonde")] string IsVinbonde,
-    [property: Name("Betalt")] string IsPaid
+[CsvRecord]
+internal sealed partial record EventWineRow(
+    [property: CsvColumn("Vinnummer")] string WineNumber,
+    [property: CsvColumn("Navn")] string Name,
+    [property: CsvColumn("Vurderingsnavn")] string RatingName,
+    [property: CsvColumn("Produsent")] string Producer,
+    [property: CsvColumn("Gruppe")] string Group,
+    [property: CsvColumn("Klasse")] string Class,
+    [property: CsvColumn("Kategori")] string Category,
+    [property: CsvColumn("Årgang")] string Vintage,
+    [property: CsvColumn("Alkohol%")] string AlcoholPercentage,
+    [property: CsvColumn("Land")] string Country,
+    [property: CsvColumn("Vinbonde")] string IsVinbonde,
+    [property: CsvColumn("Betalt")] string IsPaid
 );
 
-file sealed record EventRatingRow(
-    [property: Name("Vinnummer")] string WineNumber,
-    [property: Name("Dommer")] string JudgeId,
-    [property: Name("Utseende")] string Appearance,
-    [property: Name("Nese")] string Nose,
-    [property: Name("Smak")] string Taste,
-    [property: Name("Total")] string Total,
-    [property: Name("Kommentar")] string Comment,
-    [property: Name("Dato")] string RatingDate
+[CsvRecord]
+internal sealed partial record EventRatingRow(
+    [property: CsvColumn("Vinnummer")] string WineNumber,
+    [property: CsvColumn("Dommer")] string JudgeId,
+    [property: CsvColumn("Utseende")] string Appearance,
+    [property: CsvColumn("Nese")] string Nose,
+    [property: CsvColumn("Smak")] string Taste,
+    [property: CsvColumn("Total")] string Total,
+    [property: CsvColumn("Kommentar")] string Comment,
+    [property: CsvColumn("Dato")] string RatingDate
 );
 
-file sealed record EventResultRow(
-    [property: Name("Vinnummer")] string WineNumber,
-    [property: Name("Vinnavn")] string WineName,
-    [property: Name("Total Score")] string TotalScore,
-    [property: Name("Klassifisering")] string Classification,
-    [property: Name("Antall Vurderinger")] string NumberOfRatings,
-    [property: Name("Spread")] string Spread,
-    [property: Name("Defekt")] string IsDefective,
-    [property: Name("Outlier")] string IsOutlier
+[CsvRecord]
+internal sealed partial record EventResultRow(
+    [property: CsvColumn("Vinnummer")] string WineNumber,
+    [property: CsvColumn("Vinnavn")] string WineName,
+    [property: CsvColumn("Total Score")] string TotalScore,
+    [property: CsvColumn("Klassifisering")] string Classification,
+    [property: CsvColumn("Antall Vurderinger")] string NumberOfRatings,
+    [property: CsvColumn("Spread")] string Spread,
+    [property: CsvColumn("Defekt")] string IsDefective,
+    [property: CsvColumn("Outlier")] string IsOutlier
 );
 
-file sealed record FlightListRow(
-    [property: Name("Flight")] string FlightName,
-    [property: Name("Vinnummer")] string WineNumber,
-    [property: Name("Vinnavn")] string WineName,
-    [property: Name("Kategori")] string Category,
-    [property: Name("Gruppe")] string Group,
-    [property: Name("Klasse")] string Class
+[CsvRecord]
+internal sealed partial record FlightListRow(
+    [property: CsvColumn("Flight")] string FlightName,
+    [property: CsvColumn("Vinnummer")] string WineNumber,
+    [property: CsvColumn("Vinnavn")] string WineName,
+    [property: CsvColumn("Kategori")] string Category,
+    [property: CsvColumn("Gruppe")] string Group,
+    [property: CsvColumn("Klasse")] string Class
 );
